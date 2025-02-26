@@ -29,9 +29,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/AlexHorta/temporary#readme"
-Issues = "https://github.com/AlexHorta/temporary/issues"
-Source = "https://github.com/AlexHorta/temporary"
+Documentation = "https://github.com/AlexHorta/ptbtest#readme"
+Issues = "https://github.com/AlexHorta/ptbtest/issues"
+Source = "https://github.com/AlexHorta/ptbtest"
 
 [tool.hatch.version]
 path = "ptbtest/__about__.py"
