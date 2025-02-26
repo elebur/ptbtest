@@ -61,13 +61,13 @@ class Mockbot(TelegramObject):
 
     def __init__(self, username="MockBot", **kwargs):
         self._updates = []
-        self.bot = None
+        self._bot = None
         self._username = username
         self._sendmessages = []
         from .messagegenerator import MessageGenerator
         from .chatgenerator import ChatGenerator
-        self.mg = MessageGenerator(bot=self)
-        self.cg = ChatGenerator()
+        self._mg = MessageGenerator(bot=self)
+        self._cg = ChatGenerator()
 
     @property
     def sent_messages(self):
@@ -88,7 +88,7 @@ class Mockbot(TelegramObject):
     def info(func):
         @functools.wraps(func)
         def decorator(self, *args, **kwargs):
-            if not self.bot:
+            if not self._bot:
                 self.getMe()
 
             result = func(self, *args, **kwargs)
@@ -99,22 +99,22 @@ class Mockbot(TelegramObject):
     @property
     @info
     def id(self):
-        return self.bot.id
+        return self._bot.id
 
     @property
     @info
     def first_name(self):
-        return self.bot.first_name
+        return self._bot.first_name
 
     @property
     @info
     def last_name(self):
-        return self.bot.last_name
+        return self._bot.last_name
 
     @property
     @info
     def username(self):
-        return self.bot.username
+        return self._bot.username
 
     @property
     def name(self):
@@ -151,17 +151,17 @@ class Mockbot(TelegramObject):
             dat['user'] = self.getMe()
             cid = dat.pop('chat_id', None)
             if cid:
-                dat['chat'] = self.cg.get_chat(cid=cid)
+                dat['chat'] = self._cg.get_chat(cid=cid)
             else:
                 dat['chat'] = None
             mid = dat.pop('reply_to_message_id', None)
             if mid:
-                dat['reply_to_message'] = self.mg.get_message(
+                dat['reply_to_message'] = self._mg.get_message(
                     id=mid, chat=dat['chat']).message
             dat['forward_from_message_id'] = dat.pop('message_id', None)
             cid = dat.pop('from_chat_id', None)
             if cid:
-                dat['forward_from_chat'] = self.cg.get_chat(
+                dat['forward_from_chat'] = self._cg.get_chat(
                     cid=cid, type='channel')
             dat.pop('inline_message_id', None)
             dat.pop('performer', '')
@@ -185,13 +185,13 @@ class Mockbot(TelegramObject):
             phot = dat.pop('photo', None)
             if phot:
                 dat['photo'] = True
-            return self.mg.get_message(**dat).message
+            return self._mg.get_message(**dat).message
 
         return decorator
 
     def getMe(self, timeout=None, **kwargs):
-        self.bot = User(0, "Mockbot", last_name="Bot", username=self._username)
-        return self.bot
+        self._bot = User(0, "Mockbot", True, last_name="Bot", username=self._username)
+        return self._bot
 
     @message
     def sendMessage(self,
