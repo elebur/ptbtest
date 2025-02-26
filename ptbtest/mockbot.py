@@ -26,7 +26,7 @@ import warnings
 
 import time
 
-from telegram import (User, ReplyMarkup, TelegramObject)
+from telegram import (User, TelegramObject)
 from telegram.error import TelegramError
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -134,7 +134,7 @@ class Mockbot(TelegramObject):
 
             if kwargs.get('reply_markup'):
                 reply_markup = kwargs.get('reply_markup')
-                if isinstance(reply_markup, ReplyMarkup):
+                if isinstance(reply_markup, TelegramObject):
                     data['reply_markup'] = reply_markup.to_json()
                 else:
                     data['reply_markup'] = reply_markup
