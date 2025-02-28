@@ -42,7 +42,7 @@ class TestMockbot(unittest.TestCase):
             message = bot.sendMessage(update.message.chat_id, "this works")
             self.assertIsInstance(message, Message)
 
-        updater = Updater(workers=2, bot=self.mockbot)
+        updater = Updater(bot=self.mockbot)
         dp = updater.dispatcher
         dp.add_handler(CommandHandler("start", start))
         updater.start_polling()
