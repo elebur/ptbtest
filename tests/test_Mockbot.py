@@ -20,6 +20,7 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 from __future__ import absolute_import
 
+import asyncio
 import unittest
 
 import telegram
@@ -42,20 +43,20 @@ class TestMockbot(unittest.TestCase):
             message = bot.sendMessage(update.message.chat_id, "this works")
             self.assertIsInstance(message, Message)
 
-        updater = Updater(bot=self.mockbot)
-        dp = updater.dispatcher
-        dp.add_handler(CommandHandler("start", start))
+        updater = Updater(bot=self.mockbot, update_queue=asyncio.Queue())
+        #dp = updater.dispatcher
+        #dp.add_handler(CommandHandler("start", start))
         updater.start_polling()
-        user = User(id=1, first_name="test")
+        user = User(id=1, first_name="test", is_bot=True)
         chat = Chat(45, "group")
         message = Message(
-            404, user, None, chat, text="/start", bot=self.mockbot)
+            404, user, None, chat, text="/start", via_bot=self.mockbot)
         message2 = Message(
-            404, user, None, chat, text="start", bot=self.mockbot)
+            404, user, None, chat, text="start", via_bot=self.mockbot)
         message3 = Message(
-            404, user, None, chat, text="/start@MockBot", bot=self.mockbot)
+            404, user, None, chat, text="/start@MockBot", via_bot=self.mockbot)
         message4 = Message(
-            404, user, None, chat, text="/start@OtherBot", bot=self.mockbot)
+            404, user, None, chat, text="/start@OtherBot", via_bot=self.mockbot)
         self.mockbot.insertUpdate(Update(0, message=message))
         self.mockbot.insertUpdate(Update(1, message=message2))
         self.mockbot.insertUpdate(Update(1, message=message3))

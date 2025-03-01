@@ -5,9 +5,8 @@ from ptbtest import UserGenerator
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import CommandHandler
 from telegram.ext import ConversationHandler
-from telegram.ext import Filters
+from telegram.ext import filters
 from telegram.ext import MessageHandler
-from telegram.ext import RegexHandler
 from telegram.ext import Updater
 
 from ptbtest import ChatGenerator
@@ -96,11 +95,11 @@ class TestConversationbot2(unittest.TestCase):
                            RegexHandler('^Something else...$',
                                         custom_choice),
                            ],
-                TYPING_CHOICE: [MessageHandler(Filters.text,
+                TYPING_CHOICE: [MessageHandler(filters.text,
                                                regular_choice,
                                                pass_user_data=True),
                                 ],
-                TYPING_REPLY: [MessageHandler(Filters.text,
+                TYPING_REPLY: [MessageHandler(filters.text,
                                               received_information,
                                               pass_user_data=True),
                                ],
