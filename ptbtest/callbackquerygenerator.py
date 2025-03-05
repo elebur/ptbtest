@@ -94,7 +94,7 @@ class CallbackQueryGenerator(PtbGenerator):
                 chat = ChatGenerator().get_chat(user=user)
                 message = MessageGenerator().get_message(
                     user=self.bot.getMe(), chat=chat,
-                    bot=self.bot.getMe()).message
+                    via_bot=self.bot.getMe()).message
             else:
                 raise BadMessageException
         if inline_message_id:
@@ -114,9 +114,9 @@ class CallbackQueryGenerator(PtbGenerator):
             raise BadCallbackQueryException(
                 "exactly 1 of data and game_short_name is needed")
 
-        return CallbackQuery(self._gen_id(), user, chat_instance, message,
-                             data, inline_message_id, game_short_name,
-                             self.bot)
+        return CallbackQuery(self._gen_id(), user, chat_instance, message=message,
+                             data=data, inline_message_id=inline_message_id,
+                             game_short_name=game_short_name)
 
     def _gen_id(self):
         return str(uuid.uuid4())
