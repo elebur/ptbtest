@@ -160,7 +160,7 @@ class MessageGenerator(PtbGenerator):
                     pinned_message=None,
                     parse_mode=None,
                     channel=False,
-                    bot=None):
+                    via_bot=None):
         """
         When called without arguments will return an update object for a message from a private chat with a
         random user. for modifiers see args.
@@ -222,9 +222,9 @@ class MessageGenerator(PtbGenerator):
 
         return Message(
             id or next(self.idgen),
-            user,
-            None,
+            datetime.datetime.now(),  # Adding to make tests/test_Messagegenerator.py::TestMessageGeneratorCore::test_private_message pass. Change to a suitable object later.
             chat,
+            from_user=user,
             text=text,
             reply_to_message=reply_to_message,
             entities=entities,
@@ -248,7 +248,8 @@ class MessageGenerator(PtbGenerator):
             migrate_to_chat_id=migrate_to_chat_id,
             migrate_from_chat_id=migrate_from_chat_id,
             channel_chat_created=channel_chat_created,
-            pinned_message=pinned_message)
+            pinned_message=pinned_message,
+            via_bot=self.bot)
 
     def _handle_attachments(self, audio, contact, document, location, photo,
                             sticker, user, venue, video, voice, caption):

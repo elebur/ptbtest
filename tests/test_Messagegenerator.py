@@ -21,13 +21,13 @@ class TestMessageGeneratorCore(unittest.TestCase):
 
     def test_bot(self):
         u = self.mg.get_message()
-        self.assertIsInstance(u.message.bot, Mockbot)
-        self.assertEqual(u.message.bot.username, "MockBot")
+        self.assertIsInstance(u.message.via_bot, Mockbot)
+        self.assertEqual(u.message.via_bot.username, "MockBot")
 
         b = Mockbot(username="AnotherBot")
         mg2 = MessageGenerator(bot=b)
         u = mg2.get_message()
-        self.assertEqual(u.message.bot.username, "AnotherBot")
+        self.assertEqual(u.message.via_bot.username, "AnotherBot")
 
         with self.assertRaises(BadBotException):
             mg3 = MessageGenerator(bot="Yeah!")
@@ -68,7 +68,7 @@ class TestMessageGeneratorCore(unittest.TestCase):
         self.assertNotEqual(u.message.from_user.id, u.message.chat.id)
         self.assertEqual(u.message.chat.id, c.id)
 
-        with self.assertRaisesRegexp(BadChatException, "get_channel_post"):
+        with self.assertRaisesRegex(BadChatException, r"get_channel_post"):
             c = cg.get_chat(type="channel")
             self.mg.get_message(chat=c)
 
@@ -527,9 +527,9 @@ class TestMessageGeneratorChannelPost(unittest.TestCase):
         u = self.mg.get_channel_post(chat=channel)
         self.assertEqual(channel.title, u.channel_post.chat.title)
 
-        with self.assertRaisesRegexp(BadChatException, "telegram\.Chat"):
+        with self.assertRaisesRegexp(BadChatException, r"telegram\.Chat"):
             self.mg.get_channel_post(chat="chat")
-        with self.assertRaisesRegexp(BadChatException, "chat\.type"):
+        with self.assertRaisesRegexp(BadChatException, r"chat\.type"):
             self.mg.get_channel_post(chat=group)
 
     def test_with_user(self):
