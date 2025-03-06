@@ -6,12 +6,15 @@ build-backend = "hatchling.build"
 name = "ptbtest"
 dynamic = ["version"]
 description = 'A test suite for use with python-telegram-bot.'
-readme = "README.md"
+readme = "readme.MD"
 requires-python = ">=3.8"
-license = "MIT"
-keywords = []
+license-files = ["LICENSE", "LICENSE.lesser"]
+keywords = ["python", "telegram", "bot", "unittest"]
 authors = [
-  { name = "AlexHorta", email = "buey.horta@gmail.com" },
+  { name = "Pieter Schutz", email = "pieter.schutz@gmail.com" },
+]
+maintainers = [
+  { name = "Alexandre Paloschi Horta", email = "buey.horta@gmail.com" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
