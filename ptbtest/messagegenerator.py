@@ -496,7 +496,7 @@ class MessageGenerator(PtbGenerator):
         for _ in range(2):
             w, h = randint(40, 400), randint(40, 400)
             s = w * h * 0.3
-            tmp.append(PhotoSize(str(uuid.uuid4()), w, h, file_size=s))
+            tmp.append(PhotoSize("random_photo_size_name", str(uuid.uuid4()), w, h, file_size=s))
         return tmp
 
     def _get_location(self):
@@ -515,7 +515,7 @@ class MessageGenerator(PtbGenerator):
     def _get_voice(self):
         import uuid
         from random import randint
-        return Voice(str(uuid.uuid4()), randint(1, 120))
+        return Voice(str(uuid.uuid4()), randint(1, 120), randint(1, 60))
 
     def _get_video(self, data=None):
         import uuid
@@ -525,7 +525,7 @@ class MessageGenerator(PtbGenerator):
             data['height'] = randint(40, 400)
             return Video(**data)
         return Video(
-            str(uuid.uuid4()),
+            "random_name", str(uuid.uuid4()),
             randint(40, 400), randint(40, 400), randint(2, 300))
 
     def _get_sticker(self, data=None):
@@ -539,9 +539,9 @@ class MessageGenerator(PtbGenerator):
 
     def _get_document(self):
         import uuid
-        return Document(str(uuid.uuid4()), file_name="somedoc.pdf")
+        return Document("document_random_name", str(uuid.uuid4()), file_name="somedoc.pdf")
 
     def _get_audio(self):
         import uuid
         from random import randint
-        return Audio(str(uuid.uuid4()), randint(1, 120), title="Some song")
+        return Audio(str(uuid.uuid4()), randint(1, 120), randint(1, 60), title="Some song")
