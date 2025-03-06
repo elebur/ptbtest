@@ -253,6 +253,7 @@ class Mockbot(TelegramObject):
     def sendAudio(self,
                   chat_id,
                   audio,
+                  unique_id,
                   duration=None,
                   performer=None,
                   title=None,
@@ -276,6 +277,8 @@ class Mockbot(TelegramObject):
         if caption:
             data['caption'] = caption
             data['caption'] = caption
+
+        print(data)
 
         return data
 

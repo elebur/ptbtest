@@ -418,7 +418,7 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
             self.mg.get_message(video="video")
 
     def test_sticker(self):
-        sticker = Sticker("idyouknow", 30, 30)
+        sticker = Sticker("idyouknow", "sticker_unique_id", 30, 30, True, True, "REGULAR")
         u = self.mg.get_message(sticker=sticker)
         self.assertEqual(sticker.file_id, u.message.sticker.file_id)
 

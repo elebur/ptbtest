@@ -535,7 +535,8 @@ class MessageGenerator(PtbGenerator):
             data['width'] = randint(20, 200)
             data['height'] = randint(20, 200)
             return Sticker(**data)
-        return Sticker(str(uuid.uuid4()), randint(20, 200), randint(20, 200))
+        return Sticker(str(uuid.uuid4()), "sticker_unique_id",
+                       randint(20, 200), randint(20, 200), True, True, "REGULAR")
 
     def _get_document(self):
         import uuid
