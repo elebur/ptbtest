@@ -220,6 +220,8 @@ class MessageGenerator(PtbGenerator):
             audio, contact, document, location, photo, sticker, user, venue,
             video, voice, caption)
 
+        print("in get_message: ", user, chat)
+
         return Message(
             id or next(self.idgen),
             datetime.datetime.now(),  # Adding to make tests/test_Messagegenerator.py::TestMessageGeneratorCore::test_private_message pass. Change to a suitable object later.
@@ -404,8 +406,9 @@ class MessageGenerator(PtbGenerator):
             raise BadMessageException(
                 "Limit to only one status message per message")
         if new_chat_members:
-            if not isinstance(new_chat_members, User):
-                raise BadUserException
+            for ncm in new_chat_members:
+                if not isinstance(ncm, User):
+                    raise BadUserException
             if chat.type == "private":
                 raise BadChatException("Can not add members to private chat")
         if left_chat_member:
