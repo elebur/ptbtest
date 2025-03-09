@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 
+from collections.abc import Sequence
+
 import unittest
-import tracemalloc
 
 from ptbtest import (BadBotException, BadChatException, BadUserException,
                      BadMarkupException, BadMessageException)
@@ -10,7 +11,6 @@ from ptbtest import (UserGenerator, MessageGenerator, ChatGenerator)
 from telegram import (Audio, Contact, Document, File, Location, Sticker, User,
                       Update, Venue, Video, Voice, PhotoSize, Message)
 
-tracemalloc.start(25)
 
 class TestMessageGeneratorCore(unittest.TestCase):
     def setUp(self):
@@ -306,9 +306,9 @@ class TestMessageGeneratorStatusMessages(unittest.TestCase):
     def test_new_chat_photo(self):
         chat = self.cg.get_chat(type="group")
         u = self.mg.get_message(chat=chat, new_chat_photo=True)
-        self.assertIsInstance(u.message.new_chat_photo, list)
+        self.assertIsInstance(u.message.new_chat_photo, Sequence)
         self.assertIsInstance(u.message.new_chat_photo[0], PhotoSize)
-        photo = [PhotoSize("2", 1, 1, file_size=3)]
+        photo = [PhotoSize("2", "photo_unique_id", 1, 1, file_size=3)]
         u = self.mg.get_message(chat=chat, new_chat_photo=photo)
         self.assertEqual(len(u.message.new_chat_photo), 1)
 

@@ -389,7 +389,7 @@ class MessageGenerator(PtbGenerator):
 #             forward_from_message_id = next(self.idgen)
 #         return forward_date, forward_from, forward_from_message_id
 
-    async def _handle_status(self, channel_chat_created, chat, delete_chat_photo,
+    def _handle_status(self, channel_chat_created, chat, delete_chat_photo,
                        group_chat_created, left_chat_member,
                        migrate_from_chat_id, migrate_to_chat_id,
                        new_chat_members, new_chat_photo, new_chat_title,
@@ -417,9 +417,7 @@ class MessageGenerator(PtbGenerator):
         if new_chat_title:
             if chat.type == "private":
                 raise BadChatException("Can not change title of private chat")
-            print(chat)
-            chat = await chat.set_title(new_chat_title)
-            print(chat)
+            chat.title = new_chat_title
         if new_chat_photo:
             if chat.type == "private":
                 raise BadChatException(
@@ -444,7 +442,7 @@ class MessageGenerator(PtbGenerator):
                 raise BadChatException(
                     "Messages can only be pinned in supergroups")
             else:
-                pinned_message.pin()
+                pinned_message.reply_to_message = None
         return new_chat_photo
 
     def _get_user_and_chat(self, user, chat, private):
