@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import unittest
+import tracemalloc
 
 from ptbtest import (BadBotException, BadChatException, BadUserException,
                      BadMarkupException, BadMessageException)
@@ -9,6 +10,7 @@ from ptbtest import (UserGenerator, MessageGenerator, ChatGenerator)
 from telegram import (Audio, Contact, Document, File, Location, Sticker, User,
                       Update, Venue, Video, Voice, PhotoSize, Message)
 
+tracemalloc.start(25)
 
 class TestMessageGeneratorCore(unittest.TestCase):
     def setUp(self):

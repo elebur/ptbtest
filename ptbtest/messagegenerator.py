@@ -220,8 +220,6 @@ class MessageGenerator(PtbGenerator):
             audio, contact, document, location, photo, sticker, user, venue,
             video, voice, caption)
 
-        print("in get_message: ", user, chat)
-
         return Message(
             id or next(self.idgen),
             datetime.datetime.now(),  # Adding to make tests/test_Messagegenerator.py::TestMessageGeneratorCore::test_private_message pass. Change to a suitable object later.
@@ -391,7 +389,7 @@ class MessageGenerator(PtbGenerator):
 #             forward_from_message_id = next(self.idgen)
 #         return forward_date, forward_from, forward_from_message_id
 
-    def _handle_status(self, channel_chat_created, chat, delete_chat_photo,
+    async def _handle_status(self, channel_chat_created, chat, delete_chat_photo,
                        group_chat_created, left_chat_member,
                        migrate_from_chat_id, migrate_to_chat_id,
                        new_chat_members, new_chat_photo, new_chat_title,
@@ -419,7 +417,9 @@ class MessageGenerator(PtbGenerator):
         if new_chat_title:
             if chat.type == "private":
                 raise BadChatException("Can not change title of private chat")
-            chat.title = new_chat_title
+            print(chat)
+            chat = await chat.set_title(new_chat_title)
+            print(chat)
         if new_chat_photo:
             if chat.type == "private":
                 raise BadChatException(
@@ -444,7 +444,7 @@ class MessageGenerator(PtbGenerator):
                 raise BadChatException(
                     "Messages can only be pinned in supergroups")
             else:
-                pinned_message.reply_to_message = None
+                pinned_message.pin()
         return new_chat_photo
 
     def _get_user_and_chat(self, user, chat, private):
