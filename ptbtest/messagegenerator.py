@@ -522,8 +522,6 @@ class MessageGenerator(PtbGenerator):
         import uuid
         from random import randint
         if data:
-            data['width'] = randint(40, 400)
-            data['height'] = randint(40, 400)
             return Video(**data)
         return Video(
             "random_name", str(uuid.uuid4()),

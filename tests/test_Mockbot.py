@@ -351,13 +351,15 @@ class TestMockbot(unittest.TestCase):
         self.assertEqual(data['foursquare_id'], 2)
 
     def test_sendVideo(self):
-        self.mockbot.sendVideo(1, "some file", duration=3, caption="video")
+        self.mockbot.sendVideo(1, "some file", "video_unique_id", 10, 10, 3)
         data = self.mockbot.sent_messages[-1]
+        print(data)
 
         self.assertEqual(data['method'], "sendVideo")
         self.assertEqual(data['chat_id'], 1)
-        self.assertEqual(data['duration'], 3)
-        self.assertEqual(data['caption'], "video")
+        self.assertEqual(data['video2']['width'], 10)
+        self.assertEqual(data['video2']['height'], 10)
+        self.assertEqual(data['video2']['duration'], 3)
 
     def test_sendVoice(self):
         self.mockbot.sendVoice(1, "some file", duration=3, caption="voice")

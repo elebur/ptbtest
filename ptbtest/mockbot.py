@@ -345,7 +345,10 @@ class Mockbot(TelegramObject):
     def sendVideo(self,
                   chat_id,
                   video,
-                  duration=None,
+                  video_unique_id,
+                  width,
+                  height,
+                  duration,
                   caption=None,
                   disable_notification=False,
                   reply_to_message_id=None,
@@ -356,13 +359,14 @@ class Mockbot(TelegramObject):
             'chat_id': chat_id,
             'video': video,
             'video2': {
-                'file_id': video
+                'file_id': video,
+                'file_unique_id': video_unique_id,
+                'width': width,
+                'height': height,
+                'duration': duration
             }
         }
 
-        if duration:
-            data['duration'] = duration
-            data['video2']['duration'] = duration
         if caption:
             data['caption'] = caption
 
