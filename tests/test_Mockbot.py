@@ -280,7 +280,7 @@ class TestMockbot(unittest.TestCase):
 
     def test_sendDocument(self):
         self.mockbot.sendDocument(
-            1, "45", filename="jaja.docx", caption="good doc")
+            1, "45", "document_unique_id", filename="jaja.docx", caption="good doc")
         data = self.mockbot.sent_messages[-1]
 
         self.assertEqual(data['method'], "sendDocument")

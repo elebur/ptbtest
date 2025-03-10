@@ -286,6 +286,7 @@ class Mockbot(TelegramObject):
     def sendDocument(self,
                      chat_id,
                      document,
+                     document_unique_id,
                      filename=None,
                      caption=None,
                      disable_notification=False,
@@ -297,7 +298,8 @@ class Mockbot(TelegramObject):
             'chat_id': chat_id,
             'document': document,
             'document2': {
-                'file_id': document
+                'file_id': document,
+                'file_unique_id': document_unique_id
             }
         }
         if filename:
