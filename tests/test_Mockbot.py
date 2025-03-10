@@ -335,7 +335,7 @@ class TestMockbot(unittest.TestCase):
         self.assertEqual(data['caption'], "photo")
 
     def test_sendSticker(self):
-        self.mockbot.sendSticker(-4231, "test")
+        self.mockbot.sendSticker(-4231, "test", "sticker_unique_id", 10, 10, True, True, "regular")
         data = self.mockbot.sent_messages[-1]
 
         self.assertEqual(data['method'], "sendSticker")

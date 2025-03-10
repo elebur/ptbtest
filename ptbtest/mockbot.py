@@ -314,6 +314,12 @@ class Mockbot(TelegramObject):
     def sendSticker(self,
                     chat_id,
                     sticker,
+                    sticker_unique_id,
+                    width,
+                    height,
+                    is_animated,
+                    is_video,
+                    sticker_type,
                     disable_notification=False,
                     reply_to_message_id=None,
                     reply_markup=None,
@@ -323,7 +329,13 @@ class Mockbot(TelegramObject):
             'chat_id': chat_id,
             'sticker': sticker,
             'sticker2': {
-                'file_id': sticker
+                'file_id': sticker,
+                'file_unique_id': sticker_unique_id,
+                'width': width,
+                'height': height,
+                'is_animated': is_animated,
+                'is_video': is_video,
+                'type': sticker_type
             }
         }
 
