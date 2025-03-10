@@ -26,7 +26,7 @@ import warnings
 
 import time
 
-from telegram import (User, TelegramObject)
+from telegram import (Location, TelegramObject, User)
 from telegram.error import TelegramError
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -430,15 +430,11 @@ class Mockbot(TelegramObject):
                   reply_markup=None,
                   timeout=None,
                   **kwargs):
+        loc = Location(longitude, latitude)
         data = {
             'chat_id': chat_id,
-            'latitude': latitude,
-            'longitude': longitude,
-            'address': address,
-            'title': title,
             'venue': {
-                'latitude': latitude,
-                'longitude': longitude,
+                'location': loc,
                 'address': address,
                 'title': title
             }

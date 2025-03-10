@@ -260,6 +260,7 @@ class MessageGenerator(PtbGenerator):
                 document, audio
             ] if x
         ]
+        print(attachments)
         if caption and not attachments:
             raise BadMessageException(
                 "Can't have a caption without attachment")
@@ -293,7 +294,6 @@ class MessageGenerator(PtbGenerator):
             elif isinstance(venue, bool):
                 venue = self._get_venue()
             elif isinstance(venue, dict):
-                venue['location'] = Location(**venue)
                 venue = Venue(**venue)
             else:
                 raise BadMessageException(
