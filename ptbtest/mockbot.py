@@ -60,11 +60,6 @@ class Mockbot(TelegramObject):
         username (Optional[str]): Username for this bot. Defaults to 'MockBot'"""
 
     def __init__(self, username="MockBot", **kwargs):
-        _api_kwargs = {}
-        _api_kwargs.update(username=username)
-        _api_kwargs.update(kwargs)
-        super().__init__(api_kwargs=_api_kwargs)
-
         self._updates = []
         self._bot = None
         self._username = username
@@ -257,8 +252,8 @@ class Mockbot(TelegramObject):
     @message
     def sendAudio(self,
                   chat_id,
-                  audio,
                   unique_id,
+                  audio_unique_id,
                   duration=None,
                   performer=None,
                   title=None,
@@ -268,8 +263,8 @@ class Mockbot(TelegramObject):
                   reply_markup=None,
                   timeout=None,
                   **kwargs):
-        data = {'chat_id': chat_id, 'audio': audio}
-        data['audio2'] = {'file_id': audio}
+        data = {'chat_id': chat_id, 'audio': unique_id}
+        data['audio2'] = {'file_id': unique_id, 'file_unique_id': audio_unique_id}
         if duration:
             data['duration'] = duration
             data['audio2']['duration'] = duration

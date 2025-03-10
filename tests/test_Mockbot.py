@@ -254,8 +254,6 @@ class TestMockbot(unittest.TestCase):
             caption="this song")
         data = self.mockbot.sent_messages[-1]
 
-        print(data)
-
         self.assertEqual(data['method'], "sendAudio")
         self.assertEqual(data['chat_id'], 1)
         self.assertEqual(data['duration'], 2)
