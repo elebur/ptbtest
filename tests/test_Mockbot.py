@@ -27,6 +27,7 @@ import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram import InlineQueryResult
 from telegram import User, Message, Chat, Update
+from telegram.constants import ChatAction, ParseMode
 from telegram.error import TelegramError
 from telegram.ext import Updater, CommandHandler
 
@@ -147,7 +148,7 @@ class TestMockbot(unittest.TestCase):
             self.mockbot.editMessageReplyMarkup(message_id=12)
 
     def test_editMessageText(self):
-        self.mockbot.editMessageText("test", chat_id=1, message_id=1)
+        self.mockbot.editMessageText("test", chat_id=1)
         data = self.mockbot.sent_messages[-1]
         self.assertEqual(data['method'], "editMessageText")
         self.assertEqual(data['chat_id'], 1)
@@ -312,7 +313,7 @@ class TestMockbot(unittest.TestCase):
         self.mockbot.sendMessage(
             1,
             "test",
-            parse_mode=telegram.ParseMode.MARKDOWN,
+            parse_mode=ParseMode.MARKDOWN,
             reply_markup=keyb,
             disable_notification=True,
             reply_to_message_id=334,
@@ -353,7 +354,6 @@ class TestMockbot(unittest.TestCase):
     def test_sendVideo(self):
         self.mockbot.sendVideo(1, "some file", "video_unique_id", 10, 10, 3)
         data = self.mockbot.sent_messages[-1]
-        print(data)
 
         self.assertEqual(data['method'], "sendVideo")
         self.assertEqual(data['chat_id'], 1)
@@ -362,7 +362,7 @@ class TestMockbot(unittest.TestCase):
         self.assertEqual(data['video2']['duration'], 3)
 
     def test_sendVoice(self):
-        self.mockbot.sendVoice(1, "some file", duration=3, caption="voice")
+        self.mockbot.sendVoice(1, "some file", "voide_unique_id", duration=3, caption="voice")
         data = self.mockbot.sent_messages[-1]
 
         self.assertEqual(data['method'], "sendVoice")

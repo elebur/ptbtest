@@ -376,6 +376,7 @@ class Mockbot(TelegramObject):
     def sendVoice(self,
                   chat_id,
                   voice,
+                  voice_unique_id,
                   duration=None,
                   caption=None,
                   disable_notification=False,
@@ -387,7 +388,8 @@ class Mockbot(TelegramObject):
             'chat_id': chat_id,
             'voice': voice,
             'voice2': {
-                'file_id': voice
+                'file_id': voice,
+                'file_unique_id': voice_unique_id
             }
         }
 
