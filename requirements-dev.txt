@@ -1,4 +1,0 @@
-coverage
-nose
-python-telegram-bot
-pre-commit-hooks

@@ -1,12 +1,14 @@
 from __future__ import absolute_import
 
+from collections.abc import Sequence
+
 import unittest
 
 from ptbtest import (BadBotException, BadChatException, BadUserException,
                      BadMarkupException, BadMessageException)
 from ptbtest import Mockbot
 from ptbtest import (UserGenerator, MessageGenerator, ChatGenerator)
-from telegram import (Audio, Contact, Document, Location, Sticker, User,
+from telegram import (Audio, Contact, Document, File, Location, Sticker, User,
                       Update, Venue, Video, Voice, PhotoSize, Message)
 
 
@@ -21,13 +23,13 @@ class TestMessageGeneratorCore(unittest.TestCase):
 
     def test_bot(self):
         u = self.mg.get_message()
-        self.assertIsInstance(u.message.bot, Mockbot)
-        self.assertEqual(u.message.bot.username, "MockBot")
+        self.assertIsInstance(u.message.via_bot, Mockbot)
+        self.assertEqual(u.message.via_bot.username, "MockBot")
 
         b = Mockbot(username="AnotherBot")
         mg2 = MessageGenerator(bot=b)
         u = mg2.get_message()
-        self.assertEqual(u.message.bot.username, "AnotherBot")
+        self.assertEqual(u.message.via_bot.username, "AnotherBot")
 
         with self.assertRaises(BadBotException):
             mg3 = MessageGenerator(bot="Yeah!")
@@ -68,7 +70,7 @@ class TestMessageGeneratorCore(unittest.TestCase):
         self.assertNotEqual(u.message.from_user.id, u.message.chat.id)
         self.assertEqual(u.message.chat.id, c.id)
 
-        with self.assertRaisesRegexp(BadChatException, "get_channel_post"):
+        with self.assertRaisesRegex(BadChatException, r"get_channel_post"):
             c = cg.get_chat(type="channel")
             self.mg.get_message(chat=c)
 
@@ -273,13 +275,13 @@ class TestMessageGeneratorStatusMessages(unittest.TestCase):
     def test_new_chat_member(self):
         user = self.ug.get_user()
         chat = self.cg.get_chat(type="group")
-        u = self.mg.get_message(chat=chat, new_chat_member=user)
-        self.assertEqual(u.message.new_chat_member.id, user.id)
+        u = self.mg.get_message(chat=chat, new_chat_members=[user])
+        self.assertEqual(u.message.new_chat_members[0].id, user.id)
 
         with self.assertRaises(BadChatException):
-            self.mg.get_message(new_chat_member=user)
+            self.mg.get_message(new_chat_members=[user])
         with self.assertRaises(BadUserException):
-            self.mg.get_message(chat=chat, new_chat_member="user")
+            self.mg.get_message(chat=chat, new_chat_members="user")
 
     def test_left_chat_member(self):
         user = self.ug.get_user()
@@ -304,9 +306,9 @@ class TestMessageGeneratorStatusMessages(unittest.TestCase):
     def test_new_chat_photo(self):
         chat = self.cg.get_chat(type="group")
         u = self.mg.get_message(chat=chat, new_chat_photo=True)
-        self.assertIsInstance(u.message.new_chat_photo, list)
+        self.assertIsInstance(u.message.new_chat_photo, Sequence)
         self.assertIsInstance(u.message.new_chat_photo[0], PhotoSize)
-        photo = [PhotoSize("2", 1, 1, file_size=3)]
+        photo = [PhotoSize("2", "photo_unique_id", 1, 1, file_size=3)]
         u = self.mg.get_message(chat=chat, new_chat_photo=photo)
         self.assertEqual(len(u.message.new_chat_photo), 1)
 
@@ -335,7 +337,7 @@ class TestMessageGeneratorStatusMessages(unittest.TestCase):
         with self.assertRaises(BadMessageException):
             self.mg.get_message(
                 private=False,
-                new_chat_member=self.ug.get_user(),
+                new_chat_members=self.ug.get_user(),
                 new_chat_title="New title")
 
 
@@ -344,11 +346,11 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         self.mg = MessageGenerator()
 
     def test_caption_solo(self):
-        with self.assertRaisesRegexp(BadMessageException, r"caption without"):
+        with self.assertRaisesRegex(BadMessageException, r"caption without"):
             self.mg.get_message(caption="my cap")
 
     def test_more_than_one(self):
-        with self.assertRaisesRegexp(BadMessageException, "more than one"):
+        with self.assertRaisesRegex(BadMessageException, "more than one"):
             self.mg.get_message(photo=True, video=True)
 
     def test_location(self):
@@ -359,7 +361,7 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         u = self.mg.get_message(location=True)
         self.assertIsInstance(u.message.location, Location)
 
-        with self.assertRaisesRegexp(BadMessageException,
+        with self.assertRaisesRegex(BadMessageException,
                                      r"telegram\.Location"):
             self.mg.get_message(location="location")
 
@@ -371,7 +373,7 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         u = self.mg.get_message(venue=True)
         self.assertIsInstance(u.message.venue, Venue)
 
-        with self.assertRaisesRegexp(BadMessageException, r"telegram\.Venue"):
+        with self.assertRaisesRegex(BadMessageException, r"telegram\.Venue"):
             self.mg.get_message(venue="Venue")
 
     def test_contact(self):
@@ -382,12 +384,12 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         u = self.mg.get_message(contact=True)
         self.assertIsInstance(u.message.contact, Contact)
 
-        with self.assertRaisesRegexp(BadMessageException,
+        with self.assertRaisesRegex(BadMessageException,
                                      r"telegram\.Contact"):
             self.mg.get_message(contact="contact")
 
     def test_voice(self):
-        voice = Voice("idyouknow", 12)
+        voice = Voice("idyouknow", 12, 1)
         u = self.mg.get_message(voice=voice)
         self.assertEqual(voice.file_id, u.message.voice.file_id)
 
@@ -398,12 +400,13 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         u = self.mg.get_message(voice=True)
         self.assertIsInstance(u.message.voice, Voice)
 
-        with self.assertRaisesRegexp(BadMessageException, r"telegram\.Voice"):
+        with self.assertRaisesRegex(BadMessageException, r"telegram\.Voice"):
             self.mg.get_message(voice="voice")
 
     def test_video(self):
-        video = Video("idyouknow", 200, 200, 10)
+        video = Video("idyouknow", "file_unique_id", 200, 200, 10)
         u = self.mg.get_message(video=video)
+        print(video.file_id)
         self.assertEqual(video.file_id, u.message.video.file_id)
 
         cap = "video file"
@@ -413,11 +416,11 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         u = self.mg.get_message(video=True)
         self.assertIsInstance(u.message.video, Video)
 
-        with self.assertRaisesRegexp(BadMessageException, r"telegram\.Video"):
+        with self.assertRaisesRegex(BadMessageException, r"telegram\.Video"):
             self.mg.get_message(video="video")
 
     def test_sticker(self):
-        sticker = Sticker("idyouknow", 30, 30)
+        sticker = Sticker("idyouknow", "sticker_unique_id", 30, 30, True, True, "REGULAR")
         u = self.mg.get_message(sticker=sticker)
         self.assertEqual(sticker.file_id, u.message.sticker.file_id)
 
@@ -428,12 +431,12 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         u = self.mg.get_message(sticker=True)
         self.assertIsInstance(u.message.sticker, Sticker)
 
-        with self.assertRaisesRegexp(BadMessageException,
+        with self.assertRaisesRegex(BadMessageException,
                                      r"telegram\.Sticker"):
             self.mg.get_message(sticker="sticker")
 
     def test_document(self):
-        document = Document("idyouknow", file_name="test.pdf")
+        document = Document("document_id", "idyouknow", file_name="test.pdf")
         u = self.mg.get_message(document=document)
         self.assertEqual(document.file_id, u.message.document.file_id)
 
@@ -444,12 +447,12 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         u = self.mg.get_message(document=True)
         self.assertIsInstance(u.message.document, Document)
 
-        with self.assertRaisesRegexp(BadMessageException,
+        with self.assertRaisesRegex(BadMessageException,
                                      r"telegram\.Document"):
             self.mg.get_message(document="document")
 
     def test_audio(self):
-        audio = Audio("idyouknow", 23)
+        audio = Audio("idyouknow", 23, 60)
         u = self.mg.get_message(audio=audio)
         self.assertEqual(audio.file_id, u.message.audio.file_id)
 
@@ -460,11 +463,11 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         u = self.mg.get_message(audio=True)
         self.assertIsInstance(u.message.audio, Audio)
 
-        with self.assertRaisesRegexp(BadMessageException, r"telegram\.Audio"):
+        with self.assertRaisesRegex(BadMessageException, r"telegram\.Audio"):
             self.mg.get_message(audio="audio")
 
     def test_photo(self):
-        photo = [PhotoSize("2", 1, 1, file_size=3)]
+        photo = [PhotoSize("2", "photo_unique_id", 1, 1, file_size=3)]
         u = self.mg.get_message(photo=photo)
         self.assertEqual(photo[0].file_size, u.message.photo[0].file_size)
 
@@ -473,12 +476,12 @@ class TestMessageGeneratorAttachments(unittest.TestCase):
         self.assertEqual(u.message.caption, cap)
 
         u = self.mg.get_message(photo=True)
-        self.assertIsInstance(u.message.photo, list)
+        self.assertIsInstance(u.message.photo, tuple)
         self.assertIsInstance(u.message.photo[0], PhotoSize)
 
-        with self.assertRaisesRegexp(BadMessageException, r"telegram\.Photo"):
+        with self.assertRaisesRegex(BadMessageException, r"telegram\.Photo"):
             self.mg.get_message(photo="photo")
-        with self.assertRaisesRegexp(BadMessageException, r"telegram\.Photo"):
+        with self.assertRaisesRegex(BadMessageException, r"telegram\.Photo"):
             self.mg.get_message(photo=[1, 2, 3])
 
 
@@ -527,9 +530,9 @@ class TestMessageGeneratorChannelPost(unittest.TestCase):
         u = self.mg.get_channel_post(chat=channel)
         self.assertEqual(channel.title, u.channel_post.chat.title)
 
-        with self.assertRaisesRegexp(BadChatException, "telegram\.Chat"):
+        with self.assertRaisesRegex(BadChatException, r"telegram\.Chat"):
             self.mg.get_channel_post(chat="chat")
-        with self.assertRaisesRegexp(BadChatException, "chat\.type"):
+        with self.assertRaisesRegex(BadChatException, r"chat\.type"):
             self.mg.get_channel_post(chat=group)
 
     def test_with_user(self):

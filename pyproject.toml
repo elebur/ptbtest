@@ -1,0 +1,83 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "ptbtest"
+dynamic = ["version"]
+description = 'A test suite for use with python-telegram-bot.'
+readme = "readme.MD"
+requires-python = ">=3.9"
+license = "GPL-3.0-only"
+license-files = ["LICENSE", "LICENSE.lesser"]
+keywords = ["python", "telegram", "bot", "unittest"]
+authors = [
+  { name = "Pieter Schutz", email = "pieter.schutz@gmail.com" },
+]
+maintainers = [
+  { name = "Alexandre Paloschi Horta", email = "buey.horta@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = [
+  "python-telegram-bot"
+]
+
+[project.urls]
+Documentation = "https://github.com/AlexHorta/ptbtest#readme"
+Issues = "https://github.com/AlexHorta/ptbtest/issues"
+Source = "https://github.com/AlexHorta/ptbtest"
+
+
+# HATCH
+[tool.hatch.version]
+path = "ptbtest/__about__.py"
+
+[tool.hatch.envs.test]
+dependencies = [
+  "pytest",
+  "pytest-cov",
+  "coverage[toml]",
+  "pre-commit-hooks",
+  "python-telegram-bot"
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.9", "3.10", "3.11", "3.12"]
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:ptbtest tests}"
+
+
+# COVERAGE
+[tool.coverage.run]
+source_pkgs = ["ptbtest", "tests"]
+branch = true
+parallel = true
+omit = [
+  "ptbtest/__about__.py",
+]
+
+[tool.coverage.paths]
+temporary = ["ptbtest"]
+tests = ["tests", "*/ptbtest/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]

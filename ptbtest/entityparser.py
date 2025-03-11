@@ -115,7 +115,10 @@ class EntityParser():
             length = len(text)
             for x, ent in enumerate(entities):
                 if ent.offset > start:
-                    entities[x].offset -= link.end() - start - length
+                    # The previous solution subtracted link.end()-start-length
+                    # from entities[x].offset. That's why the -1 multiplication.
+                    shift_to = (link.end() - start - length) * -1
+                    entities[x] = MessageEntity.shift_entities(shift_to, [entities[x]])[0]
             entities.append(MessageEntity('text_link', start, length, url=url))
             message = text_links.sub(r'\g<text>', message, count=1)
         for mention in mentions.finditer(message):
@@ -136,4 +139,5 @@ class EntityParser():
         for url in urls.finditer(message):
             entities.append(
                 MessageEntity('url', url.start(), url.end() - url.start()))
+        
         return message, entities

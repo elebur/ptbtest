@@ -18,7 +18,6 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-from __future__ import absolute_import
 import unittest
 
 from ptbtest import (BadBotException, BadCallbackQueryException,
@@ -33,16 +32,16 @@ class TestMessageGeneratorChannelPost(unittest.TestCase):
         self.cqg = CallbackQueryGenerator()
 
     def test_invalid_calls(self):
-        with self.assertRaisesRegexp(BadCallbackQueryException,
+        with self.assertRaisesRegex(BadCallbackQueryException,
                                      "message and inline_message_id"):
             self.cqg.get_callback_query()
-        with self.assertRaisesRegexp(BadCallbackQueryException,
+        with self.assertRaisesRegex(BadCallbackQueryException,
                                      "message and inline_message_id"):
             self.cqg.get_callback_query(message=True, inline_message_id=True)
-        with self.assertRaisesRegexp(BadCallbackQueryException,
+        with self.assertRaisesRegex(BadCallbackQueryException,
                                      "data and game_short_name"):
             self.cqg.get_callback_query(message=True)
-        with self.assertRaisesRegexp(BadCallbackQueryException,
+        with self.assertRaisesRegex(BadCallbackQueryException,
                                      "data and game_short_name"):
             self.cqg.get_callback_query(
                 message=True, data="test-data", game_short_name="mygame")
@@ -84,7 +83,7 @@ class TestMessageGeneratorChannelPost(unittest.TestCase):
             inline_message_id=True, data="test-data")
         self.assertIsInstance(u.callback_query.inline_message_id, str)
 
-        with self.assertRaisesRegexp(BadCallbackQueryException,
+        with self.assertRaisesRegex(BadCallbackQueryException,
                                      "string or True"):
             self.cqg.get_callback_query(
                 inline_message_id=3.98, data="test-data")

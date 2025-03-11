@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import unittest
 
 from telegram.ext import CommandHandler
-from telegram.ext import Filters
+from telegram.ext import filters
 from telegram.ext import MessageHandler
 from telegram.ext import Updater
 
@@ -71,7 +71,7 @@ class TestEchobot2(unittest.TestCase):
         def echo(bot, update):
             update.message.reply_text(update.message.text)
 
-        self.updater.dispatcher.add_handler(MessageHandler(Filters.text, echo))
+        self.updater.dispatcher.add_handler(MessageHandler(filters.text, echo))
         self.updater.start_polling()
         update = self.mg.get_message(text="first message")
         update2 = self.mg.get_message(text="second message")

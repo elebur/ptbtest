@@ -7,7 +7,7 @@ from uuid import uuid4
 from ptbtest import InlineQueryGenerator
 from telegram import InlineQueryResultArticle
 from telegram import InputTextMessageContent
-from telegram import ParseMode
+from telegram.constants import ParseMode
 from telegram.ext import InlineQueryHandler
 from telegram.ext import Updater
 

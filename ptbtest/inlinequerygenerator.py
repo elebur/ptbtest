@@ -99,11 +99,10 @@ class InlineQueryGenerator(PtbGenerator):
 
         return InlineQuery(
             self._gen_id(),
-            from_user=user,
-            query=query,
-            offset=offset,
-            location=location,
-            bot=self.bot)
+            user,
+            query,
+            offset,
+            location=location)
 
     @update("chosen_inline_result")
     def get_chosen_inline_result(self,

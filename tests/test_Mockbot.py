@@ -20,14 +20,15 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 from __future__ import absolute_import
 
+import asyncio
 import unittest
 
 import telegram
-from telegram import ChatAction
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram import InlineQueryResult
-from telegram import TelegramError
 from telegram import User, Message, Chat, Update
+from telegram.constants import ChatAction, ParseMode
+from telegram.error import TelegramError
 from telegram.ext import Updater, CommandHandler
 
 from ptbtest import Mockbot
@@ -43,20 +44,20 @@ class TestMockbot(unittest.TestCase):
             message = bot.sendMessage(update.message.chat_id, "this works")
             self.assertIsInstance(message, Message)
 
-        updater = Updater(workers=2, bot=self.mockbot)
-        dp = updater.dispatcher
-        dp.add_handler(CommandHandler("start", start))
+        updater = Updater(bot=self.mockbot, update_queue=asyncio.Queue())
+        #dp = updater.dispatcher
+        #dp.add_handler(CommandHandler("start", start))
         updater.start_polling()
-        user = User(id=1, first_name="test")
+        user = User(id=1, first_name="test", is_bot=True)
         chat = Chat(45, "group")
         message = Message(
-            404, user, None, chat, text="/start", bot=self.mockbot)
+            404, user, None, chat, text="/start", via_bot=self.mockbot)
         message2 = Message(
-            404, user, None, chat, text="start", bot=self.mockbot)
+            404, user, None, chat, text="start", via_bot=self.mockbot)
         message3 = Message(
-            404, user, None, chat, text="/start@MockBot", bot=self.mockbot)
+            404, user, None, chat, text="/start@MockBot", via_bot=self.mockbot)
         message4 = Message(
-            404, user, None, chat, text="/start@OtherBot", bot=self.mockbot)
+            404, user, None, chat, text="/start@OtherBot", via_bot=self.mockbot)
         self.mockbot.insertUpdate(Update(0, message=message))
         self.mockbot.insertUpdate(Update(1, message=message2))
         self.mockbot.insertUpdate(Update(1, message=message3))
@@ -147,7 +148,7 @@ class TestMockbot(unittest.TestCase):
             self.mockbot.editMessageReplyMarkup(message_id=12)
 
     def test_editMessageText(self):
-        self.mockbot.editMessageText("test", chat_id=1, message_id=1)
+        self.mockbot.editMessageText("test", chat_id=1)
         data = self.mockbot.sent_messages[-1]
         self.assertEqual(data['method'], "editMessageText")
         self.assertEqual(data['chat_id'], 1)
@@ -247,6 +248,7 @@ class TestMockbot(unittest.TestCase):
         self.mockbot.sendAudio(
             1,
             "123",
+            "audio_unique_id",
             duration=2,
             performer="singer",
             title="song",
@@ -279,7 +281,7 @@ class TestMockbot(unittest.TestCase):
 
     def test_sendDocument(self):
         self.mockbot.sendDocument(
-            1, "45", filename="jaja.docx", caption="good doc")
+            1, "45", "document_unique_id", filename="jaja.docx", caption="good doc")
         data = self.mockbot.sent_messages[-1]
 
         self.assertEqual(data['method'], "sendDocument")
@@ -311,7 +313,7 @@ class TestMockbot(unittest.TestCase):
         self.mockbot.sendMessage(
             1,
             "test",
-            parse_mode=telegram.ParseMode.MARKDOWN,
+            parse_mode=ParseMode.MARKDOWN,
             reply_markup=keyb,
             disable_notification=True,
             reply_to_message_id=334,
@@ -334,7 +336,7 @@ class TestMockbot(unittest.TestCase):
         self.assertEqual(data['caption'], "photo")
 
     def test_sendSticker(self):
-        self.mockbot.sendSticker(-4231, "test")
+        self.mockbot.sendSticker(-4231, "test", "sticker_unique_id", 10, 10, True, True, "regular")
         data = self.mockbot.sent_messages[-1]
 
         self.assertEqual(data['method'], "sendSticker")
@@ -350,16 +352,17 @@ class TestMockbot(unittest.TestCase):
         self.assertEqual(data['foursquare_id'], 2)
 
     def test_sendVideo(self):
-        self.mockbot.sendVideo(1, "some file", duration=3, caption="video")
+        self.mockbot.sendVideo(1, "some file", "video_unique_id", 10, 10, 3)
         data = self.mockbot.sent_messages[-1]
 
         self.assertEqual(data['method'], "sendVideo")
         self.assertEqual(data['chat_id'], 1)
-        self.assertEqual(data['duration'], 3)
-        self.assertEqual(data['caption'], "video")
+        self.assertEqual(data['video2']['width'], 10)
+        self.assertEqual(data['video2']['height'], 10)
+        self.assertEqual(data['video2']['duration'], 3)
 
     def test_sendVoice(self):
-        self.mockbot.sendVoice(1, "some file", duration=3, caption="voice")
+        self.mockbot.sendVoice(1, "some file", "voide_unique_id", duration=3, caption="voice")
         data = self.mockbot.sent_messages[-1]
 
         self.assertEqual(data['method'], "sendVoice")

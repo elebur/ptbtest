@@ -134,9 +134,6 @@ class MessageGenerator(PtbGenerator):
                     user=None,
                     chat=None,
                     private=True,
-                    forward_from=None,
-                    forward_from_chat=None,
-                    forward_date=None,
                     reply_to_message=None,
                     text=None,
                     entities=None,
@@ -150,7 +147,7 @@ class MessageGenerator(PtbGenerator):
                     contact=None,
                     location=None,
                     venue=None,
-                    new_chat_member=None,
+                    new_chat_members=None,
                     left_chat_member=None,
                     new_chat_title=None,
                     new_chat_photo=None,
@@ -161,10 +158,9 @@ class MessageGenerator(PtbGenerator):
                     migrate_from_chat_id=None,
                     channel_chat_created=False,
                     pinned_message=None,
-                    forward_from_message_id=None,
                     parse_mode=None,
                     channel=False,
-                    bot=None):
+                    via_bot=None):
         """
         When called without arguments will return an update object for a message from a private chat with a
         random user. for modifiers see args.
@@ -181,11 +177,7 @@ class MessageGenerator(PtbGenerator):
             parse_mode (Optional[str]): "HTML" or "Markdown" parses the text and fills entities
             entities (Optional[lst(telegram.MessageEntity)]): when text and parsemode are set this will be filled with the entities in the text.  # noqa: E501
             reply_to_message (Optional[telegram.Message): Messages this one is a reply to
-            forward_from (Optional[telegram.User): User this message is forwarded from
-            forward_from_chat (Optional[telegram.Chat]): channel this message is forwarded from
-            forward_date (Optional[int]): Original sent date
-            forward_from_message_id (Optional[int]): message id from forwarded channel post.
-            new_chat_member (Optional[telegram.User]): New member for this chat
+            new_chat_members (Optional[seq(telegram.User)]): New member(s) for this chat
             left_chat_member (Optional[telegram.User]): Member left this chat
             new_chat_title (Optional[str]): New title for the chat
             new_chat_photo (Optional[lst(telegram.Photosize)] or True): New picture for the group
@@ -216,16 +208,12 @@ class MessageGenerator(PtbGenerator):
         if reply_to_message and not isinstance(reply_to_message, Message):
             raise BadMessageException
 
-        forward_date, forward_from, forward_from_message_id = self._handle_forward(
-            forward_date, forward_from, forward_from_chat,
-            forward_from_message_id)
-
         text, entities = self._handle_text(text, parse_mode)
 
         new_chat_photo = self._handle_status(
             channel_chat_created, chat, delete_chat_photo, group_chat_created,
             left_chat_member, migrate_from_chat_id, migrate_to_chat_id,
-            new_chat_member, new_chat_photo, new_chat_title, pinned_message,
+            new_chat_members, new_chat_photo, new_chat_title, pinned_message,
             supergroup_chat_created)
 
         audio, contact, document, location, photo, sticker, venue, video, voice = self._handle_attachments(
@@ -234,12 +222,10 @@ class MessageGenerator(PtbGenerator):
 
         return Message(
             id or next(self.idgen),
-            user,
-            None,
+            datetime.datetime.now(),  # Adding to make tests/test_Messagegenerator.py::TestMessageGeneratorCore::test_private_message pass. Change to a suitable object later.
             chat,
+            from_user=user,
             text=text,
-            forward_from=forward_from,
-            forward_from_chat=forward_from_chat,
             reply_to_message=reply_to_message,
             entities=entities,
             audio=audio,
@@ -252,7 +238,7 @@ class MessageGenerator(PtbGenerator):
             contact=contact,
             location=location,
             venue=venue,
-            new_chat_member=new_chat_member,
+            new_chat_members=new_chat_members,
             left_chat_member=left_chat_member,
             new_chat_title=new_chat_title,
             new_chat_photo=new_chat_photo,
@@ -263,9 +249,7 @@ class MessageGenerator(PtbGenerator):
             migrate_from_chat_id=migrate_from_chat_id,
             channel_chat_created=channel_chat_created,
             pinned_message=pinned_message,
-            forward_from_message_id=forward_from_message_id,
-            forward_date=forward_date,
-            bot=bot or self.bot)
+            via_bot=self.bot)
 
     def _handle_attachments(self, audio, contact, document, location, photo,
                             sticker, user, venue, video, voice, caption):
@@ -276,6 +260,7 @@ class MessageGenerator(PtbGenerator):
                 document, audio
             ] if x
         ]
+        print(attachments)
         if caption and not attachments:
             raise BadMessageException(
                 "Can't have a caption without attachment")
@@ -309,7 +294,6 @@ class MessageGenerator(PtbGenerator):
             elif isinstance(venue, bool):
                 venue = self._get_venue()
             elif isinstance(venue, dict):
-                venue['location'] = Location(**venue)
                 venue = Venue(**venue)
             else:
                 raise BadMessageException(
@@ -376,42 +360,42 @@ class MessageGenerator(PtbGenerator):
                     "audio must either be True or telegram.Audio")
         return audio, contact, document, location, photo, sticker, venue, video, voice
 
-    def _handle_forward(self, forward_date, forward_from, forward_from_chat,
-                        forward_from_message_id):
-        if forward_from and not isinstance(forward_from, User):
-            raise BadUserException()
-        if forward_from_chat:
-            if not isinstance(forward_from_chat, Chat):
-                raise BadChatException
-            if forward_from_chat.type != "channel":
-                raise BadChatException(
-                    'forward_from_chat must be of type "channel"')
-            if not forward_from:
-                forward_from = UserGenerator().get_user()
-        if forward_from and not isinstance(forward_date, int):
-            if not isinstance(forward_date, datetime.datetime):
-                now = datetime.datetime.now()
-            else:
-                now = forward_date
-            try:
-                # Python 3.3+
-                forward_date = int(now.timestamp())
-            except AttributeError:
-                # Python 3 (< 3.3) and Python 2
-                forward_date = int(time.mktime(now.timetuple()))
-        if (forward_from_message_id and
-                not isinstance(forward_from_message_id, int)) or (
-                    forward_from_chat and not forward_from_message_id):
-            forward_from_message_id = next(self.idgen)
-        return forward_date, forward_from, forward_from_message_id
+#     def _handle_forward(self, forward_date, forward_from, forward_from_chat,
+#                         forward_from_message_id):
+#         if forward_from and not isinstance(forward_from, User):
+#             raise BadUserException()
+#         if forward_from_chat:
+#             if not isinstance(forward_from_chat, Chat):
+#                 raise BadChatException
+#             if forward_from_chat.type != "channel":
+#                 raise BadChatException(
+#                     'forward_from_chat must be of type "channel"')
+#             if not forward_from:
+#                 forward_from = UserGenerator().get_user()
+#         if forward_from and not isinstance(forward_date, int):
+#             if not isinstance(forward_date, datetime.datetime):
+#                 now = datetime.datetime.now()
+#             else:
+#                 now = forward_date
+#             try:
+#                 # Python 3.3+
+#                 forward_date = int(now.timestamp())
+#             except AttributeError:
+#                 # Python 3 (< 3.3) and Python 2
+#                 forward_date = int(time.mktime(now.timetuple()))
+#         if (forward_from_message_id and
+#                 not isinstance(forward_from_message_id, int)) or (
+#                     forward_from_chat and not forward_from_message_id):
+#             forward_from_message_id = next(self.idgen)
+#         return forward_date, forward_from, forward_from_message_id
 
     def _handle_status(self, channel_chat_created, chat, delete_chat_photo,
                        group_chat_created, left_chat_member,
                        migrate_from_chat_id, migrate_to_chat_id,
-                       new_chat_member, new_chat_photo, new_chat_title,
+                       new_chat_members, new_chat_photo, new_chat_title,
                        pinned_message, supergroup_chat_created):
         status_messages = [
-            new_chat_member, left_chat_member, new_chat_title, new_chat_photo,
+            new_chat_members, left_chat_member, new_chat_title, new_chat_photo,
             delete_chat_photo, group_chat_created, supergroup_chat_created,
             channel_chat_created, migrate_to_chat_id, migrate_from_chat_id,
             pinned_message
@@ -419,9 +403,10 @@ class MessageGenerator(PtbGenerator):
         if len([x for x in status_messages if x]) > 1:
             raise BadMessageException(
                 "Limit to only one status message per message")
-        if new_chat_member:
-            if not isinstance(new_chat_member, User):
-                raise BadUserException
+        if new_chat_members:
+            for ncm in new_chat_members:
+                if not isinstance(ncm, User):
+                    raise BadUserException
             if chat.type == "private":
                 raise BadChatException("Can not add members to private chat")
         if left_chat_member:
@@ -512,7 +497,7 @@ class MessageGenerator(PtbGenerator):
         for _ in range(2):
             w, h = randint(40, 400), randint(40, 400)
             s = w * h * 0.3
-            tmp.append(PhotoSize(str(uuid.uuid4()), w, h, file_size=s))
+            tmp.append(PhotoSize("random_photo_size_name", str(uuid.uuid4()), w, h, file_size=s))
         return tmp
 
     def _get_location(self):
@@ -531,17 +516,15 @@ class MessageGenerator(PtbGenerator):
     def _get_voice(self):
         import uuid
         from random import randint
-        return Voice(str(uuid.uuid4()), randint(1, 120))
+        return Voice(str(uuid.uuid4()), randint(1, 120), randint(1, 60))
 
     def _get_video(self, data=None):
         import uuid
         from random import randint
         if data:
-            data['width'] = randint(40, 400)
-            data['height'] = randint(40, 400)
             return Video(**data)
         return Video(
-            str(uuid.uuid4()),
+            "random_name", str(uuid.uuid4()),
             randint(40, 400), randint(40, 400), randint(2, 300))
 
     def _get_sticker(self, data=None):
@@ -551,13 +534,14 @@ class MessageGenerator(PtbGenerator):
             data['width'] = randint(20, 200)
             data['height'] = randint(20, 200)
             return Sticker(**data)
-        return Sticker(str(uuid.uuid4()), randint(20, 200), randint(20, 200))
+        return Sticker(str(uuid.uuid4()), "sticker_unique_id",
+                       randint(20, 200), randint(20, 200), True, True, "REGULAR")
 
     def _get_document(self):
         import uuid
-        return Document(str(uuid.uuid4()), file_name="somedoc.pdf")
+        return Document("document_random_name", str(uuid.uuid4()), file_name="somedoc.pdf")
 
     def _get_audio(self):
         import uuid
         from random import randint
-        return Audio(str(uuid.uuid4()), randint(1, 120), title="Some song")
+        return Audio(str(uuid.uuid4()), randint(1, 120), randint(1, 60), title="Some song")

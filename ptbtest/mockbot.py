@@ -26,7 +26,7 @@ import warnings
 
 import time
 
-from telegram import (User, ReplyMarkup, TelegramObject)
+from telegram import (Location, TelegramObject, User)
 from telegram.error import TelegramError
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -61,13 +61,13 @@ class Mockbot(TelegramObject):
 
     def __init__(self, username="MockBot", **kwargs):
         self._updates = []
-        self.bot = None
+        self._bot = None
         self._username = username
         self._sendmessages = []
         from .messagegenerator import MessageGenerator
         from .chatgenerator import ChatGenerator
-        self.mg = MessageGenerator(bot=self)
-        self.cg = ChatGenerator()
+        self._mg = MessageGenerator(bot=self)
+        self._cg = ChatGenerator()
 
     @property
     def sent_messages(self):
@@ -88,7 +88,7 @@ class Mockbot(TelegramObject):
     def info(func):
         @functools.wraps(func)
         def decorator(self, *args, **kwargs):
-            if not self.bot:
+            if not self._bot:
                 self.getMe()
 
             result = func(self, *args, **kwargs)
@@ -99,22 +99,22 @@ class Mockbot(TelegramObject):
     @property
     @info
     def id(self):
-        return self.bot.id
+        return self._bot.id
 
     @property
     @info
     def first_name(self):
-        return self.bot.first_name
+        return self._bot.first_name
 
     @property
     @info
     def last_name(self):
-        return self.bot.last_name
+        return self._bot.last_name
 
     @property
     @info
     def username(self):
-        return self.bot.username
+        return self._bot.username
 
     @property
     def name(self):
@@ -134,7 +134,7 @@ class Mockbot(TelegramObject):
 
             if kwargs.get('reply_markup'):
                 reply_markup = kwargs.get('reply_markup')
-                if isinstance(reply_markup, ReplyMarkup):
+                if isinstance(reply_markup, TelegramObject):
                     data['reply_markup'] = reply_markup.to_json()
                 else:
                     data['reply_markup'] = reply_markup
@@ -151,17 +151,17 @@ class Mockbot(TelegramObject):
             dat['user'] = self.getMe()
             cid = dat.pop('chat_id', None)
             if cid:
-                dat['chat'] = self.cg.get_chat(cid=cid)
+                dat['chat'] = self._cg.get_chat(cid=cid)
             else:
                 dat['chat'] = None
             mid = dat.pop('reply_to_message_id', None)
             if mid:
-                dat['reply_to_message'] = self.mg.get_message(
+                dat['reply_to_message'] = self._mg.get_message(
                     id=mid, chat=dat['chat']).message
-            dat['forward_from_message_id'] = dat.pop('message_id', None)
+            #dat['forward_from_message_id'] = dat.pop('message_id', None)
             cid = dat.pop('from_chat_id', None)
             if cid:
-                dat['forward_from_chat'] = self.cg.get_chat(
+                dat['forward_from_chat'] = self._cg.get_chat(
                     cid=cid, type='channel')
             dat.pop('inline_message_id', None)
             dat.pop('performer', '')
@@ -185,13 +185,13 @@ class Mockbot(TelegramObject):
             phot = dat.pop('photo', None)
             if phot:
                 dat['photo'] = True
-            return self.mg.get_message(**dat).message
+            return self._mg.get_message(**dat).message
 
         return decorator
 
     def getMe(self, timeout=None, **kwargs):
-        self.bot = User(0, "Mockbot", last_name="Bot", username=self._username)
-        return self.bot
+        self._bot = User(0, "Mockbot", True, last_name="Bot", username=self._username)
+        return self._bot
 
     @message
     def sendMessage(self,
@@ -252,7 +252,8 @@ class Mockbot(TelegramObject):
     @message
     def sendAudio(self,
                   chat_id,
-                  audio,
+                  unique_id,
+                  audio_unique_id,
                   duration=None,
                   performer=None,
                   title=None,
@@ -262,8 +263,8 @@ class Mockbot(TelegramObject):
                   reply_markup=None,
                   timeout=None,
                   **kwargs):
-        data = {'chat_id': chat_id, 'audio': audio}
-        data['audio2'] = {'file_id': audio}
+        data = {'chat_id': chat_id, 'audio': unique_id}
+        data['audio2'] = {'file_id': unique_id, 'file_unique_id': audio_unique_id}
         if duration:
             data['duration'] = duration
             data['audio2']['duration'] = duration
@@ -277,12 +278,15 @@ class Mockbot(TelegramObject):
             data['caption'] = caption
             data['caption'] = caption
 
+        print(data)
+
         return data
 
     @message
     def sendDocument(self,
                      chat_id,
                      document,
+                     document_unique_id,
                      filename=None,
                      caption=None,
                      disable_notification=False,
@@ -294,7 +298,8 @@ class Mockbot(TelegramObject):
             'chat_id': chat_id,
             'document': document,
             'document2': {
-                'file_id': document
+                'file_id': document,
+                'file_unique_id': document_unique_id
             }
         }
         if filename:
@@ -309,6 +314,12 @@ class Mockbot(TelegramObject):
     def sendSticker(self,
                     chat_id,
                     sticker,
+                    sticker_unique_id,
+                    width,
+                    height,
+                    is_animated,
+                    is_video,
+                    sticker_type,
                     disable_notification=False,
                     reply_to_message_id=None,
                     reply_markup=None,
@@ -318,7 +329,13 @@ class Mockbot(TelegramObject):
             'chat_id': chat_id,
             'sticker': sticker,
             'sticker2': {
-                'file_id': sticker
+                'file_id': sticker,
+                'file_unique_id': sticker_unique_id,
+                'width': width,
+                'height': height,
+                'is_animated': is_animated,
+                'is_video': is_video,
+                'type': sticker_type
             }
         }
 
@@ -328,7 +345,10 @@ class Mockbot(TelegramObject):
     def sendVideo(self,
                   chat_id,
                   video,
-                  duration=None,
+                  video_unique_id,
+                  width,
+                  height,
+                  duration,
                   caption=None,
                   disable_notification=False,
                   reply_to_message_id=None,
@@ -339,13 +359,14 @@ class Mockbot(TelegramObject):
             'chat_id': chat_id,
             'video': video,
             'video2': {
-                'file_id': video
+                'file_id': video,
+                'file_unique_id': video_unique_id,
+                'width': width,
+                'height': height,
+                'duration': duration
             }
         }
 
-        if duration:
-            data['duration'] = duration
-            data['video2']['duration'] = duration
         if caption:
             data['caption'] = caption
 
@@ -355,6 +376,7 @@ class Mockbot(TelegramObject):
     def sendVoice(self,
                   chat_id,
                   voice,
+                  voice_unique_id,
                   duration=None,
                   caption=None,
                   disable_notification=False,
@@ -366,7 +388,8 @@ class Mockbot(TelegramObject):
             'chat_id': chat_id,
             'voice': voice,
             'voice2': {
-                'file_id': voice
+                'file_id': voice,
+                'file_unique_id': voice_unique_id
             }
         }
 
@@ -413,15 +436,11 @@ class Mockbot(TelegramObject):
                   reply_markup=None,
                   timeout=None,
                   **kwargs):
+        loc = Location(longitude, latitude)
         data = {
             'chat_id': chat_id,
-            'latitude': latitude,
-            'longitude': longitude,
-            'address': address,
-            'title': title,
             'venue': {
-                'latitude': latitude,
-                'longitude': longitude,
+                'location': loc,
                 'address': address,
                 'title': title
             }

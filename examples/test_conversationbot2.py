@@ -5,9 +5,8 @@ from ptbtest import UserGenerator
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import CommandHandler
 from telegram.ext import ConversationHandler
-from telegram.ext import Filters
+from telegram.ext import filters
 from telegram.ext import MessageHandler
-from telegram.ext import RegexHandler
 from telegram.ext import Updater
 
 from ptbtest import ChatGenerator
@@ -96,11 +95,11 @@ class TestConversationbot2(unittest.TestCase):
                            RegexHandler('^Something else...$',
                                         custom_choice),
                            ],
-                TYPING_CHOICE: [MessageHandler(Filters.text,
+                TYPING_CHOICE: [MessageHandler(filters.text,
                                                regular_choice,
                                                pass_user_data=True),
                                 ],
-                TYPING_REPLY: [MessageHandler(Filters.text,
+                TYPING_REPLY: [MessageHandler(filters.text,
                                               received_information,
                                               pass_user_data=True),
                                ],
@@ -122,47 +121,47 @@ class TestConversationbot2(unittest.TestCase):
         u = self.mg.get_message(user=user, chat=chat, text="/start")
         self.bot.insertUpdate(u)
         data = self.bot.sent_messages[-1]
-        self.assertRegexpMatches(data['text'], r"Doctor Botter\. I will")
+        self.assertRegex(data['text'], r"Doctor Botter\. I will")
         u = self.mg.get_message(user=user, chat=chat, text="Age")
         self.bot.insertUpdate(u)
         data = self.bot.sent_messages[-1]
-        self.assertRegexpMatches(data['text'], r"Your age\? Yes")
+        self.assertRegex(data['text'], r"Your age\? Yes")
 
         # now let's see what happens when another user in another chat starts conversating with the bot
         u = self.mg.get_message(user=user2, chat=chat2, text="/start")
         self.bot.insertUpdate(u)
         data = self.bot.sent_messages[-1]
-        self.assertRegexpMatches(data['text'], r"Doctor Botter\. I will")
+        self.assertRegex(data['text'], r"Doctor Botter\. I will")
         self.assertEqual(data['chat_id'], chat2.id)
         self.assertNotEqual(data['chat_id'], chat.id)
         # and cancels his conv.
         u = self.mg.get_message(user=user2, chat=chat2, text="Done")
         self.bot.insertUpdate(u)
         data = self.bot.sent_messages[-1]
-        self.assertRegexpMatches(data['text'], r"Until next time!")
+        self.assertRegex(data['text'], r"Until next time!")
 
         # cary on with first user
         u = self.mg.get_message(user=user, chat=chat, text="23")
         self.bot.insertUpdate(u)
         data = self.bot.sent_messages[-1]
-        self.assertRegexpMatches(data['text'], r"Age - 23")
+        self.assertRegex(data['text'], r"Age - 23")
         u = self.mg.get_message(user=user, chat=chat, text="Something else...")
         self.bot.insertUpdate(u)
         data = self.bot.sent_messages[-1]
-        self.assertRegexpMatches(data['text'], r"Most impressive skill")
+        self.assertRegex(data['text'], r"Most impressive skill")
         u = self.mg.get_message(user=user, chat=chat, text="programming skill")
         self.bot.insertUpdate(u)
         data = self.bot.sent_messages[-1]
-        self.assertRegexpMatches(data['text'], r"Your programming skill\? Yes")
+        self.assertRegex(data['text'], r"Your programming skill\? Yes")
         u = self.mg.get_message(user=user, chat=chat, text="High")
         self.bot.insertUpdate(u)
         data = self.bot.sent_messages[-1]
-        self.assertRegexpMatches(data['text'], r"programming skill - High")
+        self.assertRegex(data['text'], r"programming skill - High")
         u = self.mg.get_message(user=user, chat=chat, text="Done")
         self.bot.insertUpdate(u)
         data = self.bot.sent_messages[-1]
-        self.assertRegexpMatches(data['text'], r"programming skill - High")
-        self.assertRegexpMatches(data['text'], r"Age - 23")
+        self.assertRegex(data['text'], r"programming skill - High")
+        self.assertRegex(data['text'], r"Age - 23")
 
         self.updater.stop()
 

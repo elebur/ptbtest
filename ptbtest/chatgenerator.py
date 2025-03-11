@@ -92,7 +92,7 @@ class ChatGenerator(PtbGenerator):
                 cid or self.gen_id(group=True),
                 type,
                 title=title,
-                all_members_are_administrators=all_members_are_administrators)
+                api_kwargs={"all_members_are_administrators": all_members_are_administrators})
         elif type == "supergroup" or type == "channel":
             if not title:
                 gn = random.choice(self.GROUPNAMES)
@@ -104,4 +104,5 @@ class ChatGenerator(PtbGenerator):
                 cid or self.gen_id(group=True),
                 type,
                 title=gn,
-                username=username)
+                username=username,
+                api_kwargs={"all_members_are_administrators": all_members_are_administrators})
