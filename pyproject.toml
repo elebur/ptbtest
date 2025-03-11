@@ -37,6 +37,7 @@ Issues = "https://github.com/AlexHorta/ptbtest/issues"
 Source = "https://github.com/AlexHorta/ptbtest"
 
 
+# HATCH
 [tool.hatch.version]
 path = "ptbtest/__about__.py"
 
@@ -61,6 +62,7 @@ extra-dependencies = [
 check = "mypy --install-types --non-interactive {args:ptbtest tests}"
 
 
+# COVERAGE
 [tool.coverage.run]
 source_pkgs = ["ptbtest", "tests"]
 branch = true
