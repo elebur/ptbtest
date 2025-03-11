@@ -1,8 +1,8 @@
 # PTBtest
-## A testsuite for [Python telegram bot](https://github.com/python-telegram-bot/python-telegram-bot/).
+## A test suite for [Python Telegram Bot](https://github.com/python-telegram-bot/python-telegram-bot/).
 
 # Under new management
-Work's being doing to bring this testsuite up to date with PTB. More new about the package soon.
+Work's being doing to bring this test suite up to date with PTB. More news about the package soon.
 
 This library is meant for people wanting to write unit tests for their python-telegram-bot driven bots.
 
