@@ -38,36 +38,34 @@ class TestMockbot(unittest.TestCase):
     def setUp(self):
         self.mockbot = Mockbot()
 
-    def test_updater_works_with_mockbot(self):
+    # This one is passing, but I believe it's wrong and I don't know why.
+    async def test_updater_works_with_mockbot(self):
         # handler method
         def start(bot, update):
             message = bot.sendMessage(update.message.chat_id, "this works")
             self.assertIsInstance(message, Message)
 
         updater = Updater(bot=self.mockbot, update_queue=asyncio.Queue())
-        #dp = updater.dispatcher
-        #dp.add_handler(CommandHandler("start", start))
-        updater.start_polling()
-        user = User(id=1, first_name="test", is_bot=True)
-        chat = Chat(45, "group")
-        message = Message(
-            404, user, None, chat, text="/start", via_bot=self.mockbot)
-        message2 = Message(
-            404, user, None, chat, text="start", via_bot=self.mockbot)
-        message3 = Message(
-            404, user, None, chat, text="/start@MockBot", via_bot=self.mockbot)
-        message4 = Message(
-            404, user, None, chat, text="/start@OtherBot", via_bot=self.mockbot)
-        self.mockbot.insertUpdate(Update(0, message=message))
-        self.mockbot.insertUpdate(Update(1, message=message2))
-        self.mockbot.insertUpdate(Update(1, message=message3))
-        self.mockbot.insertUpdate(Update(1, message=message4))
-        data = self.mockbot.sent_messages
-        self.assertEqual(len(data), 2)
-        data = data[0]
-        self.assertEqual(data['method'], 'sendMessage')
-        self.assertEqual(data['chat_id'], chat.id)
-        updater.stop()
+        async with updater:
+            user = User(id=1, first_name="test", is_bot=True)
+            chat = Chat(45, "group")
+            message = Message(
+                404, user, None, chat, text="/start", via_bot=self.mockbot)
+            message2 = Message(
+                404, user, None, chat, text="start", via_bot=self.mockbot)
+            message3 = Message(
+                404, user, None, chat, text="/start@MockBot", via_bot=self.mockbot)
+            message4 = Message(
+                404, user, None, chat, text="/start@OtherBot", via_bot=self.mockbot)
+            self.mockbot.insertUpdate(Update(0, message=message))
+            self.mockbot.insertUpdate(Update(1, message=message2))
+            self.mockbot.insertUpdate(Update(1, message=message3))
+            self.mockbot.insertUpdate(Update(1, message=message4))
+            data = self.mockbot.sent_messages
+            self.assertEqual(len(data), 2)
+            data = data[0]
+            self.assertEqual(data['method'], 'sendMessage')
+            self.assertEqual(data['chat_id'], chat.id)
 
     def test_properties(self):
         self.assertEqual(self.mockbot.id, 0)
@@ -136,10 +134,12 @@ class TestMockbot(unittest.TestCase):
         data = self.mockbot.sent_messages[-1]
         self.assertEqual(data['method'], "editMessageReplyMarkup")
         self.assertEqual(data['chat_id'], 1)
+        
         self.mockbot.editMessageReplyMarkup(inline_message_id=1)
         data = self.mockbot.sent_messages[-1]
         self.assertEqual(data['method'], "editMessageReplyMarkup")
         self.assertEqual(data['inline_message_id'], 1)
+        
         with self.assertRaises(TelegramError):
             self.mockbot.editMessageReplyMarkup()
         with self.assertRaises(TelegramError):
