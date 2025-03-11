@@ -7,7 +7,8 @@ name = "ptbtest"
 dynamic = ["version"]
 description = 'A test suite for use with python-telegram-bot.'
 readme = "readme.MD"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
+license = "GPL-3.0-only"
 license-files = ["LICENSE", "LICENSE.lesser"]
 keywords = ["python", "telegram", "bot", "unittest"]
 authors = [
@@ -19,13 +20,11 @@ maintainers = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
   "python-telegram-bot"
@@ -49,7 +48,7 @@ dependencies = [
 ]
 
 [[tool.hatch.envs.test.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+python = ["3.9", "3.10", "3.11", "3.12"]
 
 [tool.hatch.envs.types]
 extra-dependencies = [
