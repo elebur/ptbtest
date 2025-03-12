@@ -21,9 +21,11 @@
 """This module provides a class to generate telegram chats"""
 import random
 
-from .ptbgenerator import PtbGenerator
+from telegram import Chat, User
+
 from ptbtest import UserGenerator
-from telegram import (Chat, User)
+
+from .ptbgenerator import PtbGenerator
 
 
 class ChatGenerator(PtbGenerator):

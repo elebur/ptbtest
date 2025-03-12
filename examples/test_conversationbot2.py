@@ -1,17 +1,9 @@
-from __future__ import absolute_import
 import unittest
 
-from ptbtest import UserGenerator
 from telegram import ReplyKeyboardMarkup
-from telegram.ext import CommandHandler
-from telegram.ext import ConversationHandler
-from telegram.ext import filters
-from telegram.ext import MessageHandler
-from telegram.ext import Updater
+from telegram.ext import CommandHandler, ConversationHandler, MessageHandler, Updater, filters
 
-from ptbtest import ChatGenerator
-from ptbtest import MessageGenerator
-from ptbtest import Mockbot
+from ptbtest import ChatGenerator, MessageGenerator, Mockbot, UserGenerator
 
 """
 This is an example to show how the ptbtest suite can be used.

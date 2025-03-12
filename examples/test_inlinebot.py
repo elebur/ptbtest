@@ -1,17 +1,13 @@
-from __future__ import absolute_import
 
 import re
 import unittest
 from uuid import uuid4
 
-from ptbtest import InlineQueryGenerator
-from telegram import InlineQueryResultArticle
-from telegram import InputTextMessageContent
+from telegram import InlineQueryResultArticle, InputTextMessageContent
 from telegram.constants import ParseMode
-from telegram.ext import InlineQueryHandler
-from telegram.ext import Updater
+from telegram.ext import InlineQueryHandler, Updater
 
-from ptbtest import Mockbot
+from ptbtest import InlineQueryGenerator, Mockbot
 
 """
 This is an example to show how the ptbtest suite can be used.
@@ -34,7 +30,7 @@ class TestInlineBot(unittest.TestCase):
         # create some handlers and add them
         def escape_markdown(text):
             """Helper function to escape telegram markup symbols"""
-            escape_chars = '\*_`\['
+            escape_chars = r'\*_`\['
             return re.sub(r'([%s])' % escape_chars, r'\\\1', text)
 
         def inlinequery(bot, update):

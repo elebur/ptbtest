@@ -21,11 +21,12 @@
 """This module provides a helperclass to transform marked_up messages to plaintext with entities"""
 import re
 
-from ptbtest.errors import BadMarkupException
 from telegram import MessageEntity
 
+from ptbtest.errors import BadMarkupException
 
-class EntityParser():
+
+class EntityParser:
     """
     Placeholder class for the static parser methods
     """
@@ -91,8 +92,7 @@ class EntityParser():
         inv = invalids.search(message)
         if inv:
             raise BadMarkupException(
-                "nested {} is not supported. your text: {}".format(
-                    ptype, inv.groups()[0]))
+                f"nested {ptype} is not supported. your text: {inv.groups()[0]}")
         while tags.search(message):
             tag = tags.search(message)
             text = tag.groups()[2]
@@ -139,5 +139,5 @@ class EntityParser():
         for url in urls.finditer(message):
             entities.append(
                 MessageEntity('url', url.start(), url.end() - url.start()))
-        
+
         return message, entities

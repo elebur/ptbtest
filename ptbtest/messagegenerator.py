@@ -20,17 +20,15 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram mesages"""
 import datetime
-import time
 
-from .updategenerator import update
-from .ptbgenerator import PtbGenerator
+from telegram import Audio, Chat, Contact, Document, Location, Message, PhotoSize, Sticker, User, Venue, Video, Voice
+
+from ptbtest import ChatGenerator, Mockbot, UserGenerator
+from ptbtest.errors import BadBotException, BadChatException, BadMarkupException, BadMessageException, BadUserException
+
 from .entityparser import EntityParser
-from ptbtest import (UserGenerator, ChatGenerator, Mockbot)
-from ptbtest.errors import (BadUserException, BadMessageException,
-                            BadChatException, BadBotException,
-                            BadMarkupException)
-from telegram import (Audio, Chat, Contact, Document, Location, Message,
-                      PhotoSize, Sticker, User, Venue, Video, Voice)
+from .ptbgenerator import PtbGenerator
+from .updategenerator import update
 
 
 class MessageGenerator(PtbGenerator):

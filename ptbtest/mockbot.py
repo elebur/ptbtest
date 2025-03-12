@@ -22,11 +22,10 @@
 
 import functools
 import logging
+import time
 import warnings
 
-import time
-
-from telegram import (Location, TelegramObject, User)
+from telegram import Location, TelegramObject, User
 from telegram.error import TelegramError
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -64,8 +63,8 @@ class Mockbot(TelegramObject):
         self._bot = None
         self._username = username
         self._sendmessages = []
-        from .messagegenerator import MessageGenerator
         from .chatgenerator import ChatGenerator
+        from .messagegenerator import MessageGenerator
         self._mg = MessageGenerator(bot=self)
         self._cg = ChatGenerator()
 
@@ -118,7 +117,7 @@ class Mockbot(TelegramObject):
 
     @property
     def name(self):
-        return '@{0}'.format(self.username)
+        return f'@{self.username}'
 
     def message(func):
         @functools.wraps(func)

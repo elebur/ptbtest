@@ -18,18 +18,12 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-from __future__ import absolute_import
 import unittest
 
-from ptbtest.errors import (BadBotException, BadUserException)
-from ptbtest import InlineQueryGenerator
-from ptbtest import Mockbot
-from ptbtest import UserGenerator
-from telegram import ChosenInlineResult
-from telegram import InlineQuery
-from telegram import Location
-from telegram import Update
-from telegram import User
+from telegram import ChosenInlineResult, InlineQuery, Location, Update, User
+
+from ptbtest import InlineQueryGenerator, Mockbot, UserGenerator
+from ptbtest.errors import BadBotException, BadUserException
 
 
 class TestInlineQueryGenerator(unittest.TestCase):

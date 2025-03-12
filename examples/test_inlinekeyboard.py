@@ -1,15 +1,9 @@
-from __future__ import absolute_import
 import unittest
 
-from ptbtest import CallbackQueryGenerator
-from telegram import InlineKeyboardButton
-from telegram import InlineKeyboardMarkup
-from telegram.ext import CallbackQueryHandler
-from telegram.ext import Updater
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackQueryHandler, Updater
 
-from ptbtest import ChatGenerator
-from ptbtest import MessageGenerator
-from ptbtest import Mockbot
+from ptbtest import CallbackQueryGenerator, ChatGenerator, MessageGenerator, Mockbot
 
 """
 This is an example to show how the ptbtest suite can be used.
