@@ -1,578 +1,574 @@
-from __future__ import absolute_import
-
+import datetime
 from collections.abc import Sequence
 
-import unittest
-
-from ptbtest import (BadBotException, BadChatException, BadUserException,
-                     BadMarkupException, BadMessageException)
-from ptbtest import Mockbot
-from ptbtest import (UserGenerator, MessageGenerator, ChatGenerator)
-from telegram import (Audio, Contact, Document, File, Location, Sticker, User,
+import pytest
+from telegram import (Audio, Contact, Document, Location, Sticker, User,
                       Update, Venue, Video, Voice, PhotoSize, Message)
 
+from ptbtest import (BadBotException, BadChatException, BadUserException,
+                     BadMarkupException, BadMessageException, Mockbot,
+                     UserGenerator, MessageGenerator, ChatGenerator)
 
-class TestMessageGeneratorCore(unittest.TestCase):
-    def setUp(self):
-        self.mg = MessageGenerator()
 
+class TestMessageGeneratorCore:
     def test_is_update(self):
-        u = self.mg.get_message()
-        self.assertIsInstance(u, Update)
-        self.assertIsInstance(u.message, Message)
+        u = MessageGenerator().get_message()
+        assert isinstance(u, Update)
+        assert isinstance(u.message, Message)
 
     def test_bot(self):
-        u = self.mg.get_message()
-        self.assertIsInstance(u.message.via_bot, Mockbot)
-        self.assertEqual(u.message.via_bot.username, "MockBot")
+        u = MessageGenerator().get_message()
+        assert isinstance(u.message.via_bot, Mockbot)
+        assert u.message.via_bot.username == "MockBot"
 
         b = Mockbot(username="AnotherBot")
         mg2 = MessageGenerator(bot=b)
         u = mg2.get_message()
-        self.assertEqual(u.message.via_bot.username, "AnotherBot")
+        assert u.message.via_bot.username == "AnotherBot"
 
-        with self.assertRaises(BadBotException):
-            mg3 = MessageGenerator(bot="Yeah!")
+        with pytest.raises(BadBotException):
+            MessageGenerator(bot="Yeah!")
 
     def test_private_message(self):
-        u = self.mg.get_message(private=True)
-        self.assertEqual(u.message.from_user.id, u.message.chat.id)
+        u = MessageGenerator().get_message(private=True)
+        assert u.message.from_user.id == u.message.chat.id
 
     def test_not_private(self):
-        u = self.mg.get_message(private=False)
-        self.assertEqual(u.message.chat.type, "group")
-        self.assertNotEqual(u.message.from_user.id, u.message.chat.id)
+        u = MessageGenerator().get_message(private=False)
+        assert u.message.chat.type == "group"
+        assert u.message.from_user.id != u.message.chat.id
 
     def test_with_user(self):
-        ug = UserGenerator()
-        us = ug.get_user()
-        u = self.mg.get_message(user=us, private=False)
-        self.assertEqual(u.message.from_user.id, us.id)
-        self.assertNotEqual(u.message.from_user.id, u.message.chat.id)
+        user = UserGenerator().get_user()
+        u = MessageGenerator().get_message(user=user, private=False)
 
-        u = self.mg.get_message(user=us)
-        self.assertEqual(u.message.from_user, us)
-        self.assertEqual(u.message.from_user.id, u.message.chat.id)
+        assert u.message.from_user.id == user.id
+        assert u.message.from_user.id != u.message.chat.id
 
-        with self.assertRaises(BadUserException):
-            us = "not a telegram.User"
-            u = self.mg.get_message(user=us)
+        u = MessageGenerator().get_message(user=user)
+        assert u.message.from_user == user
+        assert u.message.from_user.id == u.message.chat.id
+
+        with pytest.raises(BadUserException):
+            MessageGenerator().get_message(user="not a telegram.User")
 
     def test_with_chat(self):
         cg = ChatGenerator()
-        c = cg.get_chat()
-        u = self.mg.get_message(chat=c)
-        self.assertEqual(u.message.chat.id, u.message.from_user.id)
-        self.assertEqual(u.message.chat.id, c.id)
+        chat = cg.get_chat()
+        u = MessageGenerator().get_message(chat=chat)
+        assert u.message.chat.id == u.message.from_user.id
+        assert u.message.chat.id == chat.id
 
-        c = cg.get_chat(type="group")
-        u = self.mg.get_message(chat=c)
-        self.assertNotEqual(u.message.from_user.id, u.message.chat.id)
-        self.assertEqual(u.message.chat.id, c.id)
+        chat = cg.get_chat(type="group")
+        u = MessageGenerator().get_message(chat=chat)
+        assert u.message.from_user.id != u.message.chat.id
+        assert u.message.chat.id == chat.id
 
-        with self.assertRaisesRegex(BadChatException, r"get_channel_post"):
-            c = cg.get_chat(type="channel")
-            self.mg.get_message(chat=c)
+        with pytest.raises(BadChatException) as exc:
+            chat = cg.get_chat(type="channel")
+            MessageGenerator().get_message(chat=chat)
 
-        with self.assertRaises(BadChatException):
-            c = "Not a telegram.Chat"
-            self.mg.get_message(chat=c)
+        assert "get_channel_post" in str(exc.value)
+
+        with pytest.raises(BadChatException):
+            MessageGenerator().get_message(chat="Not a telegram.Chat")
 
     def test_with_chat_and_user(self):
         cg = ChatGenerator()
         ug = UserGenerator()
         us = ug.get_user()
         c = cg.get_chat()
-        u = self.mg.get_message(user=us, chat=c)
-        self.assertNotEqual(u.message.from_user.id, u.message.chat.id)
-        self.assertEqual(u.message.from_user.id, us.id)
-        self.assertEqual(u.message.chat.id, c.id)
+        u = MessageGenerator().get_message(user=us, chat=c)
+        assert u.message.from_user.id != u.message.chat.id
+        assert u.message.from_user.id == us.id
+        assert u.message.chat.id == c.id
 
-        us = "not a telegram.User"
-        with self.assertRaises(BadUserException):
-            u = self.mg.get_message(user=us)
-        with self.assertRaises(BadUserException):
-            u = self.mg.get_message(chat=c, user="user")
+        with pytest.raises(BadUserException):
+            MessageGenerator().get_message(user="not a telegram.User")
+        with pytest.raises(BadUserException):
+            MessageGenerator().get_message(chat=c, user="user")
 
-        c = "Not a telegram.Chat"
-        with self.assertRaises(BadChatException):
-            self.mg.get_message(chat=c)
-        with self.assertRaises(BadChatException):
-            self.mg.get_message(user=u, chat="chat")
+        with pytest.raises(BadChatException):
+            MessageGenerator().get_message(chat="Not a telegram.Chat")
+        with pytest.raises(BadChatException):
+            MessageGenerator().get_message(user=u, chat="chat")
 
 
-class TestMessageGeneratorText(unittest.TestCase):
-    def setUp(self):
-        self.mg = MessageGenerator()
-
+class TestMessageGeneratorText:
     def test_simple_text(self):
-        u = self.mg.get_message(text="This is a test")
-        self.assertEqual(u.message.text, "This is a test")
+        u = MessageGenerator().get_message(text="This is a test")
+        assert u.message.text == "This is a test"
 
     def test_text_with_markdown(self):
-        teststr = "we have *bold* `code` [google](www.google.com) @username #hashtag _italics_ ```pre block``` " \
-                  "ftp://snt.utwente.nl /start"
-        u = self.mg.get_message(text=teststr)
-        self.assertEqual(u.message.text, teststr)
+        teststr = ("we have *bold* `code` [google](www.google.com) "
+                   "@username #hashtag _italics_ ```pre block``` "
+                   "ftp://snt.utwente.nl /start")
+        u = MessageGenerator().get_message(text=teststr)
+        assert u.message.text == teststr
 
-        u = self.mg.get_message(text=teststr, parse_mode="Markdown")
-        self.assertEqual(len(u.message.entities), 9)
+        u = MessageGenerator().get_message(text=teststr, parse_mode="Markdown")
+        assert len(u.message.entities) == 9
         for ent in u.message.entities:
             if ent.type == "bold":
-                self.assertEqual(ent.offset, 8)
-                self.assertEqual(ent.length, 4)
+                assert ent.offset == 8
+                assert ent.length == 4
             elif ent.type == "code":
-                self.assertEqual(ent.offset, 13)
-                self.assertEqual(ent.length, 4)
+                assert ent.offset == 13
+                assert ent.length == 4
             elif ent.type == "italic":
-                self.assertEqual(ent.offset, 44)
-                self.assertEqual(ent.length, 7)
+                assert ent.offset == 44
+                assert ent.length == 7
             elif ent.type == "pre":
-                self.assertEqual(ent.offset, 52)
-                self.assertEqual(ent.length, 9)
+                assert ent.offset == 52
+                assert ent.length == 9
             elif ent.type == "text_link":
-                self.assertEqual(ent.offset, 18)
-                self.assertEqual(ent.length, 6)
-                self.assertEqual(ent.url, "www.google.com")
+                assert ent.offset == 18
+                assert ent.length == 6
+                assert ent.url == "www.google.com"
             elif ent.type == "mention":
-                self.assertEqual(ent.offset, 25)
-                self.assertEqual(ent.length, 9)
+                assert ent.offset == 25
+                assert ent.length == 9
             elif ent.type == "hashtag":
-                self.assertEqual(ent.offset, 35)
-                self.assertEqual(ent.length, 8)
+                assert ent.offset == 35
+                assert ent.length == 8
             elif ent.type == "url":
-                self.assertEqual(ent.offset, 62)
-                self.assertEqual(ent.length, 20)
+                assert ent.offset == 62
+                assert ent.length == 20
             elif ent.type == "bot_command":
-                self.assertEqual(ent.offset, 83)
-                self.assertEqual(ent.length, 6)
+                assert ent.offset == 83
+                assert ent.length == 6
 
-        with self.assertRaises(BadMarkupException):
-            self.mg.get_message(
+        with pytest.raises(BadMarkupException):
+            MessageGenerator().get_message(
                 text="bad *_double_* markdown", parse_mode="Markdown")
 
     def test_with_html(self):
-        teststr = "we have <b>bold</b> <code>code</code> <a href='www.google.com'>google</a> @username #hashtag " \
-                  "<i>italics</i> <pre>pre block</pre> ftp://snt.utwente.nl /start"
-        u = self.mg.get_message(text=teststr)
-        self.assertEqual(u.message.text, teststr)
+        teststr = ("we have <b>bold</b> <code>code</code> "
+                   "<a href='www.google.com'>google</a> @username "
+                   "#hashtag <i>italics</i> <pre>pre block</pre> "
+                   "ftp://snt.utwente.nl /start")
+        u = MessageGenerator().get_message(text=teststr)
+        assert u.message.text == teststr
 
-        u = self.mg.get_message(text=teststr, parse_mode="HTML")
-        self.assertEqual(len(u.message.entities), 9)
+        u = MessageGenerator().get_message(text=teststr, parse_mode="HTML")
+        assert len(u.message.entities) == 9
         for ent in u.message.entities:
             if ent.type == "bold":
-                self.assertEqual(ent.offset, 8)
-                self.assertEqual(ent.length, 4)
+                assert ent.offset == 8
+                assert ent.length == 4
             elif ent.type == "code":
-                self.assertEqual(ent.offset, 13)
-                self.assertEqual(ent.length, 4)
+                assert ent.offset == 13
+                assert ent.length == 4
             elif ent.type == "italic":
-                self.assertEqual(ent.offset, 44)
-                self.assertEqual(ent.length, 7)
+                assert ent.offset == 44
+                assert ent.length == 7
             elif ent.type == "pre":
-                self.assertEqual(ent.offset, 52)
-                self.assertEqual(ent.length, 9)
+                assert ent.offset == 52
+                assert ent.length == 9
             elif ent.type == "text_link":
-                self.assertEqual(ent.offset, 18)
-                self.assertEqual(ent.length, 6)
-                self.assertEqual(ent.url, "www.google.com")
+                assert ent.offset == 18
+                assert ent.length == 6
+                assert ent.url == "www.google.com"
             elif ent.type == "mention":
-                self.assertEqual(ent.offset, 25)
-                self.assertEqual(ent.length, 9)
+                assert ent.offset == 25
+                assert ent.length == 9
             elif ent.type == "hashtag":
-                self.assertEqual(ent.offset, 35)
-                self.assertEqual(ent.length, 8)
+                assert ent.offset == 35
+                assert ent.length == 8
             elif ent.type == "url":
-                self.assertEqual(ent.offset, 62)
-                self.assertEqual(ent.length, 20)
+                assert ent.offset == 62
+                assert ent.length == 20
             elif ent.type == "bot_command":
-                self.assertEqual(ent.offset, 83)
-                self.assertEqual(ent.length, 6)
+                assert ent.offset == 83
+                assert ent.length == 6
 
-        with self.assertRaises(BadMarkupException):
-            self.mg.get_message(
+        with pytest.raises(BadMarkupException):
+            MessageGenerator().get_message(
                 text="bad <b><i>double</i></b> markup", parse_mode="HTML")
 
     def test_wrong_markup(self):
-        with self.assertRaises(BadMarkupException):
-            self.mg.get_message(text="text", parse_mode="htmarkdownl")
+        with pytest.raises(BadMarkupException):
+            MessageGenerator().get_message(text="text", parse_mode="htmarkdownl")
 
 
-class TestMessageGeneratorReplies(unittest.TestCase):
-    def setUp(self):
-        self.mg = MessageGenerator()
-
+class TestMessageGeneratorReplies:
     def test_reply(self):
-        u1 = self.mg.get_message(text="this is the first")
-        u2 = self.mg.get_message(
+        u1 = MessageGenerator().get_message(text="this is the first")
+        u2 = MessageGenerator().get_message(
             text="This is the second", reply_to_message=u1.message)
-        self.assertEqual(u1.message.text, u2.message.reply_to_message.text)
+        assert u1.message.text == u2.message.reply_to_message.text
 
-        with self.assertRaises(BadMessageException):
-            u = "This is not a Messages"
-            self.mg.get_message(reply_to_message=u)
+        with pytest.raises(BadMessageException):
+            MessageGenerator().get_message(reply_to_message="This is not a Messages")
 
 
-class TestMessageGeneratorForwards(unittest.TestCase):
-    def setUp(self):
-        self.mg = MessageGenerator()
-        self.ug = UserGenerator()
-        self.cg = ChatGenerator()
-
+class TestMessageGeneratorForwards:
     def test_forwarded_message(self):
-        u1 = self.ug.get_user()
-        u2 = self.ug.get_user()
-        c = self.cg.get_chat(type="group")
-        u = self.mg.get_message(
+        """
+        The API of the PTB v21.x doesn't have 'forward_from' attribute
+        in the Message object.
+        """
+        u1 = UserGenerator().get_user()
+        u2 = UserGenerator().get_user()
+        c = ChatGenerator().get_chat(type="group")
+        u = MessageGenerator().get_message(
             user=u1, chat=c, forward_from=u2, text="This is a test")
-        self.assertEqual(u.message.from_user.id, u1.id)
-        self.assertEqual(u.message.forward_from.id, u2.id)
-        self.assertNotEqual(u.message.from_user.id, u.message.forward_from.id)
-        self.assertEqual(u.message.text, "This is a test")
-        self.assertIsInstance(u.message.forward_date, int)
-        import datetime
-        self.mg.get_message(
+        assert u.message.from_user.id == u1.id
+        assert u.message.forward_from.id == u2.id
+        assert u.message.from_user.id != u.message.forward_from.id
+        assert u.message.text == "This is a test"
+        assert isinstance(u.message.forward_date, int)
+        MessageGenerator().get_message(
             forward_from=u2, forward_date=datetime.datetime.now())
 
-        with self.assertRaises(BadUserException):
+        with pytest.raises(BadUserException):
             u3 = "This is not a User"
-            u = self.mg.get_message(
+            MessageGenerator().get_message(
                 user=u1, chat=c, forward_from=u3, text="This is a test")
 
     def test_forwarded_channel_message(self):
-        c = self.cg.get_chat(type="channel")
-        us = self.ug.get_user()
-        u = self.mg.get_message(
+        """
+        The API of the PTB v21.x doesn't have 'forward_from' attribute
+        in the Message object.
+        """
+        c = ChatGenerator().get_chat(type="channel")
+        us = UserGenerator().get_user()
+        u = MessageGenerator().get_message(
             text="This is a test", forward_from=us, forward_from_chat=c)
-        self.assertNotEqual(u.message.chat.id, c.id)
-        self.assertNotEqual(u.message.from_user.id, us.id)
-        self.assertEqual(u.message.forward_from.id, us.id)
-        self.assertEqual(u.message.text, "This is a test")
-        self.assertIsInstance(u.message.forward_from_message_id, int)
-        self.assertIsInstance(u.message.forward_date, int)
+        assert u.message.chat.id != c.id
+        assert u.message.from_user.id != us.id
+        assert u.message.forward_from.id == us.id
+        assert u.message.text == "This is a test"
+        assert isinstance(u.message.forward_from_message_id, int)
+        assert isinstance(u.message.forward_date, int)
 
-        u = self.mg.get_message(text="This is a test", forward_from_chat=c)
-        self.assertNotEqual(u.message.from_user.id, u.message.forward_from.id)
-        self.assertIsInstance(u.message.forward_from, User)
-        self.assertIsInstance(u.message.forward_from_message_id, int)
-        self.assertIsInstance(u.message.forward_date, int)
+        u = MessageGenerator().get_message(text="This is a test", forward_from_chat=c)
+        assert u.message.from_user.id != u.message.forward_from.id
+        assert isinstance(u.message.forward_from, User)
+        assert isinstance(u.message.forward_from_message_id, int)
+        assert isinstance(u.message.forward_date, int)
 
-        with self.assertRaises(BadChatException):
+        with pytest.raises(BadChatException):
             c = "Not a Chat"
-            u = self.mg.get_message(text="This is a test", forward_from_chat=c)
+            u = MessageGenerator().get_message(text="This is a test", forward_from_chat=c)
 
-        with self.assertRaises(BadChatException):
-            c = self.cg.get_chat(type="group")
-            u = self.mg.get_message(text="This is a test", forward_from_chat=c)
+        with pytest.raises(BadChatException):
+            c = ChatGenerator().get_chat(type="group")
+            u = MessageGenerator().get_message(text="This is a test", forward_from_chat=c)
 
 
-class TestMessageGeneratorStatusMessages(unittest.TestCase):
-    def setUp(self):
-        self.mg = MessageGenerator()
-        self.ug = UserGenerator()
-        self.cg = ChatGenerator()
-
+class TestMessageGeneratorStatusMessages:
     def test_new_chat_member(self):
-        user = self.ug.get_user()
-        chat = self.cg.get_chat(type="group")
-        u = self.mg.get_message(chat=chat, new_chat_members=[user])
-        self.assertEqual(u.message.new_chat_members[0].id, user.id)
+        user = UserGenerator().get_user()
+        chat = ChatGenerator().get_chat(type="group")
+        u = MessageGenerator().get_message(chat=chat, new_chat_members=[user])
+        assert u.message.new_chat_members[0].id == user.id
 
-        with self.assertRaises(BadChatException):
-            self.mg.get_message(new_chat_members=[user])
-        with self.assertRaises(BadUserException):
-            self.mg.get_message(chat=chat, new_chat_members="user")
+        with pytest.raises(BadChatException):
+            MessageGenerator().get_message(new_chat_members=[user])
+
+        with pytest.raises(BadUserException):
+            MessageGenerator().get_message(chat=chat, new_chat_members="user")
 
     def test_left_chat_member(self):
-        user = self.ug.get_user()
-        chat = self.cg.get_chat(type='group')
-        u = self.mg.get_message(chat=chat, left_chat_member=user)
-        self.assertEqual(u.message.left_chat_member.id, user.id)
+        user = UserGenerator().get_user()
+        chat = ChatGenerator().get_chat(type='group')
+        u = MessageGenerator().get_message(chat=chat, left_chat_member=user)
+        assert u.message.left_chat_member.id == user.id
 
-        with self.assertRaises(BadChatException):
-            self.mg.get_message(left_chat_member=user)
-        with self.assertRaises(BadUserException):
-            self.mg.get_message(chat=chat, left_chat_member="user")
+        with pytest.raises(BadChatException):
+            MessageGenerator().get_message(left_chat_member=user)
+        with pytest.raises(BadUserException):
+            MessageGenerator().get_message(chat=chat, left_chat_member="user")
 
     def test_new_chat_title(self):
-        chat = self.cg.get_chat(type="group")
-        u = self.mg.get_message(chat=chat, new_chat_title="New title")
-        self.assertEqual(u.message.chat.title, "New title")
-        self.assertEqual(u.message.chat.title, chat.title)
+        """
+        This test works with the PTB v13.5 but doesn't work the v21.x
+        """
+        chat = ChatGenerator().get_chat(type="group")
+        u = MessageGenerator().get_message(chat=chat, new_chat_title="New title")
+        assert u.message.chat.title == "New title"
+        assert u.message.chat.title == chat.title
 
-        with self.assertRaises(BadChatException):
-            self.mg.get_message(new_chat_title="New title")
+        with pytest.raises(BadChatException):
+            MessageGenerator().get_message(new_chat_title="New title")
 
     def test_new_chat_photo(self):
-        chat = self.cg.get_chat(type="group")
-        u = self.mg.get_message(chat=chat, new_chat_photo=True)
-        self.assertIsInstance(u.message.new_chat_photo, Sequence)
-        self.assertIsInstance(u.message.new_chat_photo[0], PhotoSize)
+        chat = ChatGenerator().get_chat(type="group")
+        u = MessageGenerator().get_message(chat=chat, new_chat_photo=True)
+        assert isinstance(u.message.new_chat_photo, Sequence)
+        assert isinstance(u.message.new_chat_photo[0], PhotoSize)
         photo = [PhotoSize("2", "photo_unique_id", 1, 1, file_size=3)]
-        u = self.mg.get_message(chat=chat, new_chat_photo=photo)
-        self.assertEqual(len(u.message.new_chat_photo), 1)
+        u = MessageGenerator().get_message(chat=chat, new_chat_photo=photo)
+        assert len(u.message.new_chat_photo) == 1
 
-        with self.assertRaises(BadChatException):
-            self.mg.get_message(new_chat_photo=True)
+        with pytest.raises(BadChatException):
+            MessageGenerator().get_message(new_chat_photo=True)
 
         photo = "foto's!"
-        with self.assertRaises(BadMessageException):
-            self.mg.get_message(chat=chat, new_chat_photo=photo)
-        with self.assertRaises(BadMessageException):
-            self.mg.get_message(chat=chat, new_chat_photo=[1, 2, 3])
+        with pytest.raises(BadMessageException):
+            MessageGenerator().get_message(chat=chat, new_chat_photo=photo)
+        with pytest.raises(BadMessageException):
+            MessageGenerator().get_message(chat=chat, new_chat_photo=[1, 2, 3])
 
     def test_pinned_message(self):
-        chat = self.cg.get_chat(type="supergroup")
-        message = self.mg.get_message(
+        """
+        This test works with the PTB v13.5 but doesn't work the v21.x
+        """
+        chat = ChatGenerator().get_chat(type="supergroup")
+        message = MessageGenerator().get_message(
             chat=chat, text="this will be pinned").message
-        u = self.mg.get_message(chat=chat, pinned_message=message)
-        self.assertEqual(u.message.pinned_message.text, "this will be pinned")
+        u = MessageGenerator().get_message(chat=chat, pinned_message=message)
+        assert u.message.pinned_message.text == "this will be pinned"
 
-        with self.assertRaises(BadChatException):
-            self.mg.get_message(pinned_message=message)
-        with self.assertRaises(BadMessageException):
-            self.mg.get_message(chat=chat, pinned_message="message")
+        with pytest.raises(BadChatException):
+            MessageGenerator().get_message(pinned_message=message)
+        with pytest.raises(BadMessageException):
+            MessageGenerator().get_message(chat=chat, pinned_message="message")
 
     def test_multiple_statusmessages(self):
-        with self.assertRaises(BadMessageException):
-            self.mg.get_message(
+        with pytest.raises(BadMessageException):
+            MessageGenerator().get_message(
                 private=False,
-                new_chat_members=self.ug.get_user(),
+                new_chat_members=UserGenerator().get_user(),
                 new_chat_title="New title")
 
 
-class TestMessageGeneratorAttachments(unittest.TestCase):
-    def setUp(self):
-        self.mg = MessageGenerator()
-
+class TestMessageGeneratorAttachments:
     def test_caption_solo(self):
-        with self.assertRaisesRegex(BadMessageException, r"caption without"):
-            self.mg.get_message(caption="my cap")
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(caption="my cap")
+
+        assert "caption without" in str(exc.value)
 
     def test_more_than_one(self):
-        with self.assertRaisesRegex(BadMessageException, "more than one"):
-            self.mg.get_message(photo=True, video=True)
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(photo=True, video=True)
+
+        assert "more than one" in str(exc.value)
 
     def test_location(self):
         loc = Location(50.012, -32.11)
-        u = self.mg.get_message(location=loc)
-        self.assertEqual(loc.longitude, u.message.location.longitude)
+        u = MessageGenerator().get_message(location=loc)
+        assert loc.longitude == u.message.location.longitude
 
-        u = self.mg.get_message(location=True)
-        self.assertIsInstance(u.message.location, Location)
+        u = MessageGenerator().get_message(location=True)
+        assert isinstance(u.message.location, Location)
 
-        with self.assertRaisesRegex(BadMessageException,
-                                     r"telegram\.Location"):
-            self.mg.get_message(location="location")
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(location="location")
+
+        assert "telegram.Location" in str(exc.value)
 
     def test_venue(self):
         ven = Venue(Location(1.0, 1.0), "some place", "somewhere")
-        u = self.mg.get_message(venue=ven)
-        self.assertEqual(u.message.venue.title, ven.title)
+        u = MessageGenerator().get_message(venue=ven)
+        assert u.message.venue.title == ven.title
 
-        u = self.mg.get_message(venue=True)
-        self.assertIsInstance(u.message.venue, Venue)
+        u = MessageGenerator().get_message(venue=True)
+        assert isinstance(u.message.venue, Venue)
 
-        with self.assertRaisesRegex(BadMessageException, r"telegram\.Venue"):
-            self.mg.get_message(venue="Venue")
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(venue="Venue")
+        assert "telegram.Venue" in str(exc.value)
 
     def test_contact(self):
         con = Contact("0612345", "testman")
-        u = self.mg.get_message(contact=con)
-        self.assertEqual(con.phone_number, u.message.contact.phone_number)
+        u = MessageGenerator().get_message(contact=con)
+        assert con.phone_number == u.message.contact.phone_number
 
-        u = self.mg.get_message(contact=True)
-        self.assertIsInstance(u.message.contact, Contact)
+        u = MessageGenerator().get_message(contact=True)
+        assert isinstance(u.message.contact, Contact)
 
-        with self.assertRaisesRegex(BadMessageException,
-                                     r"telegram\.Contact"):
-            self.mg.get_message(contact="contact")
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(contact="contact")
+        assert "telegram.Contact" in str(exc.value)
 
     def test_voice(self):
         voice = Voice("idyouknow", 12, 1)
-        u = self.mg.get_message(voice=voice)
-        self.assertEqual(voice.file_id, u.message.voice.file_id)
+        u = MessageGenerator().get_message(voice=voice)
+        assert voice.file_id == u.message.voice.file_id
 
         cap = "voice file"
-        u = self.mg.get_message(voice=voice, caption=cap)
-        self.assertEqual(u.message.caption, cap)
+        u = MessageGenerator().get_message(voice=voice, caption=cap)
+        assert u.message.caption == cap
 
-        u = self.mg.get_message(voice=True)
-        self.assertIsInstance(u.message.voice, Voice)
+        u = MessageGenerator().get_message(voice=True)
+        assert isinstance(u.message.voice, Voice)
 
-        with self.assertRaisesRegex(BadMessageException, r"telegram\.Voice"):
-            self.mg.get_message(voice="voice")
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(voice="voice")
+
+        assert "telegram.Voice" in str(exc.value)
 
     def test_video(self):
         video = Video("idyouknow", "file_unique_id", 200, 200, 10)
-        u = self.mg.get_message(video=video)
-        print(video.file_id)
-        self.assertEqual(video.file_id, u.message.video.file_id)
+        u = MessageGenerator().get_message(video=video)
+        assert video.file_id == u.message.video.file_id
 
         cap = "video file"
-        u = self.mg.get_message(video=video, caption=cap)
-        self.assertEqual(u.message.caption, cap)
+        u = MessageGenerator().get_message(video=video, caption=cap)
+        assert u.message.caption == cap
 
-        u = self.mg.get_message(video=True)
-        self.assertIsInstance(u.message.video, Video)
+        u = MessageGenerator().get_message(video=True)
+        assert isinstance(u.message.video, Video)
 
-        with self.assertRaisesRegex(BadMessageException, r"telegram\.Video"):
-            self.mg.get_message(video="video")
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(video="video")
+
+        assert "telegram.Video" in str(exc.value)
 
     def test_sticker(self):
         sticker = Sticker("idyouknow", "sticker_unique_id", 30, 30, True, True, "REGULAR")
-        u = self.mg.get_message(sticker=sticker)
-        self.assertEqual(sticker.file_id, u.message.sticker.file_id)
+        u = MessageGenerator().get_message(sticker=sticker)
+        assert sticker.file_id == u.message.sticker.file_id
 
         cap = "sticker file"
-        u = self.mg.get_message(sticker=sticker, caption=cap)
-        self.assertEqual(u.message.caption, cap)
+        u = MessageGenerator().get_message(sticker=sticker, caption=cap)
+        assert u.message.caption == cap
 
-        u = self.mg.get_message(sticker=True)
-        self.assertIsInstance(u.message.sticker, Sticker)
+        u = MessageGenerator().get_message(sticker=True)
+        assert isinstance(u.message.sticker, Sticker)
 
-        with self.assertRaisesRegex(BadMessageException,
-                                     r"telegram\.Sticker"):
-            self.mg.get_message(sticker="sticker")
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(sticker="sticker")
+
+        assert "telegram.Sticker" in str(exc.value)
 
     def test_document(self):
         document = Document("document_id", "idyouknow", file_name="test.pdf")
-        u = self.mg.get_message(document=document)
-        self.assertEqual(document.file_id, u.message.document.file_id)
+        u = MessageGenerator().get_message(document=document)
+        assert document.file_id == u.message.document.file_id
 
         cap = "document file"
-        u = self.mg.get_message(document=document, caption=cap)
-        self.assertEqual(u.message.caption, cap)
+        u = MessageGenerator().get_message(document=document, caption=cap)
+        assert u.message.caption == cap
 
-        u = self.mg.get_message(document=True)
-        self.assertIsInstance(u.message.document, Document)
+        u = MessageGenerator().get_message(document=True)
+        assert isinstance(u.message.document, Document)
 
-        with self.assertRaisesRegex(BadMessageException,
-                                     r"telegram\.Document"):
-            self.mg.get_message(document="document")
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(document="document")
+
+        assert "telegram.Document" in str(exc.value)
 
     def test_audio(self):
         audio = Audio("idyouknow", 23, 60)
-        u = self.mg.get_message(audio=audio)
-        self.assertEqual(audio.file_id, u.message.audio.file_id)
+        u = MessageGenerator().get_message(audio=audio)
+        assert audio.file_id == u.message.audio.file_id
 
         cap = "audio file"
-        u = self.mg.get_message(audio=audio, caption=cap)
-        self.assertEqual(u.message.caption, cap)
+        u = MessageGenerator().get_message(audio=audio, caption=cap)
+        assert u.message.caption == cap
 
-        u = self.mg.get_message(audio=True)
-        self.assertIsInstance(u.message.audio, Audio)
+        u = MessageGenerator().get_message(audio=True)
+        assert isinstance(u.message.audio, Audio)
 
-        with self.assertRaisesRegex(BadMessageException, r"telegram\.Audio"):
-            self.mg.get_message(audio="audio")
+        with pytest.raises(BadMessageException) as exc:
+            MessageGenerator().get_message(audio="audio")
+
+        assert "telegram.Audio" in str(exc.value)
 
     def test_photo(self):
         photo = [PhotoSize("2", "photo_unique_id", 1, 1, file_size=3)]
-        u = self.mg.get_message(photo=photo)
-        self.assertEqual(photo[0].file_size, u.message.photo[0].file_size)
+        u = MessageGenerator().get_message(photo=photo)
+        assert photo[0].file_size == u.message.photo[0].file_size
 
         cap = "photo file"
-        u = self.mg.get_message(photo=photo, caption=cap)
-        self.assertEqual(u.message.caption, cap)
+        u = MessageGenerator().get_message(photo=photo, caption=cap)
+        assert u.message.caption == cap
 
-        u = self.mg.get_message(photo=True)
-        self.assertIsInstance(u.message.photo, tuple)
-        self.assertIsInstance(u.message.photo[0], PhotoSize)
+        u = MessageGenerator().get_message(photo=True)
+        assert isinstance(u.message.photo, tuple)
+        assert isinstance(u.message.photo[0], PhotoSize)
 
-        with self.assertRaisesRegex(BadMessageException, r"telegram\.Photo"):
-            self.mg.get_message(photo="photo")
-        with self.assertRaisesRegex(BadMessageException, r"telegram\.Photo"):
-            self.mg.get_message(photo=[1, 2, 3])
+        with pytest.raises(BadMessageException) as exc1:
+            MessageGenerator().get_message(photo="photo")
+        assert "telegram.Photo" in str(exc1.value)
+
+        with pytest.raises(BadMessageException) as exc2:
+            MessageGenerator().get_message(photo=[1, 2, 3])
+        assert "telegram.Photo" in str(exc2.value)
 
 
-class TestMessageGeneratorEditedMessage(unittest.TestCase):
-    def setUp(self):
-        self.mg = MessageGenerator()
-
+class TestMessageGeneratorEditedMessage:
     def test_edited_message(self):
-        u = self.mg.get_edited_message()
-        self.assertIsInstance(u.edited_message, Message)
-        self.assertIsInstance(u, Update)
+        u = MessageGenerator().get_edited_message()
+        assert isinstance(u.edited_message, Message)
+        assert isinstance(u, Update)
 
     def test_with_parameters(self):
-        u = self.mg.get_edited_message(
+        u = MessageGenerator().get_edited_message(
             text="New *text*", parse_mode="Markdown")
-        self.assertEqual(u.edited_message.text, "New text")
-        self.assertEqual(len(u.edited_message.entities), 1)
+        assert u.edited_message.text == "New text"
+        assert len(u.edited_message.entities) == 1
 
     def test_with_message(self):
-        m = self.mg.get_message(text="first").message
-        u = self.mg.get_edited_message(message=m, text="second")
-        self.assertEqual(m.message_id, u.edited_message.message_id)
-        self.assertEqual(m.chat.id, u.edited_message.chat.id)
-        self.assertEqual(m.from_user.id, u.edited_message.from_user.id)
-        self.assertEqual(u.edited_message.text, "second")
+        m = MessageGenerator().get_message(text="first").message
+        u = MessageGenerator().get_edited_message(message=m, text="second")
+        assert m.message_id == u.edited_message.message_id
+        assert m.chat.id == u.edited_message.chat.id
+        assert m.from_user.id == u.edited_message.from_user.id
+        assert u.edited_message.text == "second"
 
-        with self.assertRaises(BadMessageException):
-            self.mg.get_edited_message(message="Message")
+        with pytest.raises(BadMessageException):
+            MessageGenerator().get_edited_message(message="Message")
 
 
-class TestMessageGeneratorChannelPost(unittest.TestCase):
-    def setUp(self):
-        self.mg = MessageGenerator()
-
+class TestMessageGeneratorChannelPost:
     def test_channel_post(self):
-        u = self.mg.get_channel_post()
-        self.assertIsInstance(u, Update)
-        self.assertIsInstance(u.channel_post, Message)
-        self.assertEqual(u.channel_post.chat.type, "channel")
-        self.assertEqual(u.channel_post.from_user, None)
+        u = MessageGenerator().get_channel_post()
+        assert isinstance(u, Update)
+        assert isinstance(u.channel_post, Message)
+        assert u.channel_post.chat.type == "channel"
+        assert u.channel_post.from_user is None
 
     def test_with_chat(self):
         cg = ChatGenerator()
         group = cg.get_chat(type="group")
         channel = cg.get_chat(type="channel")
-        u = self.mg.get_channel_post(chat=channel)
-        self.assertEqual(channel.title, u.channel_post.chat.title)
+        u = MessageGenerator().get_channel_post(chat=channel)
+        assert channel.title == u.channel_post.chat.title
 
-        with self.assertRaisesRegex(BadChatException, r"telegram\.Chat"):
-            self.mg.get_channel_post(chat="chat")
-        with self.assertRaisesRegex(BadChatException, r"chat\.type"):
-            self.mg.get_channel_post(chat=group)
+        with pytest.raises(BadChatException) as exc1:
+            MessageGenerator().get_channel_post(chat="chat")
+        assert "telegram.Chat" in str(exc1.value)
+
+        with pytest.raises(BadChatException) as exc2:
+            MessageGenerator().get_channel_post(chat=group)
+        assert "chat.type" in str(exc2.value)
 
     def test_with_user(self):
         ug = UserGenerator()
         user = ug.get_user()
-        u = self.mg.get_channel_post(user=user)
-        self.assertEqual(u.channel_post.from_user.id, user.id)
+        u = MessageGenerator().get_channel_post(user=user)
+        assert u.channel_post.from_user.id == user.id
 
     def test_with_content(self):
-        u = self.mg.get_channel_post(
+        u = MessageGenerator().get_channel_post(
             text="this is *bold* _italic_", parse_mode="Markdown")
-        self.assertEqual(u.channel_post.text, "this is bold italic")
-        self.assertEqual(len(u.channel_post.entities), 2)
+        assert u.channel_post.text == "this is bold italic"
+        assert len(u.channel_post.entities) == 2
 
 
-class TestMessageGeneratorEditedChannelPost(unittest.TestCase):
-    def setUp(self):
-        self.mg = MessageGenerator()
-
+class TestMessageGeneratorEditedChannelPost:
     def test_edited_channel_post(self):
-        u = self.mg.get_edited_channel_post()
-        self.assertIsInstance(u.edited_channel_post, Message)
-        self.assertIsInstance(u, Update)
+        u = MessageGenerator().get_edited_channel_post()
+        assert isinstance(u.edited_channel_post, Message)
+        assert isinstance(u, Update)
 
     def test_with_parameters(self):
-        u = self.mg.get_edited_channel_post(
+        u = MessageGenerator().get_edited_channel_post(
             text="New *text*", parse_mode="Markdown")
-        self.assertEqual(u.edited_channel_post.text, "New text")
-        self.assertEqual(len(u.edited_channel_post.entities), 1)
+        assert u.edited_channel_post.text == "New text"
+        assert len(u.edited_channel_post.entities) == 1
 
     def test_with_channel_post(self):
-        m = self.mg.get_channel_post(text="first").channel_post
-        u = self.mg.get_edited_channel_post(channel_post=m, text="second")
-        self.assertEqual(m.message_id, u.edited_channel_post.message_id)
-        self.assertEqual(m.chat.id, u.edited_channel_post.chat.id)
-        self.assertEqual(u.edited_channel_post.text, "second")
+        m = MessageGenerator().get_channel_post(text="first").channel_post
+        u = MessageGenerator().get_edited_channel_post(channel_post=m, text="second")
+        assert m.message_id == u.edited_channel_post.message_id
+        assert m.chat.id == u.edited_channel_post.chat.id
+        assert u.edited_channel_post.text == "second"
 
-        with self.assertRaises(BadMessageException):
-            self.mg.get_edited_channel_post(channel_post="Message")
-
-
-if __name__ == '__main__':
-    unittest.main()
+        with pytest.raises(BadMessageException):
+            MessageGenerator().get_edited_channel_post(channel_post="Message")
