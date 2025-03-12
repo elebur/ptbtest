@@ -46,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'ptbtest'
-copyright = '2017, Pieter Schutz'
+project_copyright = '2017, Pieter Schutz'
 author = 'Pieter Schutz'
 
 # The version info for the project you're documenting, acts as replacement for
