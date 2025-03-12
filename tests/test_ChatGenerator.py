@@ -20,15 +20,12 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 from __future__ import absolute_import
 
-from ptbtest import ChatGenerator
-from ptbtest import UserGenerator
+from ptbtest import ChatGenerator, UserGenerator
 
 
 class TestChatGenerator:
-    cg = ChatGenerator()
-
     def test_without_parameters(self):
-        c = self.cg.get_chat()
+        c = ChatGenerator().get_chat()
 
         assert isinstance(c.id, int)
         assert c.id > 0
@@ -36,7 +33,7 @@ class TestChatGenerator:
         assert c.type == "private"
 
     def test_group_chat(self):
-        c = self.cg.get_chat(type="group")
+        c = ChatGenerator().get_chat(type="group")
 
         assert c.id < 0
         assert c.type == "group"
@@ -44,19 +41,19 @@ class TestChatGenerator:
         assert isinstance(c.title, str)
 
     def test_group_all_members_are_administrators(self):
-        c = self.cg.get_chat(type="group", all_members_are_administrators=True)
+        c = ChatGenerator().get_chat(type="group", all_members_are_administrators=True)
 
         assert c.type == "group"
         assert c.api_kwargs.get("all_members_are_administrators") is True
 
     def test_group_chat_with_group_name(self):
-        c = self.cg.get_chat(type="group", title="My Group")
+        c = ChatGenerator().get_chat(type="group", title="My Group")
 
         assert c.title == "My Group"
 
     def test_private_from_user(self):
         u = UserGenerator().get_user()
-        c = self.cg.get_chat(user=u)
+        c = ChatGenerator().get_chat(user=u)
 
         assert u.id == c.id
         assert c.username == c.first_name + c.last_name
@@ -64,7 +61,7 @@ class TestChatGenerator:
         assert c.type == "private"
 
     def test_supergroup(self):
-        c = self.cg.get_chat(type="supergroup")
+        c = ChatGenerator().get_chat(type="supergroup")
 
         assert c.id < 0
         assert c.type == "supergroup"
@@ -72,32 +69,32 @@ class TestChatGenerator:
         assert c.username == "".join(c.title.split())
 
     def test_supergroup_with_title(self):
-        c = self.cg.get_chat(type="supergroup", title="Awesome Group")
+        c = ChatGenerator().get_chat(type="supergroup", title="Awesome Group")
 
         assert c.title == "Awesome Group"
         assert c.username == "AwesomeGroup"
 
     def test_supergroup_with_username(self):
-        c = self.cg.get_chat(type="supergroup", username="mygroup")
+        c = ChatGenerator().get_chat(type="supergroup", username="mygroup")
 
         assert c.username == "mygroup"
 
     def test_supergroup_with_username_title(self):
-        c = self.cg.get_chat(
+        c = ChatGenerator().get_chat(
             type="supergroup", username="mygroup", title="Awesome Group")
 
         assert c.title == "Awesome Group"
         assert  c.username == "mygroup"
 
     def test_channel(self):
-        c = self.cg.get_chat(type="channel")
+        c = ChatGenerator().get_chat(type="channel")
 
         assert isinstance(c.title, str)
         assert c.type == "channel"
         assert c.username == "".join(c.title.split())
 
     def test_channel_with_title(self):
-        c = self.cg.get_chat(type="channel", title="Awesome Group")
+        c = ChatGenerator().get_chat(type="channel", title="Awesome Group")
 
         assert c.title == "Awesome Group"
         assert c.username == "AwesomeGroup"
