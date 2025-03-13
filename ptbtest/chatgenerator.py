@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# pylint: disable=E0611,E0213,E1102,C0103,E1101,W0613,R0913,R0904
+#
 # A library that provides a testing suite fot python-telegram-bot
 # wich can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
@@ -18,11 +21,9 @@
 """This module provides a class to generate telegram chats"""
 import random
 
-from telegram import Chat, User
-
-from ptbtest import UserGenerator
-
 from .ptbgenerator import PtbGenerator
+from ptbtest import UserGenerator
+from telegram import (Chat, User)
 
 
 class ChatGenerator(PtbGenerator):

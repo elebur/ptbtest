@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# pylint: disable=E0611,E0213,E1102,C0103,E1101,W0613,R0913,R0904
+#
 # A library that provides a testing suite fot python-telegram-bot
 # wich can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
@@ -18,12 +21,11 @@
 """This module provides a helperclass to transform marked_up messages to plaintext with entities"""
 import re
 
+from ptbtest.errors import BadMarkupException
 from telegram import MessageEntity
 
-from ptbtest.errors import BadMarkupException
 
-
-class EntityParser:
+class EntityParser():
     """
     Placeholder class for the static parser methods
     """
@@ -89,7 +91,8 @@ class EntityParser:
         inv = invalids.search(message)
         if inv:
             raise BadMarkupException(
-                f"nested {ptype} is not supported. your text: {inv.groups()[0]}")
+                "nested {} is not supported. your text: {}".format(
+                    ptype, inv.groups()[0]))
         while tags.search(message):
             tag = tags.search(message)
             text = tag.groups()[2]
@@ -136,5 +139,5 @@ class EntityParser:
         for url in urls.finditer(message):
             entities.append(
                 MessageEntity('url', url.start(), url.end() - url.start()))
-
+        
         return message, entities

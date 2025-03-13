@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# pylint: disable=E0611,E0213,E1102,C0103,E1101,W0613,R0913,R0904
+#
 # A library that provides a testing suite fot python-telegram-bot
 # wich can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
@@ -18,13 +21,12 @@
 """This module provides a class to generate telegram callback queries"""
 import uuid
 
-from telegram import ChosenInlineResult, InlineQuery, Location, User
-
-from ptbtest import Mockbot, UserGenerator
-from ptbtest.errors import BadBotException, BadUserException
-
-from .ptbgenerator import PtbGenerator
+from telegram import ChosenInlineResult
 from .updategenerator import update
+from .ptbgenerator import PtbGenerator
+from ptbtest import (Mockbot, UserGenerator)
+from ptbtest.errors import (BadBotException, BadUserException)
+from telegram import (InlineQuery, Location, User)
 
 
 class InlineQueryGenerator(PtbGenerator):

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# pylint: disable=E0611,E0213,E1102,C0103,E1101,W0613,R0913,R0904
+#
 # A library that provides a testing suite fot python-telegram-bot
 # wich can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
@@ -17,15 +20,17 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram mesages"""
 import datetime
+import time
 
-from telegram import Audio, Chat, Contact, Document, Location, Message, PhotoSize, Sticker, User, Venue, Video, Voice
-
-from ptbtest import ChatGenerator, Mockbot, UserGenerator
-from ptbtest.errors import BadBotException, BadChatException, BadMarkupException, BadMessageException, BadUserException
-
-from .entityparser import EntityParser
-from .ptbgenerator import PtbGenerator
 from .updategenerator import update
+from .ptbgenerator import PtbGenerator
+from .entityparser import EntityParser
+from ptbtest import (UserGenerator, ChatGenerator, Mockbot)
+from ptbtest.errors import (BadUserException, BadMessageException,
+                            BadChatException, BadBotException,
+                            BadMarkupException)
+from telegram import (Audio, Chat, Contact, Document, Location, Message,
+                      PhotoSize, Sticker, User, Venue, Video, Voice)
 
 
 class MessageGenerator(PtbGenerator):

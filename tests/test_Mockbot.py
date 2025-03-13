@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# pylint: disable=E0611,E0213,E1102,C0103,E1101,W0613,R0913,R0904
+#
 # A library that provides a testing suite fot python-telegram-bot
 # wich can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
@@ -15,14 +18,18 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+from __future__ import absolute_import
 
 import asyncio
 import unittest
 
-from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResult, Message, Update, User
+import telegram
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineQueryResult
+from telegram import User, Message, Chat, Update
 from telegram.constants import ChatAction, ParseMode
 from telegram.error import TelegramError
-from telegram.ext import Updater
+from telegram.ext import Updater, CommandHandler
 
 from ptbtest import Mockbot
 
@@ -127,12 +134,12 @@ class TestMockbot(unittest.TestCase):
         data = self.mockbot.sent_messages[-1]
         self.assertEqual(data['method'], "editMessageReplyMarkup")
         self.assertEqual(data['chat_id'], 1)
-
+        
         self.mockbot.editMessageReplyMarkup(inline_message_id=1)
         data = self.mockbot.sent_messages[-1]
         self.assertEqual(data['method'], "editMessageReplyMarkup")
         self.assertEqual(data['inline_message_id'], 1)
-
+        
         with self.assertRaises(TelegramError):
             self.mockbot.editMessageReplyMarkup()
         with self.assertRaises(TelegramError):

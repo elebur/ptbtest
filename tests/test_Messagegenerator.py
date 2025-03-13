@@ -1,36 +1,15 @@
-# A library that provides a testing suite fot python-telegram-bot
-# wich can be found on https://github.com/python-telegram-bot/python-telegram-bot
-# Copyright (C) 2017
-# Pieter Schutz - https://github.com/eldinnie
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser Public License for more details.
-#
-# You should have received a copy of the GNU Lesser Public License
-# along with this program.  If not, see [http://www.gnu.org/licenses/].
-import unittest
+from __future__ import absolute_import
+
 from collections.abc import Sequence
 
-from telegram import Audio, Contact, Document, Location, Message, PhotoSize, Sticker, Update, User, Venue, Video, Voice
+import unittest
 
-from ptbtest import (
-    BadBotException,
-    BadChatException,
-    BadMarkupException,
-    BadMessageException,
-    BadUserException,
-    ChatGenerator,
-    MessageGenerator,
-    Mockbot,
-    UserGenerator,
-)
+from ptbtest import (BadBotException, BadChatException, BadUserException,
+                     BadMarkupException, BadMessageException)
+from ptbtest import Mockbot
+from ptbtest import (UserGenerator, MessageGenerator, ChatGenerator)
+from telegram import (Audio, Contact, Document, File, Location, Sticker, User,
+                      Update, Venue, Video, Voice, PhotoSize, Message)
 
 
 class TestMessageGeneratorCore(unittest.TestCase):
