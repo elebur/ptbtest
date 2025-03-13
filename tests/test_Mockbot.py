@@ -34,6 +34,8 @@ from telegram.ext import Updater
 
 from ptbtest import Mockbot
 
+pytestmark = pytest.mark.anyio
+
 
 class TestMockbot:
     mockbot = Mockbot()

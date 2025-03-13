@@ -44,6 +44,7 @@ path = "ptbtest/__about__.py"
 
 [tool.hatch.envs.test]
 dependencies = [
+  "anyio",
   "pytest",
   "pytest-cov",
   "coverage[toml]",
