@@ -1,20 +1,15 @@
+from __future__ import absolute_import
 
-import unittest
 from collections.abc import Sequence
 
-from telegram import Audio, Contact, Document, Location, Message, PhotoSize, Sticker, Update, User, Venue, Video, Voice
+import unittest
 
-from ptbtest import (
-    BadBotException,
-    BadChatException,
-    BadMarkupException,
-    BadMessageException,
-    BadUserException,
-    ChatGenerator,
-    MessageGenerator,
-    Mockbot,
-    UserGenerator,
-)
+from ptbtest import (BadBotException, BadChatException, BadUserException,
+                     BadMarkupException, BadMessageException)
+from ptbtest import Mockbot
+from ptbtest import (UserGenerator, MessageGenerator, ChatGenerator)
+from telegram import (Audio, Contact, Document, File, Location, Sticker, User,
+                      Update, Venue, Video, Voice, PhotoSize, Message)
 
 
 class TestMessageGeneratorCore(unittest.TestCase):

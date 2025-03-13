@@ -20,18 +20,11 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import unittest
 
-from telegram import CallbackQuery, Message, Update, User
-
-from ptbtest import (
-    BadBotException,
-    BadCallbackQueryException,
-    BadMessageException,
-    BadUserException,
-    CallbackQueryGenerator,
-    MessageGenerator,
-    Mockbot,
-    UserGenerator,
-)
+from ptbtest import (BadBotException, BadCallbackQueryException,
+                     BadUserException, BadMessageException)
+from ptbtest import (CallbackQueryGenerator, MessageGenerator, Mockbot,
+                     UserGenerator)
+from telegram import (CallbackQuery, Message, Update, User)
 
 
 class TestMessageGeneratorChannelPost(unittest.TestCase):

@@ -18,14 +18,18 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+from __future__ import absolute_import
 
 import asyncio
 import unittest
 
-from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResult, Message, Update, User
+import telegram
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineQueryResult
+from telegram import User, Message, Chat, Update
 from telegram.constants import ChatAction, ParseMode
 from telegram.error import TelegramError
-from telegram.ext import Updater
+from telegram.ext import Updater, CommandHandler
 
 from ptbtest import Mockbot
 
@@ -130,12 +134,12 @@ class TestMockbot(unittest.TestCase):
         data = self.mockbot.sent_messages[-1]
         self.assertEqual(data['method'], "editMessageReplyMarkup")
         self.assertEqual(data['chat_id'], 1)
-
+        
         self.mockbot.editMessageReplyMarkup(inline_message_id=1)
         data = self.mockbot.sent_messages[-1]
         self.assertEqual(data['method'], "editMessageReplyMarkup")
         self.assertEqual(data['inline_message_id'], 1)
-
+        
         with self.assertRaises(TelegramError):
             self.mockbot.editMessageReplyMarkup()
         with self.assertRaises(TelegramError):

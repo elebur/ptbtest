@@ -1,9 +1,15 @@
-import time
+from __future__ import absolute_import
 import unittest
 
-from telegram.ext import CommandHandler, Job, Updater
+import time
 
-from ptbtest import ChatGenerator, MessageGenerator, Mockbot
+from telegram.ext import CommandHandler
+from telegram.ext import Job
+from telegram.ext import Updater
+
+from ptbtest import ChatGenerator
+from ptbtest import MessageGenerator
+from ptbtest import Mockbot
 
 """
 This is an example to show how the ptbtest suite can be used.
