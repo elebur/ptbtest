@@ -222,7 +222,7 @@ class MessageGenerator(PtbGenerator):
 
         return Message(
             id or next(self.idgen),
-            datetime.datetime.now(),  # Adding to make tests/test_Messagegenerator.py::TestMessageGeneratorCore::test_private_message pass. Change to a suitable object later.
+            datetime.datetime.now(),  # Adding to make tests/test_MessageGenerator.py::TestMessageGeneratorCore::test_private_message pass. Change to a suitable object later.
             chat,
             from_user=user,
             text=text,
