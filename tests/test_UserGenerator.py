@@ -19,32 +19,24 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 from __future__ import absolute_import
-import unittest
 
 from ptbtest import UserGenerator
 
 
-class TestUserGenerator(unittest.TestCase):
-    def setUp(self):
-        self.ug = UserGenerator()
-
+class TestUserGenerator:
     def test_no_specification(self):
-        u = self.ug.get_user()
-        self.assertIsInstance(u.id, int)
-        self.assertTrue(u.id > 0)
-        self.assertIsInstance(u.first_name, str)
-        self.assertEqual(u.username, u.first_name + u.last_name)
+        u = UserGenerator().get_user()
+        assert isinstance(u.id, int)
+        assert u.id > 0
+        assert isinstance(u.first_name, str)
+        assert u.username == u.first_name + u.last_name
 
     def test_with_first_name(self):
-        u = self.ug.get_user(first_name="Test")
-        self.assertEqual(u.first_name, "Test")
-        self.assertTrue(u.username.startswith("Test"))
+        u = UserGenerator().get_user(first_name="Test")
+        assert u.first_name == "Test"
+        assert u.username.startswith("Test")
 
     def test_with_username(self):
-        u = self.ug.get_user(username="misterbot")
+        u = UserGenerator().get_user(username="misterbot")
 
-        self.assertEqual(u.username, "misterbot")
-
-
-if __name__ == '__main__':
-    unittest.main()
+        assert u.username == "misterbot"
