@@ -1,3 +1,4 @@
+# ruff: noqa: PT009
 import unittest
 
 from telegram.ext import CommandHandler

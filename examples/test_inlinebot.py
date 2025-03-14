@@ -1,3 +1,4 @@
+# ruff: noqa: PT009
 import re
 import unittest
 from uuid import uuid4
