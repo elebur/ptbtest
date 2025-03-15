@@ -811,24 +811,36 @@ class Mockbot(TelegramObject):
 
         self._sendmessages.append(data)
 
-    def getChatAdministrators(self, chat_id, timeout=None, **kwargs):
+    @deprecated(reason["PEP8"])
+    def getChatAdministrators(self, *args, **kwargs):
+        return self.get_chat_administrators(args, kwargs)
+
+    def get_chat_administrators(self, chat_id, timeout=None, **kwargs):
         data = {'chat_id': chat_id}
 
-        data['method'] = "getChatAdministrators"
+        data['method'] = "get_chat_administrators"
 
         self._sendmessages.append(data)
 
-    def getChatMembersCount(self, chat_id, timeout=None, **kwargs):
+    @deprecated(reason["PEP8"])
+    def getChatMembersCount(self, *args, **kwargs):
+        return self.get_chat_members_count(args, kwargs)
+
+    def get_chat_members_count(self, chat_id, timeout=None, **kwargs):
         data = {'chat_id': chat_id}
 
-        data['method'] = "getChatMembersCount"
+        data['method'] = "get_chat_members_count"
 
         self._sendmessages.append(data)
 
-    def getChatMember(self, chat_id, user_id, timeout=None, **kwargs):
+    @deprecated(reason["PEP8"])
+    def getChatMember(self, *args, **kwargs):
+        return self.get_chat_member(args, kwargs)
+
+    def get_chat_member(self, chat_id, user_id, timeout=None, **kwargs):
         data = {'chat_id': chat_id, 'user_id': user_id}
 
-        data['method'] = "getChatMember"
+        data['method'] = "get_chat_member"
 
         self._sendmessages.append(data)
 
@@ -907,8 +919,5 @@ class Mockbot(TelegramObject):
 
     # snake_case (PEP8) aliases
 
-    get_chat_administrators = getChatAdministrators
-    get_chat_member = getChatMember
-    get_chat_members_count = getChatMembersCount
     set_game_score = setGameScore
     get_game_high_scores = getGameHighScores

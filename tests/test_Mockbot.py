@@ -173,25 +173,25 @@ class TestMockbot:
         assert data['chat_id'] == 1
 
     def test_getChatAdministrators(self):
-        self.mockbot.getChatAdministrators(chat_id=2)
+        self.mockbot.get_chat_administrators(chat_id=2)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "getChatAdministrators"
+        assert data['method'] == "get_chat_administrators"
         assert data['chat_id'] == 2
 
-    def test_getChatMember(self):
-        self.mockbot.getChatMember(1, 3)
+    def test_get_chat_member(self):
+        self.mockbot.get_chat_member(1, 3)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "getChatMember"
+        assert data['method'] == "get_chat_member"
         assert data['chat_id'] == 1
         assert data['user_id'] == 3
 
-    def test_getChatMembersCount(self):
-        self.mockbot.getChatMembersCount(1)
+    def test_get_chat_members_count(self):
+        self.mockbot.get_chat_members_count(1)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "getChatMembersCount"
+        assert data['method'] == "get_chat_members_count"
         assert data['chat_id'] == 1
 
     def test_get_file(self):
