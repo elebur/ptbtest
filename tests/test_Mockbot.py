@@ -201,12 +201,12 @@ class TestMockbot:
         assert data['method'] == "get_file"
         assert data['file_id'] == "12345"
 
-    def test_getGameHighScores(self):
-        self.mockbot.getGameHighScores(
+    def test_get_game_high_score(self):
+        self.mockbot.get_game_high_score(
             1, chat_id=2, message_id=3, inline_message_id=4)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "getGameHighScores"
+        assert data['method'] == "get_game_high_score"
         assert data['user_id'] == 1
 
     def test_get_me(self):
@@ -364,8 +364,8 @@ class TestMockbot:
         assert data['duration'] == 3
         assert data['caption'] == "voice"
 
-    def test_setGameScore(self):
-        self.mockbot.setGameScore(
+    def test_set_game_score(self):
+        self.mockbot.set_game_score(
             1,
             200,
             chat_id=2,
@@ -375,9 +375,9 @@ class TestMockbot:
             disable_edit_message=True)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "setGameScore"
+        assert data['method'] == "set_game_score"
         assert data['user_id'] == 1
-        self.mockbot.setGameScore(1, 200, edit_message=True)
+        self.mockbot.set_game_score(1, 200, edit_message=True)
 
     def test_unban_chat_member(self):
         self.mockbot.unban_chat_member(1, 2)

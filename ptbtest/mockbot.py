@@ -844,7 +844,11 @@ class Mockbot(TelegramObject):
 
         self._sendmessages.append(data)
 
-    def setGameScore(self,
+    @deprecated(reason["PEP8"])
+    def setGameScore(self, *args, **kwargs):
+        return self.set_game_score(args, kwargs)
+
+    def set_game_score(self,
                      user_id,
                      score,
                      chat_id=None,
@@ -876,10 +880,14 @@ class Mockbot(TelegramObject):
                 warnings.warn(
                     'edit_message is ignored when disable_edit_message is used')
 
-        data['method'] = "setGameScore"
+        data['method'] = "set_game_score"
         self._sendmessages.append(data)
 
-    def getGameHighScores(self,
+    @deprecated(reason["PEP8"])
+    def getGameHighScore(self, *args, **kwargs):
+        return self.get_game_high_score(args, kwargs)
+
+    def get_game_high_score(self,
                           user_id,
                           chat_id=None,
                           message_id=None,
@@ -895,7 +903,7 @@ class Mockbot(TelegramObject):
         if inline_message_id:
             data['inline_message_id'] = inline_message_id
 
-        data['method'] = "getGameHighScores"
+        data['method'] = "get_game_high_score"
 
         self._sendmessages.append(data)
 
@@ -917,7 +925,3 @@ class Mockbot(TelegramObject):
 
         return data
 
-    # snake_case (PEP8) aliases
-
-    set_game_score = setGameScore
-    get_game_high_scores = getGameHighScores
