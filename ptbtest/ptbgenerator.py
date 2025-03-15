@@ -39,5 +39,5 @@ class PtbGenerator:
         """
         if group:
             return random.randint(-99999999, -222222)
-        else:
-            return random.randint(10000, 99999999)
+
+        return random.randint(10000, 99999999)
