@@ -28,7 +28,7 @@ class TestChatGenerator:
         assert c.type == "private"
 
     def test_group_chat(self):
-        c = ChatGenerator().get_chat(type="group")
+        c = ChatGenerator().get_chat(chat_type="group")
 
         assert c.id < 0
         assert c.type == "group"
@@ -36,13 +36,13 @@ class TestChatGenerator:
         assert isinstance(c.title, str)
 
     def test_group_all_members_are_administrators(self):
-        c = ChatGenerator().get_chat(type="group", all_members_are_administrators=True)
+        c = ChatGenerator().get_chat(chat_type="group", all_members_are_administrators=True)
 
         assert c.type == "group"
         assert c.api_kwargs.get("all_members_are_administrators") is True
 
     def test_group_chat_with_group_name(self):
-        c = ChatGenerator().get_chat(type="group", title="My Group")
+        c = ChatGenerator().get_chat(chat_type="group", title="My Group")
 
         assert c.title == "My Group"
 
@@ -56,7 +56,7 @@ class TestChatGenerator:
         assert c.type == "private"
 
     def test_supergroup(self):
-        c = ChatGenerator().get_chat(type="supergroup")
+        c = ChatGenerator().get_chat(chat_type="supergroup")
 
         assert c.id < 0
         assert c.type == "supergroup"
@@ -64,32 +64,32 @@ class TestChatGenerator:
         assert c.username == "".join(c.title.split())
 
     def test_supergroup_with_title(self):
-        c = ChatGenerator().get_chat(type="supergroup", title="Awesome Group")
+        c = ChatGenerator().get_chat(chat_type="supergroup", title="Awesome Group")
 
         assert c.title == "Awesome Group"
         assert c.username == "AwesomeGroup"
 
     def test_supergroup_with_username(self):
-        c = ChatGenerator().get_chat(type="supergroup", username="mygroup")
+        c = ChatGenerator().get_chat(chat_type="supergroup", username="mygroup")
 
         assert c.username == "mygroup"
 
     def test_supergroup_with_username_title(self):
         c = ChatGenerator().get_chat(
-            type="supergroup", username="mygroup", title="Awesome Group")
+            chat_type="supergroup", username="mygroup", title="Awesome Group")
 
         assert c.title == "Awesome Group"
         assert  c.username == "mygroup"
 
     def test_channel(self):
-        c = ChatGenerator().get_chat(type="channel")
+        c = ChatGenerator().get_chat(chat_type="channel")
 
         assert isinstance(c.title, str)
         assert c.type == "channel"
         assert c.username == "".join(c.title.split())
 
     def test_channel_with_title(self):
-        c = ChatGenerator().get_chat(type="channel", title="Awesome Group")
+        c = ChatGenerator().get_chat(chat_type="channel", title="Awesome Group")
 
         assert c.title == "Awesome Group"
         assert c.username == "AwesomeGroup"

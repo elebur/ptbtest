@@ -18,9 +18,10 @@
 """This module provides a class to generate telegram chats"""
 import random
 
-from .ptbgenerator import PtbGenerator
+from telegram import Chat, User
+
 from ptbtest import UserGenerator
-from telegram import (Chat, User)
+from ptbtest.ptbgenerator import PtbGenerator
 
 
 class ChatGenerator(PtbGenerator):
@@ -28,20 +29,21 @@ class ChatGenerator(PtbGenerator):
         Chat generator class. placeholder for random names and mainly used
         via it's get_chat() method
     """
-    GROUPNAMES = [
+    GROUPNAMES = (
         "Frustrated Vagabonds", "Heir Apparents", "Walky Talky",
         "Flirty Crowns", "My Amigos"
-    ]
+    )
 
     def __init__(self):
         PtbGenerator.__init__(self)
 
     def get_chat(self,
                  cid=None,
-                 type="private",
+                 chat_type="private",
                  title=None,
                  username=None,
                  user=None,
+                 *,
                  all_members_are_administrators=False):
         """
         Returns a telegram.Chat object with the optionally given type or username
@@ -52,7 +54,7 @@ class ChatGenerator(PtbGenerator):
         generated user.
 
         Args:
-            type (str): Type of chat can be private, group, supergroup or channel.
+            chat_type (str): Type of chat can be private, group, supergroup or channel.
             title (Optional[str]): Title  for the group/supergroup/channel/
             username (Optional[str]): Username for the private/supergroup/channel.
             user (Optional[telegram.User]): If given a private chat for the supplied user will be generated.
@@ -62,44 +64,41 @@ class ChatGenerator(PtbGenerator):
             telegram.Chat: A telegram Chat object.
 
         """
-        if cid and type == 'private':
+        if cid and chat_type == 'private':
             if cid < 0:
-                type = "group"
+                chat_type = "group"
         if user:
             if isinstance(user, User):
                 u = user
                 return Chat(
                     cid or u.id,
-                    type,
+                    chat_type,
                     username=u.username,
                     first_name=u.first_name,
                     last_name=u.last_name)
-        elif type == "private":
+        elif chat_type == "private":
             u = UserGenerator().get_user(username=username)
             return Chat(
                 cid or u.id,
-                type,
+                chat_type,
                 username=u.username,
                 first_name=u.first_name,
                 last_name=u.last_name)
-        elif type == "group":
+        elif chat_type == "group":
             if not title:
-                title = random.choice(self.GROUPNAMES)
+                title = random.choice(self.GROUPNAMES) # noqa: S311
             return Chat(
                 cid or self.gen_id(group=True),
-                type,
+                chat_type,
                 title=title,
                 api_kwargs={"all_members_are_administrators": all_members_are_administrators})
-        elif type == "supergroup" or type == "channel":
-            if not title:
-                gn = random.choice(self.GROUPNAMES)
-            else:
-                gn = title
+        elif chat_type in ("supergroup", "channel"):
+            gn = title if title else random.choice(self.GROUPNAMES) # noqa: S311
             if not username:
                 username = "".join(gn.split(" "))
             return Chat(
                 cid or self.gen_id(group=True),
-                type,
+                chat_type,
                 title=gn,
                 username=username,
                 api_kwargs={"all_members_are_administrators": all_members_are_administrators})

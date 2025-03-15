@@ -16,25 +16,26 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram callback queries"""
+
 import uuid
 
-from .updategenerator import update
-from .ptbgenerator import PtbGenerator
-from ptbtest import (ChatGenerator, MessageGenerator, Mockbot, UserGenerator)
-from ptbtest.errors import (BadBotException, BadCallbackQueryException,
-                            BadMessageException, BadUserException)
-from telegram import (CallbackQuery, Message, User)
+from telegram import CallbackQuery, Message, User
+
+from ptbtest import ChatGenerator, MessageGenerator, Mockbot, UserGenerator
+from ptbtest.errors import BadBotException, BadCallbackQueryException, BadMessageException, BadUserException
+from ptbtest.ptbgenerator import PtbGenerator
+from ptbtest.updategenerator import update
 
 
 class CallbackQueryGenerator(PtbGenerator):
     """
-        Callback query generator class.
+    Callback query generator class.
 
-        Attributes:
-            bot (ptbtest.Mockbot): Bot to encode with the messages
+    Attributes:
+        bot (ptbtest.Mockbot): Bot to encode with the messages
 
-        Args:
-            bot (Optional[ptbtest.Mockbot]): supply your own for a custom botname
+    Args:
+        bot (Optional[ptbtest.Mockbot]): supply your own for a custom botname
     """
 
     def __init__(self, bot=None):
@@ -48,13 +49,9 @@ class CallbackQueryGenerator(PtbGenerator):
             raise BadBotException
 
     @update("callback_query")
-    def get_callback_query(self,
-                           user=None,
-                           chat_instance=None,
-                           message=None,
-                           data=None,
-                           inline_message_id=None,
-                           game_short_name=None):
+    def get_callback_query(
+        self, user=None, chat_instance=None, message=None, data=None, inline_message_id=None, game_short_name=None
+    ):
         """
 
         Returns a telegram.Update object containing a callback_query.
@@ -89,9 +86,9 @@ class CallbackQueryGenerator(PtbGenerator):
                 pass
             elif isinstance(message, bool):
                 chat = ChatGenerator().get_chat(user=user)
-                message = MessageGenerator().get_message(
-                    user=self.bot.get_me(), chat=chat,
-                    via_bot=self.bot.get_me()).message
+                message = (
+                    MessageGenerator().get_message(user=self.bot.get_me(), chat=chat, via_bot=self.bot.get_me()).message
+                )
             else:
                 raise BadMessageException
         if inline_message_id:
@@ -100,20 +97,26 @@ class CallbackQueryGenerator(PtbGenerator):
             elif isinstance(inline_message_id, bool):
                 inline_message_id = self._gen_id()
             else:
-                raise BadCallbackQueryException(
-                    "inline_message_id should be string or True")
+                msg = "inline_message_id should be string or True"
+                raise BadCallbackQueryException(msg)
 
-        if not len([x for x in [message, inline_message_id] if x]) == 1:
-            raise BadCallbackQueryException(
-                "exactly 1 of message and inline_message_id is needed")
+        if len([x for x in [message, inline_message_id] if x]) != 1:
+            msg = "exactly 1 of message and inline_message_id is needed"
+            raise BadCallbackQueryException(msg)
 
-        if not len([x for x in [data, game_short_name] if x]) == 1:
-            raise BadCallbackQueryException(
-                "exactly 1 of data and game_short_name is needed")
+        if len([x for x in [data, game_short_name] if x]) != 1:
+            msg = "exactly 1 of data and game_short_name is needed"
+            raise BadCallbackQueryException(msg)
 
-        return CallbackQuery(self._gen_id(), user, chat_instance, message=message,
-                             data=data, inline_message_id=inline_message_id,
-                             game_short_name=game_short_name)
+        return CallbackQuery(
+            self._gen_id(),
+            user,
+            chat_instance,
+            message=message,
+            data=data,
+            inline_message_id=inline_message_id,
+            game_short_name=game_short_name,
+        )
 
     def _gen_id(self):
         return str(uuid.uuid4())

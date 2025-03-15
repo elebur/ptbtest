@@ -29,24 +29,20 @@ class TestCallbackQueryGenerator:
     def test_invalid_calls(self):
         with pytest.raises(BadCallbackQueryException) as exc:
             CallbackQueryGenerator().get_callback_query()
-
-        assert "message and inline_message_id" in str(exc.value)
+            assert "message and inline_message_id" in str(exc.value)
 
         with pytest.raises(BadCallbackQueryException) as exc:
             CallbackQueryGenerator().get_callback_query(message=True, inline_message_id=True)
-
-        assert "message and inline_message_id" in str(exc.value)
+            assert "message and inline_message_id" in str(exc.value)
 
         with pytest.raises(BadCallbackQueryException) as exc:
             CallbackQueryGenerator().get_callback_query(message=True)
-
-        assert "data and game_short_name" in str(exc.value)
+            assert "data and game_short_name" in str(exc.value)
 
         with pytest.raises(BadCallbackQueryException) as exc:
             CallbackQueryGenerator().get_callback_query(
                 message=True, data="test-data", game_short_name="mygame")
-
-        assert "data and game_short_name" in str(exc.value)
+            assert "data and game_short_name" in str(exc.value)
 
     def test_required_auto_set(self):
 
