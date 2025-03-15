@@ -86,9 +86,9 @@ class Testtimerbot(unittest.TestCase):
         u4 = self.mg.get_message(chat=chat, text="/unset")
 
         # first check some errors
-        self.bot.insertUpdate(u1)
-        self.bot.insertUpdate(u2)
-        self.bot.insertUpdate(u4)
+        self.bot.insert_update(u1)
+        self.bot.insert_update(u2)
+        self.bot.insert_update(u4)
         data = self.bot.sent_messages
         self.assertEqual(len(data), 3)
         self.assertEqual(data[0]['text'], "Usage: /set <seconds>")
@@ -96,11 +96,11 @@ class Testtimerbot(unittest.TestCase):
         self.assertEqual(data[2]['text'], 'You have no active timer')
 
         # now check if setting and unsetting works (within timer limit)
-        self.bot.insertUpdate(u3)
+        self.bot.insert_update(u3)
         data = self.bot.sent_messages[-1]
         self.assertEqual(data['text'], 'Timer successfully set!')
         time.sleep(2)
-        self.bot.insertUpdate(u4)
+        self.bot.insert_update(u4)
         data = self.bot.sent_messages[-1]
         self.assertEqual(data['text'], 'Timer successfully unset!')
         # and to be certain we have to wait some more to see if it stops sending the message
@@ -111,7 +111,7 @@ class Testtimerbot(unittest.TestCase):
         self.assertEqual(len(data), 0)
 
         # lastly we will make sure an alarm message is sent after the timelimit has passed
-        self.bot.insertUpdate(u3)
+        self.bot.insert_update(u3)
         time.sleep(6)
         data = self.bot.sent_messages[-1]
         self.assertEqual(data['text'], 'Beep!')

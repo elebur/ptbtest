@@ -40,7 +40,7 @@ class TestEchobot2(unittest.TestCase):
         # create random ones
         update = self.mg.get_message(text="/help")
         # We insert the update with the bot so the updater can retrieve it.
-        self.bot.insertUpdate(update)
+        self.bot.insert_update(update)
         # sent_messages is the list with calls to the bot's outbound actions. Since we hope the message we inserted
         # only triggered one sendMessage action it's length should be 1.
         self.assertEqual(len(self.bot.sent_messages), 1)
@@ -60,7 +60,7 @@ class TestEchobot2(unittest.TestCase):
         user = self.ug.get_user(first_name="Test", last_name="The Bot")
         chat = self.cg.get_chat(user=user)
         update = self.mg.get_message(user=user, chat=chat, text="/start")
-        self.bot.insertUpdate(update)
+        self.bot.insert_update(update)
         self.assertEqual(len(self.bot.sent_messages), 1)
         sent = self.bot.sent_messages[0]
         self.assertEqual(sent['method'], "sendMessage")
@@ -75,8 +75,8 @@ class TestEchobot2(unittest.TestCase):
         self.updater.start_polling()
         update = self.mg.get_message(text="first message")
         update2 = self.mg.get_message(text="second message")
-        self.bot.insertUpdate(update)
-        self.bot.insertUpdate(update2)
+        self.bot.insert_update(update)
+        self.bot.insert_update(update2)
         self.assertEqual(len(self.bot.sent_messages), 2)
         sent = self.bot.sent_messages
         self.assertEqual(sent[0]['method'], "sendMessage")

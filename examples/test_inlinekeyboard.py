@@ -34,7 +34,7 @@ class TestInlineKeyboard(unittest.TestCase):
         def button(bot, update):
             query = update.callback_query
 
-            bot.editMessageText(text="Selected option: %s" % query.data,
+            bot.edit_message_text(text="Selected option: %s" % query.data,
                                 chat_id=query.message.chat_id,
                                 message_id=query.message.message_id)
         dp = self.updater.dispatcher
@@ -57,17 +57,17 @@ class TestInlineKeyboard(unittest.TestCase):
         u3 = self.cqg.get_callback_query(message=start_message, data="3")
 
         # And test them one by one
-        self.bot.insertUpdate(u1)
+        self.bot.insert_update(u1)
         data = self.bot.sent_messages[-1]
         self.assertEqual(data['text'], "Selected option: 1")
         self.assertEqual(data['chat_id'], start_message.chat.id)
         self.assertEqual(data['message_id'], start_message.message_id)
-        self.bot.insertUpdate(u2)
+        self.bot.insert_update(u2)
         data = self.bot.sent_messages[-1]
         self.assertEqual(data['text'], "Selected option: 2")
         self.assertEqual(data['chat_id'], start_message.chat.id)
         self.assertEqual(data['message_id'], start_message.message_id)
-        self.bot.insertUpdate(u3)
+        self.bot.insert_update(u3)
         data = self.bot.sent_messages[-1]
         self.assertEqual(data['text'], "Selected option: 3")
         self.assertEqual(data['chat_id'], start_message.chat.id)

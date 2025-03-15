@@ -39,7 +39,7 @@ class TestMockbot:
     async def test_updater_works_with_mockbot(self):
         # handler method
         def start(bot, update):
-            message = bot.sendMessage(update.message.chat_id, "this works")
+            message = bot.send_message(update.message.chat_id, "this works")
             assert isinstance(message, Message)
 
         updater = Updater(bot=self.mockbot, update_queue=asyncio.Queue())
@@ -54,14 +54,14 @@ class TestMockbot:
                 404, user, None, chat, text="/start@MockBot", via_bot=self.mockbot)
             message4 = Message(
                 404, user, None, chat, text="/start@OtherBot", via_bot=self.mockbot)
-            self.mockbot.insertUpdate(Update(0, message=message))
-            self.mockbot.insertUpdate(Update(1, message=message2))
-            self.mockbot.insertUpdate(Update(1, message=message3))
-            self.mockbot.insertUpdate(Update(1, message=message4))
+            self.mockbot.insert_update(Update(0, message=message))
+            self.mockbot.insert_update(Update(1, message=message2))
+            self.mockbot.insert_update(Update(1, message=message3))
+            self.mockbot.insert_update(Update(1, message=message4))
             data = self.mockbot.sent_messages
             assert len(data) == 2
             data = data[0]
-            assert data['method'] == 'sendMessage'
+            assert data['method'] == 'send_message'
             assert data['chat_id'] == chat.id
 
     def test_properties(self):
@@ -71,8 +71,8 @@ class TestMockbot:
         assert self.mockbot.name == "@MockBot"
         mb2 = Mockbot("OtherUsername")
         assert mb2.name == "@OtherUsername"
-        self.mockbot.sendMessage(1, "test 1")
-        self.mockbot.sendMessage(2, "test 2")
+        self.mockbot.send_message(1, "test 1")
+        self.mockbot.send_message(2, "test 2")
         assert len(self.mockbot.sent_messages) == 2
         self.mockbot.reset()
         assert len(self.mockbot.sent_messages) == 0
@@ -84,19 +84,19 @@ class TestMockbot:
         b = Mockbot.de_json(js, None)
         assert isinstance(b, Mockbot)
 
-    def test_answerCallbackQuery(self):
-        self.mockbot.answerCallbackQuery(
+    def test_answer_callback_query(self):
+        self.mockbot.answer_callback_query(
             1, "done", show_alert=True, url="google.com", cache_time=2)
 
         data = self.mockbot.sent_messages[-1]
-        assert data['method'] == "answerCallbackQuery"
+        assert data['method'] == "answer_callback_query"
         assert data['text'] == "done"
 
-    def test_answerInlineQuery(self):
+    def test_answer_inline_query(self):
         r = [
             InlineQueryResult("string", "1"), InlineQueryResult("string", "2")
         ]
-        self.mockbot.answerInlineQuery(
+        self.mockbot.answer_inline_query(
             1,
             r,
             is_personal=True,
@@ -105,71 +105,71 @@ class TestMockbot:
             switch_pm_text="pm")
 
         data = self.mockbot.sent_messages[-1]
-        assert data['method'] == "answerInlineQuery"
+        assert data['method'] == "answer_inline_query"
         assert data['results'][0]['id'] == "1"
 
-    def test_editMessageCaption(self):
-        self.mockbot.editMessageCaption(chat_id=12, message_id=23)
+    def test_edit_message_caption(self):
+        self.mockbot.edit_message_caption(chat_id=12, message_id=23)
 
         data = self.mockbot.sent_messages[-1]
-        assert data['method'] == "editMessageCaption"
+        assert data['method'] == "edit_message_caption"
         assert data['chat_id'] == 12
-        self.mockbot.editMessageCaption(
+        self.mockbot.edit_message_caption(
             inline_message_id=23, caption="new cap", photo=True)
         data = self.mockbot.sent_messages[-1]
-        assert data['method'] == "editMessageCaption"
+        assert data['method'] == "edit_message_caption"
         with pytest.raises(TelegramError):
-            self.mockbot.editMessageCaption()
+            self.mockbot.edit_message_caption()
         with pytest.raises(TelegramError):
-            self.mockbot.editMessageCaption(chat_id=12)
+            self.mockbot.edit_message_caption(chat_id=12)
         with pytest.raises(TelegramError):
-            self.mockbot.editMessageCaption(message_id=12)
+            self.mockbot.edit_message_caption(message_id=12)
 
-    def test_editMessageReplyMarkup(self):
-        self.mockbot.editMessageReplyMarkup(chat_id=1, message_id=1)
+    def test_edit_message_reply_markup(self):
+        self.mockbot.edit_message_reply_markup(chat_id=1, message_id=1)
         data = self.mockbot.sent_messages[-1]
-        assert data['method'] == "editMessageReplyMarkup"
+        assert data['method'] == "edit_message_reply_markup"
         assert data['chat_id'] == 1
 
-        self.mockbot.editMessageReplyMarkup(inline_message_id=1)
+        self.mockbot.edit_message_reply_markup(inline_message_id=1)
         data = self.mockbot.sent_messages[-1]
-        assert data['method'] == "editMessageReplyMarkup"
+        assert data['method'] == "edit_message_reply_markup"
         assert data['inline_message_id'] == 1
 
         with pytest.raises(TelegramError):
-            self.mockbot.editMessageReplyMarkup()
+            self.mockbot.edit_message_reply_markup()
         with pytest.raises(TelegramError):
-            self.mockbot.editMessageReplyMarkup(chat_id=12)
+            self.mockbot.edit_message_reply_markup(chat_id=12)
         with pytest.raises(TelegramError):
-            self.mockbot.editMessageReplyMarkup(message_id=12)
+            self.mockbot.edit_message_reply_markup(message_id=12)
 
-    def test_editMessageText(self):
-        self.mockbot.editMessageText("test", chat_id=1)
+    def test_edit_message_text(self):
+        self.mockbot.edit_message_text("test", chat_id=1)
         data = self.mockbot.sent_messages[-1]
-        assert data['method'] == "editMessageText"
+        assert data['method'] == "edit_message_text"
         assert data['chat_id'] == 1
         assert data['text'] == "test"
-        self.mockbot.editMessageText(
+        self.mockbot.edit_message_text(
             "test",
             inline_message_id=1,
             parse_mode="Markdown",
             disable_web_page_preview=True)
         data = self.mockbot.sent_messages[-1]
-        assert data['method'] == "editMessageText"
+        assert data['method'] == "edit_message_text"
         assert data['inline_message_id'] == 1
 
-    def test_forwardMessage(self):
-        self.mockbot.forwardMessage(1, 2, 3)
+    def test_forward_message(self):
+        self.mockbot.forward_message(1, 2, 3)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "forwardMessage"
+        assert data['method'] == "forward_message"
         assert data['chat_id'] == 1
 
-    def test_getChat(self):
-        self.mockbot.getChat(1)
+    def test_get_chat(self):
+        self.mockbot.get_chat(1)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "getChat"
+        assert data['method'] == "get_chat"
         assert data['chat_id'] == 1
 
     def test_getChatAdministrators(self):
@@ -194,11 +194,11 @@ class TestMockbot:
         assert data['method'] == "getChatMembersCount"
         assert data['chat_id'] == 1
 
-    def test_getFile(self):
-        self.mockbot.getFile("12345")
+    def test_get_file(self):
+        self.mockbot.get_file("12345")
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "getFile"
+        assert data['method'] == "get_file"
         assert data['file_id'] == "12345"
 
     def test_getGameHighScores(self):
@@ -209,39 +209,39 @@ class TestMockbot:
         assert data['method'] == "getGameHighScores"
         assert data['user_id'] == 1
 
-    def test_getMe(self):
-        data = self.mockbot.getMe()
+    def test_get_me(self):
+        data = self.mockbot.get_me()
 
         assert isinstance(data, User)
         assert data.name == "@MockBot"
 
-    def test_getUpdates(self):
-        data = self.mockbot.getUpdates()
+    def test_get_updates(self):
+        data = self.mockbot.get_updates()
 
         assert data == []
 
-    def test_getUserProfilePhotos(self):
-        self.mockbot.getUserProfilePhotos(1, offset=2)
+    def test_get_user_profile_photos(self):
+        self.mockbot.get_user_profile_photos(1, offset=2)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "getUserProfilePhotos"
+        assert data['method'] == "get_user_profile_photos"
         assert data['user_id'] == 1
 
-    def test_kickChatMember(self):
-        self.mockbot.kickChatMember(chat_id=1, user_id=2)
+    def test_kick_chat_member(self):
+        self.mockbot.kick_chat_member(chat_id=1, user_id=2)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "kickChatMember"
+        assert data['method'] == "kick_chat_member"
         assert data['user_id'] == 2
 
-    def test_leaveChat(self):
-        self.mockbot.leaveChat(1)
+    def test_leave_chat(self):
+        self.mockbot.leave_chat(1)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "leaveChat"
+        assert data['method'] == "leave_chat"
 
-    def test_sendAudio(self):
-        self.mockbot.sendAudio(
+    def test_send_audio(self):
+        self.mockbot.send_audio(
             1,
             "123",
             "audio_unique_id",
@@ -251,62 +251,62 @@ class TestMockbot:
             caption="this song")
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendAudio"
+        assert data['method'] == "send_audio"
         assert data['chat_id'] == 1
         assert data['duration'] == 2
         assert data['performer'] == "singer"
         assert data['title'] == "song"
         assert data['caption'] == "this song"
 
-    def test_sendChatAction(self):
-        self.mockbot.sendChatAction(1, ChatAction.TYPING)
+    def test_send_chat_action(self):
+        self.mockbot.send_chat_action(1, ChatAction.TYPING)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendChatAction"
+        assert data['method'] == "send_chat_action"
         assert data['chat_id'] == 1
         assert data['action'] == "typing"
 
-    def test_sendContact(self):
-        self.mockbot.sendContact(1, "123456", "test", last_name="me")
+    def test_send_contact(self):
+        self.mockbot.send_contact(1, "123456", "test", last_name="me")
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendContact"
+        assert data['method'] == "send_contact"
         assert data['chat_id'] == 1
         assert data['phone_number'] == "123456"
         assert data['last_name'] == "me"
 
-    def test_sendDocument(self):
-        self.mockbot.sendDocument(
+    def test_send_document(self):
+        self.mockbot.send_document(
             1, "45", "document_unique_id", filename="jaja.docx", caption="good doc")
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendDocument"
+        assert data['method'] == "send_document"
         assert data['chat_id'] == 1
         assert data['filename'] == "jaja.docx"
         assert data['caption'] == "good doc"
 
-    def test_sendGame(self):
-        self.mockbot.sendGame(1, "testgame")
+    def test_send_game(self):
+        self.mockbot.send_game(1, "testgame")
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendGame"
+        assert data['method'] == "send_game"
         assert data['chat_id'] == 1
         assert data['game_short_name'] == "testgame"
 
-    def test_sendLocation(self):
-        self.mockbot.sendLocation(1, 52.123, 4.23)
+    def test_send_location(self):
+        self.mockbot.send_location(1, 52.123, 4.23)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendLocation"
+        assert data['method'] == "send_location"
         assert data['chat_id'] == 1
 
-    def test_sendMessage(self):
+    def test_send_message(self):
         keyb = InlineKeyboardMarkup(
             [[InlineKeyboardButton(
                 "test 1", callback_data="test1")],
              [InlineKeyboardButton(
                  "test 2", callback_data="test2")]])
-        self.mockbot.sendMessage(
+        self.mockbot.send_message(
             1,
             "test",
             parse_mode=ParseMode.MARKDOWN,
@@ -316,50 +316,50 @@ class TestMockbot:
             disable_web_page_preview=True)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendMessage"
+        assert data['method'] == "send_message"
         assert data['chat_id'] == 1
         assert data['text'] == "test"
         assert eval(data['reply_markup'])['inline_keyboard'][1][0]['callback_data'] == "test2"
 
-    def test_sendPhoto(self):
-        self.mockbot.sendPhoto(1, "test.png", caption="photo")
+    def test_send_photo(self):
+        self.mockbot.send_photo(1, "test.png", caption="photo")
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendPhoto"
+        assert data['method'] == "send_photo"
         assert data['chat_id'] == 1
         assert data['caption'] == "photo"
 
-    def test_sendSticker(self):
-        self.mockbot.sendSticker(-4231, "test", "sticker_unique_id", 10, 10, True, True, "regular")
+    def test_send_sticker(self):
+        self.mockbot.send_sticker(-4231, "test", "sticker_unique_id", 10, 10, True, True, "regular")
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendSticker"
+        assert data['method'] == "send_sticker"
         assert data['chat_id'] == -4231
 
-    def test_sendVenue(self):
-        self.mockbot.sendVenue(
+    def test_send_venue(self):
+        self.mockbot.send_venue(
             1, 4.2, 5.1, "nice place", "somewherestreet 2", foursquare_id=2)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendVenue"
+        assert data['method'] == "send_venue"
         assert data['chat_id'] == 1
         assert data['foursquare_id'] == 2
 
-    def test_sendVideo(self):
-        self.mockbot.sendVideo(1, "some file", "video_unique_id", 10, 10, 3)
+    def test_send_video(self):
+        self.mockbot.send_video(1, "some file", "video_unique_id", 10, 10, 3)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendVideo"
+        assert data['method'] == "send_video"
         assert data['chat_id'] == 1
         assert data['video2']['width'] == 10
         assert data['video2']['height'] == 10
         assert data['video2']['duration'] == 3
 
-    def test_sendVoice(self):
-        self.mockbot.sendVoice(1, "some file", "voide_unique_id", duration=3, caption="voice")
+    def test_send_voice(self):
+        self.mockbot.send_voice(1, "some file", "voide_unique_id", duration=3, caption="voice")
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "sendVoice"
+        assert data['method'] == "send_voice"
         assert data['chat_id'] == 1
         assert data['duration'] == 3
         assert data['caption'] == "voice"
@@ -379,9 +379,9 @@ class TestMockbot:
         assert data['user_id'] == 1
         self.mockbot.setGameScore(1, 200, edit_message=True)
 
-    def test_unbanChatMember(self):
-        self.mockbot.unbanChatMember(1, 2)
+    def test_unban_chat_member(self):
+        self.mockbot.unban_chat_member(1, 2)
         data = self.mockbot.sent_messages[-1]
 
-        assert data['method'] == "unbanChatMember"
+        assert data['method'] == "unban_chat_member"
         assert data['chat_id'] == 1

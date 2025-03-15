@@ -90,8 +90,8 @@ class CallbackQueryGenerator(PtbGenerator):
             elif isinstance(message, bool):
                 chat = ChatGenerator().get_chat(user=user)
                 message = MessageGenerator().get_message(
-                    user=self.bot.getMe(), chat=chat,
-                    via_bot=self.bot.getMe()).message
+                    user=self.bot.get_me(), chat=chat,
+                    via_bot=self.bot.get_me()).message
             else:
                 raise BadMessageException
         if inline_message_id:

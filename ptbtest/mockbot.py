@@ -26,6 +26,8 @@ import time
 from telegram import (Location, TelegramObject, User)
 from telegram.error import TelegramError
 
+from utils.deprecation import deprecated, reason
+
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
@@ -46,13 +48,13 @@ class Mockbot(TelegramObject):
     named ``method`` which will contain the method used to send this message to the server.
 
     Examples:
-        A call to ``sendMessage(1, "hello")`` will return the following::
+        A call to ``send_message(1, "hello")`` will return the following::
 
-        {'text': 'hello', 'chat_id': 1, 'method': 'sendMessage'}
+        {'text': 'hello', 'chat_id': 1, 'method': 'send_message'}
 
-        A call to ``editMessageText(text="test 2", inline_message_id=404, disable_web_page_preview=True)``::
+        A call to ``edit_message_text(text="test 2", inline_message_id=404, disable_web_page_preview=True)``::
 
-        {'inline_message_id': 404, 'text': 'test 2', 'method': 'editMessageText', 'disable_web_page_preview': True}
+        {'inline_message_id': 404, 'text': 'test 2', 'method': 'edit_message_text', 'disable_web_page_preview': True}
     Parameters:
         username (Optional[str]): Username for this bot. Defaults to 'MockBot'"""
 
@@ -86,7 +88,7 @@ class Mockbot(TelegramObject):
         @functools.wraps(func)
         def decorator(self, *args, **kwargs):
             if not self._bot:
-                self.getMe()
+                self.get_me()
 
             result = func(self, *args, **kwargs)
             return result
@@ -137,7 +139,7 @@ class Mockbot(TelegramObject):
                     data['reply_markup'] = reply_markup
             data['method'] = func.__name__
             self._sendmessages.append(data)
-            if data['method'] in ['sendChatAction']:
+            if data['method'] in ['send_chat_action']:
                 return True
             dat = kwargs.copy()
             dat.update(data)
@@ -145,7 +147,7 @@ class Mockbot(TelegramObject):
             dat.pop('disable_web_page_preview', "")
             dat.pop('disable_notification', "")
             dat.pop('reply_markup', "")
-            dat['user'] = self.getMe()
+            dat['user'] = self.get_me()
             cid = dat.pop('chat_id', None)
             if cid:
                 dat['chat'] = self._cg.get_chat(cid=cid)
@@ -186,12 +188,20 @@ class Mockbot(TelegramObject):
 
         return decorator
 
-    def getMe(self, timeout=None, **kwargs):
+    @deprecated(reason["PEP8"])
+    def getMe(self, *args, **kwargs):
+        return self.get_me(args, kwargs)
+
+    def get_me(self, timeout=None, **kwargs):
         self._bot = User(0, "Mockbot", True, last_name="Bot", username=self._username)
         return self._bot
 
+    @deprecated(reason["PEP8"])
+    def sendMessage(self, *args, **kwargs):
+        return self.send_message(args, kwargs)
+
     @message
-    def sendMessage(self,
+    def send_message(self,
                     chat_id,
                     text,
                     parse_mode=None,
@@ -210,8 +220,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def forwardMessage(self, *args, **kwargs):
+        return self.forward_message(args, kwargs)
+
     @message
-    def forwardMessage(self,
+    def forward_message(self,
                        chat_id,
                        from_chat_id,
                        message_id,
@@ -229,8 +243,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendPhoto(self, *args, **kwargs):
+        return self.send_photo(args, kwargs)
+
     @message
-    def sendPhoto(self,
+    def send_photo(self,
                   chat_id,
                   photo,
                   caption=None,
@@ -246,8 +264,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendAudio(self, *args, **kwargs):
+        return self.send_audio(args, kwargs)
+
     @message
-    def sendAudio(self,
+    def send_audio(self,
                   chat_id,
                   unique_id,
                   audio_unique_id,
@@ -279,8 +301,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendDocument(self, *args, **kwargs):
+        return self.send_document(args, kwargs)
+
     @message
-    def sendDocument(self,
+    def send_document(self,
                      chat_id,
                      document,
                      document_unique_id,
@@ -307,8 +333,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendSticker(self, *args, **kwargs):
+        return self.send_sticker(args, kwargs)
+
     @message
-    def sendSticker(self,
+    def send_sticker(self,
                     chat_id,
                     sticker,
                     sticker_unique_id,
@@ -338,8 +368,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendVideo(self, *args, **kwargs):
+        return self.send_video(args, kwargs)
+
     @message
-    def sendVideo(self,
+    def send_video(self,
                   chat_id,
                   video,
                   video_unique_id,
@@ -369,8 +403,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendVoice(self, *args, **kwargs):
+        return self.send_voice(args, kwargs)
+
     @message
-    def sendVoice(self,
+    def send_voice(self,
                   chat_id,
                   voice,
                   voice_unique_id,
@@ -398,8 +436,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendLocation(self, *args, **kwargs):
+        return self.send_location(args, kwargs)
+
     @message
-    def sendLocation(self,
+    def send_location(self,
                      chat_id,
                      latitude,
                      longitude,
@@ -420,8 +462,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendVenue(self, *args, **kwargs):
+        return self.send_venue(args, kwargs)
+
     @message
-    def sendVenue(self,
+    def send_venue(self,
                   chat_id,
                   latitude,
                   longitude,
@@ -449,8 +495,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendContact(self, *args, **kwargs):
+        return self.send_contact(args, kwargs)
+
     @message
-    def sendContact(self,
+    def send_contact(self,
                     chat_id,
                     phone_number,
                     first_name,
@@ -476,19 +526,31 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendGame(self, *args, **kwargs):
+        return self.send_game(args, kwargs)
+
     @message
-    def sendGame(self, chat_id, game_short_name, timeout=None, **kwargs):
+    def send_game(self, chat_id, game_short_name, timeout=None, **kwargs):
         data = {'chat_id': chat_id, 'game_short_name': game_short_name}
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def sendChatAction(self, *args, **kwargs):
+        return self.send_chat_action(args, kwargs)
+
     @message
-    def sendChatAction(self, chat_id, action, timeout=None, **kwargs):
+    def send_chat_action(self, chat_id, action, timeout=None, **kwargs):
         data = {'chat_id': chat_id, 'action': action}
 
         return data
 
-    def answerInlineQuery(self,
+    @deprecated(reason["PEP8"])
+    def answerInlineQuery(self, *args, **kwargs):
+        return self.answer_inline_query(args, kwargs)
+
+    def answer_inline_query(self,
                           inline_query_id,
                           results,
                           cache_time=300,
@@ -512,11 +574,15 @@ class Mockbot(TelegramObject):
             data['switch_pm_text'] = switch_pm_text
         if switch_pm_parameter:
             data['switch_pm_parameter'] = switch_pm_parameter
-        data['method'] = "answerInlineQuery"
+        data['method'] = "answer_inline_query"
 
         self._sendmessages.append(data)
 
-    def getUserProfilePhotos(self,
+    @deprecated(reason["PEP8"])
+    def getUserProfilePhotos(self, *args, **kwargs):
+        return self.get_user_profile_photos(args, kwargs)
+
+    def get_user_profile_photos(self,
                              user_id,
                              offset=None,
                              limit=100,
@@ -529,31 +595,47 @@ class Mockbot(TelegramObject):
         if limit:
             data['limit'] = limit
 
-        data['method'] = "getUserProfilePhotos"
+        data['method'] = "get_user_profile_photos"
 
         self._sendmessages.append(data)
 
-    def getFile(self, file_id, timeout=None, **kwargs):
+    @deprecated(reason["PEP8"])
+    def getFile(self, *args, **kwargs):
+        return self.get_file(args, kwargs)
+
+    def get_file(self, file_id, timeout=None, **kwargs):
         data = {'file_id': file_id}
 
-        data['method'] = "getFile"
+        data['method'] = "get_file"
         self._sendmessages.append(data)
 
-    def kickChatMember(self, chat_id, user_id, timeout=None, **kwargs):
+    @deprecated(reason["PEP8"])
+    def kickChatMember(self, *args, **kwargs):
+        return self.kick_chat_member(args, kwargs)
+
+    def kick_chat_member(self, chat_id, user_id, timeout=None, **kwargs):
         data = {'chat_id': chat_id, 'user_id': user_id}
 
-        data['method'] = "kickChatMember"
+        data['method'] = "kick_chat_member"
 
         self._sendmessages.append(data)
 
-    def unbanChatMember(self, chat_id, user_id, timeout=None, **kwargs):
+    @deprecated(reason["PEP8"])
+    def unbanChatMember(self, *args, **kwargs):
+        return self.unban_chat_member(args, kwargs)
+
+    def unban_chat_member(self, chat_id, user_id, timeout=None, **kwargs):
         data = {'chat_id': chat_id, 'user_id': user_id}
 
-        data['method'] = "unbanChatMember"
+        data['method'] = "unban_chat_member"
 
         self._sendmessages.append(data)
 
-    def answerCallbackQuery(self,
+    @deprecated(reason["PEP8"])
+    def answerCallbackQuery(self, *args, **kwargs):
+        return self.answer_callback_query(args, kwargs)
+
+    def answer_callback_query(self,
                             callback_query_id,
                             text=None,
                             show_alert=False,
@@ -572,12 +654,16 @@ class Mockbot(TelegramObject):
         if cache_time is not None:
             data['cache_time'] = cache_time
 
-        data['method'] = "answerCallbackQuery"
+        data['method'] = "answer_callback_query"
 
         self._sendmessages.append(data)
 
+    @deprecated(reason["PEP8"])
+    def editMessageText(self, *args, **kwargs):
+        return self.edit_message_text(args, kwargs)
+
     @message
-    def editMessageText(self,
+    def edit_message_text(self,
                         text,
                         chat_id=None,
                         message_id=None,
@@ -602,8 +688,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def editMessageCaption(self, *args, **kwargs):
+        return self.edit_message_caption(args, kwargs)
+
     @message
-    def editMessageCaption(self,
+    def edit_message_caption(self,
                            chat_id=None,
                            message_id=None,
                            inline_message_id=None,
@@ -614,7 +704,7 @@ class Mockbot(TelegramObject):
         if inline_message_id is None and (chat_id is None or
                                           message_id is None):
             raise TelegramError(
-                'editMessageCaption: Both chat_id and message_id are required when '
+                'edit_message_caption: Both chat_id and message_id are required when '
                 'inline_message_id is not specified')
 
         data = {}
@@ -630,8 +720,12 @@ class Mockbot(TelegramObject):
 
         return data
 
+    @deprecated(reason["PEP8"])
+    def editMessageReplyMarkup(self, *args, **kwargs):
+        return self.edit_message_markup(args, kwargs)
+
     @message
-    def editMessageReplyMarkup(self,
+    def edit_message_reply_markup(self,
                                chat_id=None,
                                message_id=None,
                                inline_message_id=None,
@@ -641,7 +735,7 @@ class Mockbot(TelegramObject):
         if inline_message_id is None and (chat_id is None or
                                           message_id is None):
             raise TelegramError(
-                'editMessageCaption: Both chat_id and message_id are required when '
+                'edit_message_caption: Both chat_id and message_id are required when '
                 'inline_message_id is not specified')
 
         data = {}
@@ -655,10 +749,14 @@ class Mockbot(TelegramObject):
 
         return data
 
-    def insertUpdate(self, update):
+    @deprecated(reason["PEP8"])
+    def insertUpdate(self, *args, **kwargs):
+        return self.insert_update(args, kwargs)
+
+    def insert_update(self, update):
         """
-        This inserts an update into the the bot's storage. these will be retreived on a call to
-        getUpdates which is used by the :py:class:`telegram.Updater`. This way the updater can function without any
+        This inserts an update into the the bot's storage. these will be retrieved on a call to
+        get_updates which is used by the :py:class:`telegram.Updater`. This way the updater can function without any
         modifications.
 
         Args:
@@ -667,7 +765,11 @@ class Mockbot(TelegramObject):
         self._updates.append(update)
         time.sleep(.3)
 
-    def getUpdates(self,
+    @deprecated(reason["PEP8"])
+    def getUpdates(self, *args, **kwargs):
+        return self.get_updates(args, kwargs)
+
+    def get_updates(self,
                    offset=None,
                    limit=100,
                    timeout=0,
@@ -676,24 +778,36 @@ class Mockbot(TelegramObject):
                    **kwargs):
         return self.updates
 
-    def setWebhook(self,
+    @deprecated(reason["PEP8"])
+    def setWebhook(self, *args, **kwargs):
+        return self.set_webhook(args, kwargs)
+
+    def set_webhook(self,
                    webhook_url=None,
                    certificate=None,
                    timeout=None,
                    **kwargs):
         return None
 
-    def leaveChat(self, chat_id, timeout=None, **kwargs):
+    @deprecated(reason["PEP8"])
+    def leaveChat(self, *args, **kwargs):
+        return self.leave_chat(args, kwargs)
+
+    def leave_chat(self, chat_id, timeout=None, **kwargs):
         data = {'chat_id': chat_id}
 
-        data['method'] = "leaveChat"
+        data['method'] = "leave_chat"
 
         self._sendmessages.append(data)
 
-    def getChat(self, chat_id, timeout=None, **kwargs):
+    @deprecated(reason["PEP8"])
+    def getChat(self, *args, **kwargs):
+        return self.get_chat(args, kwargs)
+
+    def get_chat(self, chat_id, timeout=None, **kwargs):
         data = {'chat_id': chat_id}
 
-        data['method'] = "getChat"
+        data['method'] = "get_chat"
 
         self._sendmessages.append(data)
 
@@ -793,33 +907,6 @@ class Mockbot(TelegramObject):
 
     # snake_case (PEP8) aliases
 
-    get_me = getMe
-    send_message = sendMessage
-    forward_message = forwardMessage
-    send_photo = sendPhoto
-    send_audio = sendAudio
-    send_document = sendDocument
-    send_sticker = sendSticker
-    send_video = sendVideo
-    send_voice = sendVoice
-    send_location = sendLocation
-    send_venue = sendVenue
-    send_contact = sendContact
-    send_game = sendGame
-    send_chat_action = sendChatAction
-    answer_inline_query = answerInlineQuery
-    get_user_profile_photos = getUserProfilePhotos
-    get_file = getFile
-    kick_chat_member = kickChatMember
-    unban_chat_member = unbanChatMember
-    answer_callback_query = answerCallbackQuery
-    edit_message_text = editMessageText
-    edit_message_caption = editMessageCaption
-    edit_message_reply_markup = editMessageReplyMarkup
-    get_updates = getUpdates
-    set_webhook = setWebhook
-    leave_chat = leaveChat
-    get_chat = getChat
     get_chat_administrators = getChatAdministrators
     get_chat_member = getChatMember
     get_chat_members_count = getChatMembersCount

@@ -7,4 +7,4 @@
  - messagegenerator.py - line 538: Added positional arguments. Find the right way to add this.
  - messagegenerator.py - line 542: Added positional arguments. Find the right way to add this.
 
- - test_mockbot.py - TestMockbot::test_editMessageText - line 151 - removing message_id made the test pass. Investigate.
+ - test_mockbot.py - TestMockbot::test_edit_message_text - line 151 - removing message_id made the test pass. Investigate.

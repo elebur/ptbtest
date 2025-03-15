@@ -62,7 +62,7 @@ class TestInlineBot(unittest.TestCase):
 
         # Now test the handler
         u1 = self.iqg.get_inline_query(query="test data")
-        self.bot.insertUpdate(u1)
+        self.bot.insert_update(u1)
 
         data = self.bot.sent_messages[-1]
         self.assertEqual(len(data['results']), 3)
