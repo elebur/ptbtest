@@ -1,15 +1,10 @@
 # ruff: noqa: PT009
 import unittest
 
-from ptbtest import CallbackQueryGenerator
-from telegram import InlineKeyboardButton
-from telegram import InlineKeyboardMarkup
-from telegram.ext import CallbackQueryHandler
-from telegram.ext import Updater
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackQueryHandler, Updater
 
-from ptbtest import ChatGenerator
-from ptbtest import MessageGenerator
-from ptbtest import Mockbot
+from ptbtest import CallbackQueryGenerator, ChatGenerator, MessageGenerator, Mockbot
 
 """
 This is an example to show how the ptbtest suite can be used.
@@ -18,6 +13,8 @@ https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/
 We will skip the start and help callbacks and focus on the callback query.
 
 """
+
+
 class TestInlineKeyboard(unittest.TestCase):
     def setUp(self):
         # For use within the tests we nee some stuff. Starting with a Mockbot
@@ -34,22 +31,26 @@ class TestInlineKeyboard(unittest.TestCase):
         def button(bot, update):
             query = update.callback_query
 
-            bot.edit_message_text(text="Selected option: %s" % query.data,
-                                chat_id=query.message.chat_id,
-                                message_id=query.message.message_id)
+            bot.edit_message_text(
+                text=f"Selected option: {query.data}",
+                chat_id=query.message.chat_id,
+                message_id=query.message.message_id,
+            )
+
         dp = self.updater.dispatcher
         dp.add_handler(CallbackQueryHandler(button))
         self.updater.start_polling()
 
         # the start callback in this example generates a message that will be edited, so let's mimick that message
         # for future reference
-        keyboard = [[InlineKeyboardButton("Option 1", callback_data='1'),
-                     InlineKeyboardButton("Option 2", callback_data='2')],
-                    [InlineKeyboardButton("Option 3", callback_data='3')]]
+        keyboard = [
+            [InlineKeyboardButton("Option 1", callback_data="1"), InlineKeyboardButton("Option 2", callback_data="2")],
+            [InlineKeyboardButton("Option 3", callback_data="3")],
+        ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
         chat = self.cg.get_chat()
-        start_message = self.bot.sendMessage(chat_id=chat.id, text='Please choose:', reply_markup=reply_markup)
+        start_message = self.bot.sendMessage(chat_id=chat.id, text="Please choose:", reply_markup=reply_markup)
 
         # now let's create some callback query's to send
         u1 = self.cqg.get_callback_query(message=start_message, data="1")
@@ -59,23 +60,23 @@ class TestInlineKeyboard(unittest.TestCase):
         # And test them one by one
         self.bot.insert_update(u1)
         data = self.bot.sent_messages[-1]
-        self.assertEqual(data['text'], "Selected option: 1")
-        self.assertEqual(data['chat_id'], start_message.chat.id)
-        self.assertEqual(data['message_id'], start_message.message_id)
+        self.assertEqual(data["text"], "Selected option: 1")
+        self.assertEqual(data["chat_id"], start_message.chat.id)
+        self.assertEqual(data["message_id"], start_message.message_id)
         self.bot.insert_update(u2)
         data = self.bot.sent_messages[-1]
-        self.assertEqual(data['text'], "Selected option: 2")
-        self.assertEqual(data['chat_id'], start_message.chat.id)
-        self.assertEqual(data['message_id'], start_message.message_id)
+        self.assertEqual(data["text"], "Selected option: 2")
+        self.assertEqual(data["chat_id"], start_message.chat.id)
+        self.assertEqual(data["message_id"], start_message.message_id)
         self.bot.insert_update(u3)
         data = self.bot.sent_messages[-1]
-        self.assertEqual(data['text'], "Selected option: 3")
-        self.assertEqual(data['chat_id'], start_message.chat.id)
-        self.assertEqual(data['message_id'], start_message.message_id)
+        self.assertEqual(data["text"], "Selected option: 3")
+        self.assertEqual(data["chat_id"], start_message.chat.id)
+        self.assertEqual(data["message_id"], start_message.message_id)
 
         # stop polling
         self.updater.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

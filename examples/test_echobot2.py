@@ -1,15 +1,9 @@
 # ruff: noqa: PT009
 import unittest
 
-from telegram.ext import CommandHandler
-from telegram.ext import filters
-from telegram.ext import MessageHandler
-from telegram.ext import Updater
+from telegram.ext import CommandHandler, MessageHandler, Updater, filters
 
-from ptbtest import ChatGenerator
-from ptbtest import MessageGenerator
-from ptbtest import Mockbot
-from ptbtest import UserGenerator
+from ptbtest import ChatGenerator, MessageGenerator, Mockbot, UserGenerator
 
 """
 This is an example to show how the ptbtest suite can be used.
@@ -17,6 +11,8 @@ This example follows the echobot2 example at:
 https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/echobot2.py
 
 """
+
+
 class TestEchobot2(unittest.TestCase):
     def setUp(self):
         # For use within the tests we nee some stuff. Starting with a Mockbot
@@ -30,11 +26,11 @@ class TestEchobot2(unittest.TestCase):
 
     def test_help(self):
         # this tests the help handler. So first insert the handler
-        def help(bot, update):
-            update.message.reply_text('Help!')
+        def help_message(update):
+            update.message.reply_text("Help!")
 
         # Then register the handler with he updater's dispatcher and start polling
-        self.updater.dispatcher.add_handler(CommandHandler("help", help))
+        self.updater.dispatcher.add_handler(CommandHandler("help", help_message))
         self.updater.start_polling()
         # We want to simulate a message. Since we don't care wich user sends it we let the MessageGenerator
         # create random ones
@@ -45,14 +41,14 @@ class TestEchobot2(unittest.TestCase):
         # only triggered one sendMessage action it's length should be 1.
         self.assertEqual(len(self.bot.sent_messages), 1)
         sent = self.bot.sent_messages[0]
-        self.assertEqual(sent['method'], "sendMessage")
-        self.assertEqual(sent['text'], "Help!")
+        self.assertEqual(sent["method"], "sendMessage")
+        self.assertEqual(sent["text"], "Help!")
         # Always stop the updater at the end of a testcase so it won't hang.
         self.updater.stop()
 
     def test_start(self):
-        def start(bot, update):
-            update.message.reply_text('Hi!')
+        def start(update):
+            update.message.reply_text("Hi!")
 
         self.updater.dispatcher.add_handler(CommandHandler("start", start))
         self.updater.start_polling()
@@ -63,12 +59,12 @@ class TestEchobot2(unittest.TestCase):
         self.bot.insert_update(update)
         self.assertEqual(len(self.bot.sent_messages), 1)
         sent = self.bot.sent_messages[0]
-        self.assertEqual(sent['method'], "sendMessage")
-        self.assertEqual(sent['text'], "Hi!")
+        self.assertEqual(sent["method"], "sendMessage")
+        self.assertEqual(sent["text"], "Hi!")
         self.updater.stop()
 
     def test_echo(self):
-        def echo(bot, update):
+        def echo(update):
             update.message.reply_text(update.message.text)
 
         self.updater.dispatcher.add_handler(MessageHandler(filters.text, echo))
@@ -79,11 +75,11 @@ class TestEchobot2(unittest.TestCase):
         self.bot.insert_update(update2)
         self.assertEqual(len(self.bot.sent_messages), 2)
         sent = self.bot.sent_messages
-        self.assertEqual(sent[0]['method'], "sendMessage")
-        self.assertEqual(sent[0]['text'], "first message")
-        self.assertEqual(sent[1]['text'], "second message")
+        self.assertEqual(sent[0]["method"], "sendMessage")
+        self.assertEqual(sent[0]["text"], "first message")
+        self.assertEqual(sent[1]["text"], "second message")
         self.updater.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

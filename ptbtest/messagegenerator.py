@@ -1,3 +1,4 @@
+# ruff: noqa: S311
 # A library that provides a testing suite fot python-telegram-bot
 # which can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
