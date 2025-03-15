@@ -161,7 +161,7 @@ class Mockbot(TelegramObject):
             cid = dat.pop('from_chat_id', None)
             if cid:
                 dat['forward_from_chat'] = self._cg.get_chat(
-                    cid=cid, type='channel')
+                    cid=cid, chat_type='channel')
             dat.pop('inline_message_id', None)
             dat.pop('performer', '')
             dat.pop('title', '')
