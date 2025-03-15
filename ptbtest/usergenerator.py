@@ -36,7 +36,7 @@ class UserGenerator(PtbGenerator):
     ]
 
     def __init__(self):
-        PtbGenerator.__init__(self)
+        super().__init__()
 
     def get_user(self, first_name=None, last_name=None, username=None,
                  id=None):
@@ -47,7 +47,7 @@ class UserGenerator(PtbGenerator):
 
         Args:
             first_name (Optional[str]): First name for the returned user.
-            last_name (Optional[str]): Lst name for the returned user.
+            last_name (Optional[str]): Last name for the returned user.
             username (Optional[str]): Username for the returned user.
 
         Returns:
