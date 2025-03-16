@@ -68,6 +68,7 @@ class ChatGenerator(PtbGenerator):
         if cid and chat_type == 'private':
             if cid < 0:
                 chat_type = "group"
+
         if user:
             if isinstance(user, User):
                 u = user
@@ -77,6 +78,8 @@ class ChatGenerator(PtbGenerator):
                     username=u.username,
                     first_name=u.first_name,
                     last_name=u.last_name)
+            else:
+                raise TypeError("user must be a telegram.User instance")
         elif chat_type == "private":
             u = UserGenerator().get_user(username=username)
             return Chat(

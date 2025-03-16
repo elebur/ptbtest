@@ -46,7 +46,7 @@ class TestChatGenerator:
         assert c.first_name is None
         assert c.last_name is None
 
-    def test_invalid_cid(self, mock_chat):
+    def test_zero_cid(self, mock_chat):
         c = mock_chat.get_chat(cid=0)
 
         assert c.id > 0
@@ -69,25 +69,6 @@ class TestChatGenerator:
         c = mock_chat.get_chat(chat_type="channel", cid=-1)
         assert c.type == "channel"
 
-    def test_group_chat(self):
-        c = ChatGenerator().get_chat(chat_type="group")
-
-        assert c.id < 0
-        assert c.type == "group"
-        assert c.api_kwargs.get("all_members_are_administrators") is False
-        assert isinstance(c.title, str)
-
-    def test_group_all_members_are_administrators(self):
-        c = ChatGenerator().get_chat(chat_type="group", all_members_are_administrators=True)
-
-        assert c.type == "group"
-        assert c.api_kwargs.get("all_members_are_administrators") is True
-
-    def test_group_chat_with_group_name(self):
-        c = ChatGenerator().get_chat(chat_type="group", title="My Group")
-
-        assert c.title == "My Group"
-
     def test_private_from_user(self):
         u = UserGenerator().get_user()
         c = ChatGenerator().get_chat(user=u)
@@ -96,6 +77,40 @@ class TestChatGenerator:
         assert c.username == c.first_name + c.last_name
         assert u.username == c.username
         assert c.type == "private"
+
+    def test_private_no_username(self):
+        c = ChatGenerator().get_chat(chat_type="private")
+        
+        assert c.id > 0
+        assert c.username == c.first_name + c.last_name
+        assert c.type == "private"
+
+    def test_with_invalid_user(self):
+        """The user argument must be a telegram.User instance"""
+        with pytest.raises(TypeError):
+            ChatGenerator().get_chat(user="invalid user")
+
+    def test_group_chat(self):
+        c = ChatGenerator().get_chat(chat_type="group")
+
+        assert c.id < 0
+        assert c.type == "group"
+        assert c.api_kwargs.get("all_members_are_administrators") is False
+        assert isinstance(c.title, str)
+
+    def test_group_chat_with_group_name(self):
+        c = ChatGenerator().get_chat(chat_type="group", title="My Group")
+
+        assert c.id < 0
+        assert c.type == "group"
+        assert c.api_kwargs.get("all_members_are_administrators") is False
+        assert c.title == "My Group"
+
+    def test_group_all_members_are_administrators(self):
+        c = ChatGenerator().get_chat(chat_type="group", all_members_are_administrators=True)
+
+        assert c.type == "group"
+        assert c.api_kwargs.get("all_members_are_administrators") is True
 
     def test_supergroup(self):
         c = ChatGenerator().get_chat(chat_type="supergroup")
@@ -116,7 +131,7 @@ class TestChatGenerator:
 
         assert c.username == "mygroup"
 
-    def test_supergroup_with_username_title(self):
+    def test_supergroup_with_username_and_title(self):
         c = ChatGenerator().get_chat(
             chat_type="supergroup", username="mygroup", title="Awesome Group")
 
