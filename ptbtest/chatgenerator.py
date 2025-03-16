@@ -56,9 +56,9 @@ class ChatGenerator(PtbGenerator):
         Args:
             cid (Optional[int]): Id of the returned chat.
             chat_type (str): Type of chat can be private, group, supergroup or channel.
-            title (Optional[str]): Title  for the group/supergroup/channel/
+            title (Optional[str]): Title  for the group/supergroup/channel.
             username (Optional[str]): Username for the private/supergroup/channel.
-            user (Optional[telegram.User]): If given a private chat for the supplied user will be generated.
+            user (Optional[telegram.User]): If given, a private chat for the supplied user will be generated.
             all_members_are_administrators (Optional[bool]): Sets this flag for a group.
 
         Returns:

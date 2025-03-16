@@ -28,13 +28,13 @@ class PtbGenerator:
     @staticmethod
     def gen_id(group=False):
         """
-        Returns an id in the range telegram id's are valid. defaults to a positive int for a private chat.
+        Returns an id in the range telegram id's are valid. Defaults to a positive int for a private chat.
 
         Args:
             group (optional[bool]): If True will return a negative id for a group chat.
 
         Returns:
-            int: positive or negitve depending on group argument,
+            int: positive or negative depending on group argument,
 
         """
         if group:

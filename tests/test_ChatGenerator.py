@@ -15,17 +15,59 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+import pytest
+
 from ptbtest import ChatGenerator, UserGenerator
 
 
+@pytest.fixture(scope="function")
+def mock_chat():
+    return ChatGenerator()
+
+
 class TestChatGenerator:
-    def test_without_parameters(self):
-        c = ChatGenerator().get_chat()
+    def test_without_parameters(self, mock_chat):
+        c = mock_chat.get_chat()
 
         assert isinstance(c.id, int)
         assert c.id > 0
-        assert c.username == c.first_name + c.last_name
         assert c.type == "private"
+        assert c.username == c.first_name + c.last_name
+
+    def test_cid_only(self, mock_chat):
+        c = mock_chat.get_chat(cid=1)
+
+        assert c.type == "private"
+        assert c.username == c.first_name + c.last_name
+
+        c = mock_chat.get_chat(cid=-1)
+
+        assert c.type == "group"
+        assert c.first_name is None
+        assert c.last_name is None
+
+    def test_invalid_cid(self, mock_chat):
+        c = mock_chat.get_chat(cid=0)
+
+        assert c.id > 0
+        assert c.type == "private"
+        assert c.username == c.first_name + c.last_name
+
+    def test_with_cid_and_private(self, mock_chat):
+        """If cid conflicts with chat_type, cid wins"""
+        c = mock_chat.get_chat(chat_type="private", cid=-1)
+        assert c.id == -1
+        assert c.type == "group"
+
+    def test_with_cid_not_private(self, mock_chat):
+        c = mock_chat.get_chat(chat_type="group", cid=-1)
+        assert c.type == "group"
+
+        c = mock_chat.get_chat(chat_type="supergroup", cid=-1)
+        assert c.type == "supergroup"
+
+        c = mock_chat.get_chat(chat_type="channel", cid=-1)
+        assert c.type == "channel"
 
     def test_group_chat(self):
         c = ChatGenerator().get_chat(chat_type="group")
