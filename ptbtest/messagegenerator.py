@@ -460,7 +460,7 @@ class MessageGenerator(PtbGenerator):
                         first_name=chat.first_name,
                         last_name=chat.last_name,
                         username=chat.username,
-                        id=chat.id)
+                        user_id=chat.id)
                 else:
                     user = self.ug.get_user()
         elif user and private:

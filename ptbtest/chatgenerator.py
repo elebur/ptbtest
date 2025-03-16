@@ -26,8 +26,8 @@ from ptbtest.ptbgenerator import PtbGenerator
 
 class ChatGenerator(PtbGenerator):
     """
-        Chat generator class. placeholder for random names and mainly used
-        via it's get_chat() method
+        Chat generator class. Placeholder for random names and mainly used
+        via it's get_chat() method.
     """
     GROUPNAMES = (
         "Frustrated Vagabonds", "Heir Apparents", "Walky Talky",
@@ -35,7 +35,7 @@ class ChatGenerator(PtbGenerator):
     )
 
     def __init__(self):
-        PtbGenerator.__init__(self)
+        super().__init__()
 
     def get_chat(self,
                  cid=None,
@@ -54,11 +54,12 @@ class ChatGenerator(PtbGenerator):
         generated user.
 
         Args:
+            cid (Optional[int]): Id of the returned chat.
             chat_type (str): Type of chat can be private, group, supergroup or channel.
             title (Optional[str]): Title  for the group/supergroup/channel/
             username (Optional[str]): Username for the private/supergroup/channel.
             user (Optional[telegram.User]): If given a private chat for the supplied user will be generated.
-            all_members_are_administrators: set's this flag for a group.
+            all_members_are_administrators (Optional[bool]): Sets this flag for a group.
 
         Returns:
             telegram.Chat: A telegram Chat object.
@@ -102,3 +103,4 @@ class ChatGenerator(PtbGenerator):
                 title=gn,
                 username=username,
                 api_kwargs={"all_members_are_administrators": all_members_are_administrators})
+

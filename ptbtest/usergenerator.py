@@ -23,25 +23,25 @@ from telegram import User
 
 
 class UserGenerator(PtbGenerator):
-    """User generator class. placeholder for random names and mainly used
-        via it's get_user() method"""
-    FIRST_NAMES = [
+    """User generator class. Placeholder for random names and mainly used
+        via its get_user() method."""
+    FIRST_NAMES = (
         "James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael",
         "Elizabeth", "William", "Linda", "David", "Barbara", "Richard",
         "Susan", "Joseph", "Jessica", "Thomas", "Margaret", "Charles", "Sarah"
-    ]
-    LAST_NAMES = [
+    )
+    LAST_NAMES = (
         "Smith", "Johnson", "Williams", "Jones", "Brown", "Davis", "Miller",
         "Wilson", "Moore", "Taylor"
-    ]
+    )
 
     def __init__(self):
         super().__init__()
 
     def get_user(self, first_name=None, last_name=None, username=None,
-                 id=None):
+                 user_id=None):
         """
-        Returns a telegram.User object with the optionally given name(s) or username
+        Returns a telegram.User object with the optionally given name(s) or username.
         If any of the arguments are omitted the names will be chosen randomly and the
         username will be generated as first_name + last_name.
 
@@ -49,6 +49,7 @@ class UserGenerator(PtbGenerator):
             first_name (Optional[str]): First name for the returned user.
             last_name (Optional[str]): Last name for the returned user.
             username (Optional[str]): Username for the returned user.
+            user_id (Optional[int]): Id for the returned user.
 
         Returns:
             telegram.User: A telegram user object
@@ -61,8 +62,9 @@ class UserGenerator(PtbGenerator):
         if not username:
             username = first_name + last_name
         return User(
-            id or self.gen_id(),
+            user_id or self.gen_id(),
             first_name,
             False,
             last_name=last_name,
             username=username)
+
