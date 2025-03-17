@@ -37,30 +37,40 @@ import unittest
 
 class TestEchobot2(unittest.TestCase):
     def setUp(self):
+
         # For use within the tests we nee some stuff. Starting with a Mockbot
         self.bot = Mockbot()
+
         # Some generators for users and chats
         self.ug = UserGenerator()
         self.cg = ChatGenerator()
+
         # And a Messagegenerator and updater (for use with the bot.)
         self.mg = MessageGenerator(self.bot)
         self.updater = Updater(bot=self.bot)
 
     def test_echo(self):
+
         def echo(update):
             update.message.reply_text(update.message.text)
 
         self.updater.dispatcher.add_handler(MessageHandler(filters.text, echo))
         self.updater.start_polling()
+
         update = self.mg.get_message(text="first message")
         update2 = self.mg.get_message(text="second message")
+
         self.bot.insert_update(update)
         self.bot.insert_update(update2)
+
         self.assertEqual(len(self.bot.sent_messages), 2)
+
         sent = self.bot.sent_messages
+
         self.assertEqual(sent[0]["method"], "sendMessage")
         self.assertEqual(sent[0]["text"], "first message")
         self.assertEqual(sent[1]["text"], "second message")
+
         self.updater.stop()
 ```
 
