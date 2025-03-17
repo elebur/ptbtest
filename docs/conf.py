@@ -35,7 +35,7 @@ extensions = [
 ]
 
 intersphinx_mapping = {
-        'telegram': ('http://python-telegram-bot.readthedocs.io/en/latest/', None)
+        'telegram': ('https://docs.python-telegram-bot.org/en/latest/objects.inv', None)
 }
 intersphinx_disabled_domains = ["std"]
 
