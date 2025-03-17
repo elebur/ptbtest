@@ -20,10 +20,10 @@
 import datetime
 import time
 
-from .updategenerator import update
-from .ptbgenerator import PtbGenerator
-from .entityparser import EntityParser
 from ptbtest import (UserGenerator, ChatGenerator, Mockbot)
+from ptbtest.updategenerator import update
+from ptbtest.ptbgenerator import PtbGenerator
+from ptbtest.entityparser import EntityParser
 from ptbtest.errors import (BadUserException, BadMessageException,
                             BadChatException, BadBotException,
                             BadMarkupException)
