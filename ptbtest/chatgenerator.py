@@ -69,37 +69,24 @@ class ChatGenerator(PtbGenerator):
             if cid < 0:
                 chat_type = "group"
 
-        if user:
-            if isinstance(user, User):
-                u = user
-                return Chat(
-                    cid or u.id,
-                    chat_type,
-                    username=u.username,
-                    first_name=u.first_name,
-                    last_name=u.last_name)
-            else:
+        if user or chat_type == "private":
+            if user and not isinstance(user, User):
                 raise TypeError("user must be a telegram.User instance")
-        elif chat_type == "private":
-            u = UserGenerator().get_user(username=username)
+            
+            u = user if user else UserGenerator().get_user(username=username)
+
             return Chat(
                 cid or u.id,
                 chat_type,
                 username=u.username,
                 first_name=u.first_name,
                 last_name=u.last_name)
-        elif chat_type == "group":
-            if not title:
-                title = random.choice(self.GROUPNAMES) # noqa: S311
-            return Chat(
-                cid or self.gen_id(group=True),
-                chat_type,
-                title=title,
-                api_kwargs={"all_members_are_administrators": all_members_are_administrators})
-        elif chat_type in ("supergroup", "channel"):
+
+        elif chat_type in ("group", "supergroup", "channel"):
             gn = title if title else random.choice(self.GROUPNAMES) # noqa: S311
-            if not username:
+            if not username and chat_type != "group":
                 username = "".join(gn.split(" "))
+
             return Chat(
                 cid or self.gen_id(group=True),
                 chat_type,
