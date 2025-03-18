@@ -17,9 +17,10 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram chats"""
 import random
-from typing import Optional
+from typing import Optional, Union
 
 from telegram import Chat, User
+from telegram.constants import ChatType
 
 from ptbtest import UserGenerator
 from ptbtest.ptbgenerator import PtbGenerator
@@ -40,7 +41,7 @@ class ChatGenerator(PtbGenerator):
 
     def get_chat(self,
                  cid: Optional[int] = None,
-                 chat_type: Optional[str] = "private",
+                 chat_type: Optional[Union[ChatType, str]] = ChatType.PRIVATE,
                  title: Optional[str] = None,
                  username: Optional[str] = None,
                  user: Optional[User] = None,
@@ -55,8 +56,9 @@ class ChatGenerator(PtbGenerator):
         generated user.
 
         Args:
-            cid (Optional[int]): Id of the returned chat.
-            chat_type (str): Type of chat can be private, group, supergroup or channel.
+            cid (Optional[int]): ID of the returned chat.
+            chat_type (Optional[Union[ChatType, str]]): Type of the chat can be either
+                telegram.constants.ChatType or the string literal ("private", "group", "supergroup", "channel").
             title (Optional[str]): Title  for the group/supergroup/channel.
             username (Optional[str]): Username for the private/supergroup/channel.
             user (Optional[telegram.User]): If given, a private chat for the supplied user will be generated.
@@ -66,11 +68,11 @@ class ChatGenerator(PtbGenerator):
             telegram.Chat: A telegram Chat object.
 
         """
-        if cid and chat_type == 'private':
+        if cid and chat_type == ChatType.PRIVATE:
             if cid < 0:
-                chat_type = "group"
+                chat_type = ChatType.GROUP
 
-        if user or chat_type == "private":
+        if user or chat_type == ChatType.PRIVATE:
             if user and not isinstance(user, User):
                 raise TypeError("user must be a telegram.User instance")
 
@@ -83,9 +85,9 @@ class ChatGenerator(PtbGenerator):
                 first_name=u.first_name,
                 last_name=u.last_name)
 
-        elif chat_type in ("group", "supergroup", "channel"):
+        elif chat_type in (ChatType.GROUP, ChatType.SUPERGROUP, ChatType.CHANNEL):
             gn = title if title else random.choice(self.GROUPNAMES) # noqa: S311
-            if not username and chat_type != "group":
+            if not username and chat_type != ChatType.GROUP:
                 username = "".join(gn.split(" "))
 
             return Chat(
