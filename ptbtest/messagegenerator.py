@@ -91,7 +91,7 @@ class MessageGenerator(PtbGenerator):
             **kwargs: See get_message
 
         Returns:
-            telegram.Update: A telegram update object containing a :py:class:`telegram.Message.
+            telegram.Update: A telegram update object containing a :py:class:`telegram.Message`.
         """
         if chat:
             if not isinstance(chat, Chat):

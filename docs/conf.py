@@ -41,6 +41,8 @@ intersphinx_mapping = {
 }
 intersphinx_disabled_domains = ["std"]
 
+autodoc_mock_imports = ['python-telegram-bot']
+
 templates_path = ["_templates"]
 
 # -- Options for EPUB output
