@@ -15,9 +15,9 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-from multiprocessing.spawn import is_forking
 
 import pytest
+from telegram.constants import ChatType
 
 from ptbtest import ChatGenerator, UserGenerator
 
@@ -37,17 +37,18 @@ class TestChatGenerator:
         assert c.username == c.first_name + c.last_name
         assert c.is_forum is False
 
-    def test_cid_only(self, mock_chat):
+    def test_positive_cid_only(self, mock_chat):
         c = mock_chat.get_chat(cid=1)
 
         assert c.type == "private"
         assert c.username == c.first_name + c.last_name
 
-        c = mock_chat.get_chat(cid=-1)
+    def test_negative_cid_only(self, mock_chat):
 
-        assert c.type == "group"
-        assert c.first_name is None
-        assert c.last_name is None
+        with pytest.raises(ValueError) as exc:
+            mock_chat.get_chat(cid=-1)
+
+        assert "Only groups and supergroups can have the negative 'cid'" == str(exc.value)
 
     def test_zero_cid(self, mock_chat):
         c = mock_chat.get_chat(cid=0)
@@ -56,11 +57,19 @@ class TestChatGenerator:
         assert c.type == "private"
         assert c.username == c.first_name + c.last_name
 
-    def test_with_cid_and_private(self, mock_chat):
-        """If cid conflicts with chat_type, cid wins"""
-        c = mock_chat.get_chat(chat_type="private", cid=-1)
-        assert c.id == -1
-        assert c.type == "group"
+    @pytest.mark.parametrize("type", [(ChatType.PRIVATE,), (ChatType.CHANNEL,)])
+    def test_negative_cid_with_channel_and_private(self, mock_chat, type):
+        with pytest.raises(ValueError) as exc:
+            mock_chat.get_chat(cid=-1)
+
+        assert "Only groups and supergroups can have the negative 'cid'" == str(exc.value)
+
+    @pytest.mark.parametrize("type", [(ChatType.GROUP,), (ChatType.SUPERGROUP,)])
+    def test_positive_cid_with_group_and_supergroup(self, mock_chat, type):
+        with pytest.raises(ValueError) as exc:
+            mock_chat.get_chat(cid=1, chat_type=type)
+
+        assert "Only private chats and channels can have the positive 'cid'" == str(exc.value)
 
     def test_with_cid_not_private(self, mock_chat):
         c = mock_chat.get_chat(chat_type="group", cid=-1)
@@ -68,9 +77,6 @@ class TestChatGenerator:
 
         c = mock_chat.get_chat(chat_type="supergroup", cid=-1)
         assert c.type == "supergroup"
-
-        c = mock_chat.get_chat(chat_type="channel", cid=-1)
-        assert c.type == "channel"
 
     def test_private_from_user(self):
         u = UserGenerator().get_user()
