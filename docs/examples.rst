@@ -1,11 +1,8 @@
 Examples
 ========
 
-In this section we display small examples to show what a bot written with
-``python-telegram-bot`` looks like.
-Some bots focus on one specific
-aspect of the Telegram Bot API while others focus on one of the
-mechanics of this library.
+Here are some small examples to show how a developer can user ``PTBtest`` to write
+unit tests for a ``python-telegram-bot`` bot.
 
 All examples are licensed under the `CC0
 License <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/LICENSE.txt>`__
@@ -18,6 +15,7 @@ Contents
 .. toctree::
 
    examples.test_echobot
+   examples.test_timerbot
 
 :any:`examples.test_echobot`
 ----------------------------
@@ -25,3 +23,10 @@ Contents
 This is the base example of how to use PTBtest to write unit tests for your 
 ``python-telegram-bot``. It is based on `echobot <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/echobot.py>`__
 which simply replies to each text message with a message that contains the same text.
+
+:any:`examples.test_timerbot`
+-----------------------------
+
+This example follows the timerbot example at: `timerbot <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/timerbot.py>`__.
+We will skip the start and help handlers and focus on the timer.
+
