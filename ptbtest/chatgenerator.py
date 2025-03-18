@@ -17,6 +17,7 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram chats"""
 import random
+from typing import Optional
 
 from telegram import Chat, User
 
@@ -38,13 +39,13 @@ class ChatGenerator(PtbGenerator):
         super().__init__()
 
     def get_chat(self,
-                 cid=None,
-                 chat_type="private",
-                 title=None,
-                 username=None,
-                 user=None,
+                 cid: Optional[int] = None,
+                 chat_type: Optional[str] = "private",
+                 title: Optional[str] = None,
+                 username: Optional[str] = None,
+                 user: Optional[User] = None,
                  *,
-                 all_members_are_administrators=False):
+                 all_members_are_administrators: bool = False) -> Chat:
         """
         Returns a telegram.Chat object with the optionally given type or username
         If any of the arguments are omitted the names will be chosen randomly and the
@@ -72,7 +73,7 @@ class ChatGenerator(PtbGenerator):
         if user or chat_type == "private":
             if user and not isinstance(user, User):
                 raise TypeError("user must be a telegram.User instance")
-            
+
             u = user if user else UserGenerator().get_user(username=username)
 
             return Chat(
