@@ -12,6 +12,13 @@ License <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/
 and are therefore fully dedicated to the public domain. You can use them
 as the base for your own bots without worrying about copyrights.
 
+Contents
+--------
+
+.. toctree::
+
+   examples.test_echobot
+
 :any:`examples.test_echobot`
 ----------------------------
 
