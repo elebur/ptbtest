@@ -41,7 +41,7 @@ class ChatGenerator(PtbGenerator):
 
     def get_chat(self,
                  cid: Optional[int] = None,
-                 chat_type: Optional[Union[ChatType, str]] = ChatType.PRIVATE,
+                 chat_type: Union[ChatType, str] = ChatType.PRIVATE,
                  title: Optional[str] = None,
                  username: Optional[str] = None,
                  user: Optional[User] = None,
@@ -58,7 +58,7 @@ class ChatGenerator(PtbGenerator):
 
         Args:
             cid (Optional[int]): ID of the returned chat.
-            chat_type (Optional[Union[ChatType, str]]): Type of the chat can be either
+            chat_type (Union[ChatType, str]): Type of the chat can be either
                 telegram.constants.ChatType or the string literal ("private", "group", "supergroup", "channel").
             title (Optional[str]): Title  for the group/supergroup/channel.
             username (Optional[str]): Username for the private/supergroup/channel.
@@ -69,9 +69,11 @@ class ChatGenerator(PtbGenerator):
         Returns:
             telegram.Chat: A telegram Chat object.
         """
-        if cid and chat_type == ChatType.PRIVATE:
-            if cid < 0:
-                chat_type = ChatType.GROUP
+        if cid:
+            if cid < 0 and chat_type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+                raise ValueError("Only groups and supergroups can have the negative 'cid'")
+            elif cid > 0 and chat_type not in (ChatType.PRIVATE, ChatType.CHANNEL):
+                raise ValueError("Only private chats and channels can have the positive 'cid'")
 
         if is_forum and chat_type not in (ChatType.GROUP, ChatType.SUPERGROUP):
             raise ValueError("'is_forum' can be True for groups and supergroups only")
