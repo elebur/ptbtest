@@ -13,7 +13,7 @@ and are therefore fully dedicated to the public domain. You can use them
 as the base for your own bots without worrying about copyrights.
 
 :any:`examples.test_echobot`
------------------------
+----------------------------
 
 This is the base example of how to use PTBtest to write unit tests for your 
 ``python-telegram-bot``. It is based on `echobot <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/echobot.py>`__
