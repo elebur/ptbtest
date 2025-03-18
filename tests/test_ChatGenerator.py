@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+from multiprocessing.spawn import is_forking
+
 import pytest
 
 from ptbtest import ChatGenerator, UserGenerator
@@ -33,6 +35,7 @@ class TestChatGenerator:
         assert c.id > 0
         assert c.type == "private"
         assert c.username == c.first_name + c.last_name
+        assert c.is_forum is False
 
     def test_cid_only(self, mock_chat):
         c = mock_chat.get_chat(cid=1)
@@ -150,3 +153,29 @@ class TestChatGenerator:
 
         assert c.title == "Awesome Group"
         assert c.username == "AwesomeGroup"
+
+    def test_topics_enabled_for_groups(self, mock_chat):
+        ch = mock_chat.get_chat(chat_type="group", is_forum=True)
+        assert ch.is_forum is True
+
+    def test_topics_enabled_for_supergroups(self, mock_chat):
+        ch = mock_chat.get_chat(chat_type="supergroup", is_forum=True)
+        assert ch.is_forum is True
+
+    def test_topics_disabled(self, mock_chat):
+        ch = mock_chat.get_chat(chat_type="group", is_forum=False)
+        assert ch.is_forum is False
+
+    def test_topics_enabled_for_private_chat(self, mock_chat):
+
+        with pytest.raises(ValueError) as exc:
+            mock_chat.get_chat(cid=1, chat_type="private", is_forum=True)
+
+        assert "'is_forum' can be True for groups and supergroups only" == str(exc.value)
+
+    def test_topics_enabled_for_channel(self, mock_chat):
+
+        with pytest.raises(ValueError) as exc:
+            mock_chat.get_chat(cid=1, chat_type="channel", is_forum=True)
+
+        assert "'is_forum' can be True for groups and supergroups only" == str(exc.value)
