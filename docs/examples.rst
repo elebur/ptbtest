@@ -5,10 +5,7 @@ In this section we display small examples to show what a bot written with
 ``python-telegram-bot`` looks like.
 Some bots focus on one specific
 aspect of the Telegram Bot API while others focus on one of the
-mechanics of this library. Except for the
-:any:`examples.rawapibot` example, they all use the high-level
-framework this library provides with the
-:mod:`telegram.ext` submodule.
+mechanics of this library.
 
 All examples are licensed under the `CC0
 License <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/LICENSE.txt>`__
