@@ -15,7 +15,7 @@ License <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/
 and are therefore fully dedicated to the public domain. You can use them
 as the base for your own bots without worrying about copyrights.
 
-:any:`examples.echobot2`
+:any:`examples.echobot`
 -----------------------
 
 This is the base example of how to use PTBtest to write unit tests for your 
