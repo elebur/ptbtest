@@ -45,6 +45,7 @@ class ChatGenerator(PtbGenerator):
                  title: Optional[str] = None,
                  username: Optional[str] = None,
                  user: Optional[User] = None,
+                 is_forum: bool = False,
                  *,
                  all_members_are_administrators: bool = False) -> Chat:
         """
@@ -62,15 +63,18 @@ class ChatGenerator(PtbGenerator):
             title (Optional[str]): Title  for the group/supergroup/channel.
             username (Optional[str]): Username for the private/supergroup/channel.
             user (Optional[telegram.User]): If given, a private chat for the supplied user will be generated.
+            is_forum (bool): True, if the supergroup chat is a forum (has topics enabled)
             all_members_are_administrators (Optional[bool]): Sets this flag for a group.
 
         Returns:
             telegram.Chat: A telegram Chat object.
-
         """
         if cid and chat_type == ChatType.PRIVATE:
             if cid < 0:
                 chat_type = ChatType.GROUP
+
+        if is_forum and chat_type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+            raise ValueError("'is_forum' can be True for groups and supergroups only")
 
         if user or chat_type == ChatType.PRIVATE:
             if user and not isinstance(user, User):
@@ -83,7 +87,8 @@ class ChatGenerator(PtbGenerator):
                 chat_type,
                 username=u.username,
                 first_name=u.first_name,
-                last_name=u.last_name)
+                last_name=u.last_name,
+                is_forum=is_forum)
 
         elif chat_type in (ChatType.GROUP, ChatType.SUPERGROUP, ChatType.CHANNEL):
             gn = title if title else random.choice(self.GROUPNAMES) # noqa: S311
@@ -95,5 +100,6 @@ class ChatGenerator(PtbGenerator):
                 chat_type,
                 title=gn,
                 username=username,
+                is_forum=is_forum,
                 api_kwargs={"all_members_are_administrators": all_members_are_administrators})
 
