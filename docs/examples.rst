@@ -13,6 +13,7 @@ Contents
 --------
 
 .. toctree::
+   :hidden:
 
    examples.test_echobot
    examples.test_timerbot
