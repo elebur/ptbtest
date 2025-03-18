@@ -1,7 +1,7 @@
 Examples
 ========
 
-Here are some small examples to show how a developer can user ``PTBtest`` to write
+Here are some small examples to show how a developer can use ``PTBtest`` to write
 unit tests for a ``python-telegram-bot`` bot.
 
 All examples are licensed under the `CC0
@@ -17,6 +17,9 @@ Contents
 
    examples.test_echobot
    examples.test_timerbot
+   examples.test_conversationbot2
+   examples.test_inlinebot
+   examples.test_inlinekeyboard
 
 :any:`examples.test_echobot`
 ----------------------------
@@ -30,4 +33,13 @@ which simply replies to each text message with a message that contains the same 
 
 This example follows the timerbot example at: `timerbot <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/timerbot.py>`__.
 We will skip the start and help handlers and focus on the timer.
+
+:any:`examples.test_conversationbot2`
+-------------------------------------
+
+:any:`examples.test_inlinebot`
+------------------------------
+
+:any:`examples.test_inlinekeyboard`
+-----------------------------------
 
