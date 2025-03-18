@@ -57,14 +57,14 @@ class TestChatGenerator:
         assert c.type == "private"
         assert c.username == c.first_name + c.last_name
 
-    @pytest.mark.parametrize("type", [(ChatType.PRIVATE,), (ChatType.CHANNEL,)])
+    @pytest.mark.parametrize(["type"], [(ChatType.PRIVATE,), (ChatType.CHANNEL,)])
     def test_negative_cid_with_channel_and_private(self, mock_chat, type):
         with pytest.raises(ValueError) as exc:
             mock_chat.get_chat(cid=-1)
 
         assert "Only groups and supergroups can have the negative 'cid'" == str(exc.value)
 
-    @pytest.mark.parametrize("type", [(ChatType.GROUP,), (ChatType.SUPERGROUP,)])
+    @pytest.mark.parametrize(["type"], [(ChatType.GROUP,), (ChatType.SUPERGROUP,)])
     def test_positive_cid_with_group_and_supergroup(self, mock_chat, type):
         with pytest.raises(ValueError) as exc:
             mock_chat.get_chat(cid=1, chat_type=type)
@@ -172,16 +172,9 @@ class TestChatGenerator:
         ch = mock_chat.get_chat(chat_type="group", is_forum=False)
         assert ch.is_forum is False
 
-    def test_topics_enabled_for_private_chat(self, mock_chat):
-
+    @pytest.mark.parametrize(["type"], [(ChatType.PRIVATE,), (ChatType.CHANNEL,)])
+    def test_topics_enabled_for_private_and_channel(self, mock_chat, type):
         with pytest.raises(ValueError) as exc:
-            mock_chat.get_chat(cid=1, chat_type="private", is_forum=True)
-
-        assert "'is_forum' can be True for groups and supergroups only" == str(exc.value)
-
-    def test_topics_enabled_for_channel(self, mock_chat):
-
-        with pytest.raises(ValueError) as exc:
-            mock_chat.get_chat(cid=1, chat_type="channel", is_forum=True)
+            mock_chat.get_chat(cid=1, chat_type=type, is_forum=True)
 
         assert "'is_forum' can be True for groups and supergroups only" == str(exc.value)
