@@ -70,9 +70,7 @@ html_css_files = ["css/custom.css"]
 html_sidebars = {
     '**': [
         'about.html',
-        'searchfield.html',
         'navigation.html',
-        'relations.html',
         'donate.html',
     ]
 }
