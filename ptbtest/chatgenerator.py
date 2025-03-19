@@ -41,7 +41,7 @@ class ChatGenerator(PtbGenerator):
 
     def get_chat(self,
                  cid: Optional[int] = None,
-                 chat_type: Optional[Union[ChatType, str]] = None,
+                 type: Optional[Union[ChatType, str]] = None,
                  title: Optional[str] = None,
                  username: Optional[str] = None,
                  user: Optional[User] = None,
@@ -58,7 +58,7 @@ class ChatGenerator(PtbGenerator):
 
         Args:
             cid (Optional[int]): ID of the returned chat.
-            chat_type (Optional[Union[ChatType, str]]): Type of the chat can be either
+            type (Optional[Union[ChatType, str]]): Type of the chat can be either
                 telegram.constants.ChatType or the string literal ("private", "group", "supergroup", "channel").
             title (Optional[str]): Title  for the group/supergroup/channel.
             username (Optional[str]): Username for the private/supergroup/channel.
@@ -70,22 +70,22 @@ class ChatGenerator(PtbGenerator):
             telegram.Chat: A telegram Chat object.
         """
         if cid:
-            if chat_type:
-                if cid < 0 and chat_type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+            if type:
+                if cid < 0 and type not in (ChatType.GROUP, ChatType.SUPERGROUP):
                     raise ValueError("Only groups and supergroups can have the negative 'cid'")
-                elif cid > 0 and chat_type not in (ChatType.PRIVATE, ChatType.CHANNEL):
+                elif cid > 0 and type not in (ChatType.PRIVATE, ChatType.CHANNEL):
                     raise ValueError("Only private chats and channels can have the positive 'cid'")
         else:
-            is_group = True if chat_type in (ChatType.GROUP, ChatType.SUPERGROUP) else False
+            is_group = True if type in (ChatType.GROUP, ChatType.SUPERGROUP) else False
             cid = self.gen_id(is_group)
 
-        if not chat_type:
-            chat_type = ChatType.GROUP if cid < 0 else ChatType.PRIVATE
+        if not type:
+            type = ChatType.GROUP if cid < 0 else ChatType.PRIVATE
 
-        if is_forum and chat_type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+        if is_forum and type not in (ChatType.GROUP, ChatType.SUPERGROUP):
             raise ValueError("'is_forum' can be True for groups and supergroups only")
 
-        if user or chat_type == ChatType.PRIVATE:
+        if user or type == ChatType.PRIVATE:
             if user and not isinstance(user, User):
                 raise TypeError("user must be a telegram.User instance")
 
@@ -93,22 +93,21 @@ class ChatGenerator(PtbGenerator):
 
             return Chat(
                 u.id or cid,
-                chat_type,
+                type,
                 username=u.username,
                 first_name=u.first_name,
                 last_name=u.last_name,
                 is_forum=is_forum)
 
-        elif chat_type in (ChatType.GROUP, ChatType.SUPERGROUP, ChatType.CHANNEL):
+        elif type in (ChatType.GROUP, ChatType.SUPERGROUP, ChatType.CHANNEL):
             gn = title if title else random.choice(self.GROUPNAMES) # noqa: S311
-            if not username and chat_type != ChatType.GROUP:
+            if not username and type != ChatType.GROUP:
                 username = "".join(gn.split(" "))
 
             return Chat(
                 cid or self.gen_id(group=True),
-                chat_type,
+                type,
                 title=gn,
                 username=username,
                 is_forum=is_forum,
                 api_kwargs={"all_members_are_administrators": all_members_are_administrators})
-

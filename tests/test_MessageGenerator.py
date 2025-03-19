@@ -79,13 +79,13 @@ class TestMessageGeneratorCore:
         assert u.message.chat.id == u.message.from_user.id
         assert u.message.chat.id == chat.id
 
-        chat = cg.get_chat(chat_type="group")
+        chat = cg.get_chat(type="group")
         u = MessageGenerator().get_message(chat=chat)
         assert u.message.from_user.id != u.message.chat.id
         assert u.message.chat.id == chat.id
 
         with pytest.raises(BadChatException, match="get_channel_post"):
-            chat = cg.get_chat(chat_type="channel")
+            chat = cg.get_chat(type="channel")
             MessageGenerator().get_message(chat=chat)
 
         with pytest.raises(BadChatException):
@@ -224,7 +224,7 @@ class TestMessageGeneratorForwards:
 
     @pytest.fixture(scope="function")
     def mock_group_chat(self):
-        return ChatGenerator().get_chat(chat_type="group")
+        return ChatGenerator().get_chat(type="group")
 
     def test_forwarded_message(self):
         """
@@ -233,7 +233,7 @@ class TestMessageGeneratorForwards:
         """
         u1 = UserGenerator().get_user()
         u2 = UserGenerator().get_user()
-        c = ChatGenerator().get_chat(chat_type="group")
+        c = ChatGenerator().get_chat(type="group")
         u = MessageGenerator().get_message(
             user=u1, chat=c, forward_from=u2, text="This is a test")
         assert u.message.from_user.id == u1.id
@@ -256,7 +256,7 @@ class TestMessageGeneratorForwards:
         The API of the PTB v21.x doesn't have 'forward_from' attribute
         in the Message object.
         """
-        c = ChatGenerator().get_chat(chat_type="channel")
+        c = ChatGenerator().get_chat(type="channel")
         us = UserGenerator().get_user()
         u = MessageGenerator().get_message(
             text="This is a test", forward_from=us, forward_from_chat=c)
@@ -287,7 +287,7 @@ class TestMessageGeneratorForwards:
 class TestMessageGeneratorStatusMessages:
     def test_new_chat_member(self):
         user = UserGenerator().get_user()
-        chat = ChatGenerator().get_chat(chat_type="group")
+        chat = ChatGenerator().get_chat(type="group")
         u = MessageGenerator().get_message(chat=chat, new_chat_members=[user])
         assert u.message.new_chat_members[0].id == user.id
 
@@ -299,7 +299,7 @@ class TestMessageGeneratorStatusMessages:
 
     def test_left_chat_member(self):
         user = UserGenerator().get_user()
-        chat = ChatGenerator().get_chat(chat_type='group')
+        chat = ChatGenerator().get_chat(type='group')
         u = MessageGenerator().get_message(chat=chat, left_chat_member=user)
         assert u.message.left_chat_member.id == user.id
 
@@ -312,7 +312,7 @@ class TestMessageGeneratorStatusMessages:
         """
         This test works with the PTB v13.5 but doesn't work the v21.x
         """
-        chat = ChatGenerator().get_chat(chat_type="group")
+        chat = ChatGenerator().get_chat(type="group")
         u = MessageGenerator().get_message(chat=chat, new_chat_title="New title")
         assert u.message.chat.title == "New title"
         assert u.message.chat.title == chat.title
@@ -321,7 +321,7 @@ class TestMessageGeneratorStatusMessages:
             MessageGenerator().get_message(new_chat_title="New title")
 
     def test_new_chat_photo(self):
-        chat = ChatGenerator().get_chat(chat_type="group")
+        chat = ChatGenerator().get_chat(type="group")
         u = MessageGenerator().get_message(chat=chat, new_chat_photo=True)
         assert isinstance(u.message.new_chat_photo, Sequence)
         assert isinstance(u.message.new_chat_photo[0], PhotoSize)
@@ -342,7 +342,7 @@ class TestMessageGeneratorStatusMessages:
         """
         This test works with the PTB v13.5 but doesn't work the v21.x
         """
-        chat = ChatGenerator().get_chat(chat_type="supergroup")
+        chat = ChatGenerator().get_chat(type="supergroup")
         message = MessageGenerator().get_message(
             chat=chat, text="this will be pinned").message
         u = MessageGenerator().get_message(chat=chat, pinned_message=message)
@@ -531,8 +531,8 @@ class TestMessageGeneratorChannelPost:
 
     def test_with_chat(self):
         cg = ChatGenerator()
-        group = cg.get_chat(chat_type="group")
-        channel = cg.get_chat(chat_type="channel")
+        group = cg.get_chat(type="group")
+        channel = cg.get_chat(type="channel")
         u = MessageGenerator().get_channel_post(chat=channel)
         assert channel.title == u.channel_post.chat.title
 
