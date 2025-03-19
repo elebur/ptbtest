@@ -34,3 +34,7 @@ python:
   install:
     - requirements: docs/requirements.txt
 
+search:
+  ranking:
+    # Match a single file
+    ptbtest.errors.html: -10
