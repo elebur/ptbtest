@@ -65,6 +65,8 @@ html_theme = "alabaster"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+html_css_files = ["css/custom.css"]
+
 
 # The version info for the project yo're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
