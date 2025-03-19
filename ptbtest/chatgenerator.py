@@ -17,6 +17,7 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram chats"""
 import random
+import warnings
 from typing import Optional, Union
 
 from telegram import Chat, User
@@ -78,36 +79,52 @@ class ChatGenerator(PtbGenerator):
         else:
             is_group = True if type in (ChatType.GROUP, ChatType.SUPERGROUP) else False
             cid = self.gen_id(is_group)
+        chat_id = cid
 
-        if not type:
-            type = ChatType.GROUP if cid < 0 else ChatType.PRIVATE
+        chat_type = type
+        if not chat_type:
+            chat_type = ChatType.GROUP if cid < 0 else ChatType.PRIVATE
 
-        if is_forum and type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+        if is_forum and chat_type not in (ChatType.GROUP, ChatType.SUPERGROUP):
             raise ValueError("'is_forum' can be True for groups and supergroups only")
 
-        if user or type == ChatType.PRIVATE:
-            if user and not isinstance(user, User):
+        if user:
+            if not isinstance(user, User):
                 raise TypeError("user must be a telegram.User instance")
+            elif chat_type != ChatType.PRIVATE:
+                if chat_type is not None:
+                    warnings.warn(f"'type' was forcibly changed to 'private' instead of "
+                                  f"'{chat_type}' because you set 'user' parameter")
+                chat_type = ChatType.PRIVATE
 
-            u = user if user else UserGenerator().get_user(username=username)
+        chat_user = user
+        if not chat_user and chat_type == ChatType.PRIVATE:
+            chat_user = UserGenerator().get_user(username=username)
 
-            return Chat(
-                u.id or cid,
-                type,
-                username=u.username,
-                first_name=u.first_name,
-                last_name=u.last_name,
-                is_forum=is_forum)
+        chat_title = title
+        chat_username = username
+        chat_first_name = None
+        chat_last_name = None
+        chat_api_kwargs = None
 
-        elif type in (ChatType.GROUP, ChatType.SUPERGROUP, ChatType.CHANNEL):
-            gn = title if title else random.choice(self.GROUPNAMES) # noqa: S311
-            if not username and type != ChatType.GROUP:
-                username = "".join(gn.split(" "))
+        # Configuring private chats.
+        if chat_user:
+            chat_id = chat_user.id
+            chat_username = chat_user.username
+            chat_first_name = chat_user.first_name
+            chat_last_name = chat_user.last_name
+        # Configuring channels, groups and supergroups.
+        else:
+            chat_title = chat_title if chat_title else random.choice(self.GROUPNAMES)  # noqa: S311
+            if not chat_username and chat_type != ChatType.GROUP:
+                chat_username = "".join(chat_title.split(" "))
+            chat_api_kwargs = {"all_members_are_administrators": all_members_are_administrators}
 
-            return Chat(
-                cid or self.gen_id(group=True),
-                type,
-                title=gn,
-                username=username,
-                is_forum=is_forum,
-                api_kwargs={"all_members_are_administrators": all_members_are_administrators})
+        return Chat(chat_id,
+                    chat_type,
+                    username=chat_username,
+                    first_name=chat_first_name,
+                    last_name=chat_last_name,
+                    title=chat_title,
+                    is_forum=is_forum,
+                    api_kwargs=chat_api_kwargs)
