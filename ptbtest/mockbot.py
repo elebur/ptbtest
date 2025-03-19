@@ -56,29 +56,29 @@ class Mockbot(TelegramObject):
 
     @property
     def sent_messages(self):
-    """
-    A list of every message sent with this bot.
+        """
+        A list of every message sent with this bot.
 
-    It contains the data dict usually passed to the methods that actually send data to Telegram, with an added field
-    named ``method`` which will contain the method used to send this message to the server.
+        It contains the data dict usually passed to the methods that actually send data to Telegram, with an added field
+        named ``method`` which will contain the method used to send this message to the server.
 
-    Examples:
-        A call to
+        Examples:
+            A call to
 
-        ``send_message(1, "hello")``
+            ``send_message(1, "hello")``
 
-        will return the following
+            will return the following
 
-        {'text': 'hello', 'chat_id': 1, 'method': 'send_message'}
+            ``{'text': 'hello', 'chat_id': 1, 'method': 'send_message'}``
 
-        A call to
+            A call to
 
-        ``edit_message_text(text="test 2", inline_message_id=404, disable_web_page_preview=True)``::
+            ``edit_message_text(text="test 2", inline_message_id=404, disable_web_page_preview=True)``::
 
-        results in
+            results in
 
-        {'inline_message_id': 404, 'text': 'test 2', 'method': 'edit_message_text', 'disable_web_page_preview': True}
-    """
+            ``{'inline_message_id': 404, 'text': 'test 2', 'method': 'edit_message_text', 'disable_web_page_preview': True}``
+        """
         return self._sendmessages
 
     @property
