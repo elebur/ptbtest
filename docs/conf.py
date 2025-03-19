@@ -69,6 +69,9 @@ html_css_files = ["css/custom.css"]
 
 html_theme_options = {
     "fixed_sidebar": True,
+    "github_button": True,
+    "github_repo": "https://github.com/AlexPHorta/ptbtest",
+    "github_user": "AlexPHorta",
     "page_width": "70%",
 }
 
