@@ -67,14 +67,6 @@ html_static_path = ["_static"]
 
 html_css_files = ["css/custom.css"]
 
-html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'donate.html',
-    ]
-}
-
 # The version info for the project yo're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
