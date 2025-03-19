@@ -70,7 +70,6 @@ html_css_files = ["css/custom.css"]
 html_theme_options = {
     "fixed_sidebar": True,
     "page_width": "70%",
-    "sidebar_width": "20%",
 }
 
 # The version info for the project yo're documenting, acts as replacement for
