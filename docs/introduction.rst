@@ -12,7 +12,7 @@ Its features include:
 Installation
 ------------
 
-PTBtest supports Python versions 3.9 and above. It's recommended to user a virtual environment to isolate your project's dependencies from other projects and the system. That said, you can install PTBtest with:
+PTBtest supports Python versions 3.9 and above. It's recommended to use a virtual environment to isolate your project's dependencies from other projects and the system. That said, you can install PTBtest with:
 
 .. code:: shell
 

@@ -33,31 +33,17 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 class Mockbot(TelegramObject):
     """
-    The Mockbot is a fake telegram-bot that does not require a token or a connection to the telegram
-    servers. It's used to mimmick all methods of python-telegram-bot instance, but never contact the telegram servers.
-    All methods as described in :py:class:`telegram.Bot` are functional and described here are only
-    the special methods added for testing functionality
-
-
+    The Mockbot is a fake telegram-bot that does not require a token or a connection to Telegram's
+    servers. It's used to mimmick all methods of a ``python-telegram-bot`` instance, without a single network connection.
+    All methods described in :py:class:`telegram.Bot` are functional and here are described only
+    the special methods added for testing functionality.
 
     Attributes:
         sent_messages ([dict<sent message>]): A list of every message sent with this bot.
 
-    It will contain
-    the data dict usually passed to the methods actually sending data to telegram. With an added field
-    named ``method`` which will contain the method used to send this message to the server.
-
-    Examples:
-        A call to ``send_message(1, "hello")`` will return the following::
-
-        {'text': 'hello', 'chat_id': 1, 'method': 'send_message'}
-
-        A call to ``edit_message_text(text="test 2", inline_message_id=404, disable_web_page_preview=True)``::
-
-        {'inline_message_id': 404, 'text': 'test 2', 'method': 'edit_message_text', 'disable_web_page_preview': True}
     Parameters:
-        username (Optional[str]): Username for this bot. Defaults to 'MockBot'"""
-
+        username (Optional[str]): Username for this bot. Defaults to 'MockBot'
+    """
     def __init__(self, username="MockBot", **kwargs):
         self._updates = []
         self._bot = None
@@ -70,6 +56,29 @@ class Mockbot(TelegramObject):
 
     @property
     def sent_messages(self):
+    """
+    A list of every message sent with this bot.
+
+    It contains the data dict usually passed to the methods that actually send data to Telegram, with an added field
+    named ``method`` which will contain the method used to send this message to the server.
+
+    Examples:
+        A call to
+
+        ``send_message(1, "hello")``
+
+        will return the following::
+
+        {'text': 'hello', 'chat_id': 1, 'method': 'send_message'}
+
+        A call to
+
+        ``edit_message_text(text="test 2", inline_message_id=404, disable_web_page_preview=True)``::
+
+        results in::
+
+        {'inline_message_id': 404, 'text': 'test 2', 'method': 'edit_message_text', 'disable_web_page_preview': True}
+    """
         return self._sendmessages
 
     @property
