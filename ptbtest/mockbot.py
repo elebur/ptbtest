@@ -67,7 +67,7 @@ class Mockbot(TelegramObject):
 
         ``send_message(1, "hello")``
 
-        will return the following::
+        will return the following
 
         {'text': 'hello', 'chat_id': 1, 'method': 'send_message'}
 
@@ -75,7 +75,7 @@ class Mockbot(TelegramObject):
 
         ``edit_message_text(text="test 2", inline_message_id=404, disable_web_page_preview=True)``::
 
-        results in::
+        results in
 
         {'inline_message_id': 404, 'text': 'test 2', 'method': 'edit_message_text', 'disable_web_page_preview': True}
     """
