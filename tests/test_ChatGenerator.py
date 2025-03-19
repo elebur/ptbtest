@@ -116,6 +116,17 @@ class TestChatGenerator:
         assert c.first_name
         assert c.last_name
 
+    @pytest.mark.parametrize(["chat_type"],[(ChatType.GROUP,), (ChatType.SUPERGROUP,), (ChatType.CHANNEL,)])
+    def test_chat_with_user_but_not_private_chat_turns_into_private_and_send_warning(self, mock_chat, chat_type):
+        user = UserGenerator().get_user()
+
+        warn_message = re.escape("'type' was forcibly changed to 'private' instead of "
+                                 f"'{chat_type}' because you set 'user' parameter")
+        with pytest.warns(UserWarning, match=warn_message):
+            chat = mock_chat.get_chat(user=user, type=chat_type)
+
+        assert chat.type == ChatType.PRIVATE
+
     def test_private_no_username(self):
         c = ChatGenerator().get_chat(type="private")
 
