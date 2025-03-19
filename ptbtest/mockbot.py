@@ -33,31 +33,15 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 class Mockbot(TelegramObject):
     """
-    The Mockbot is a fake telegram-bot that does not require a token or a connection to the telegram
-    servers. It's used to mimmick all methods of python-telegram-bot instance, but never contact the telegram servers.
-    All methods as described in :py:class:`telegram.Bot` are functional and described here are only
-    the special methods added for testing functionality
+    The Mockbot is a fake telegram-bot that does not require a token or a connection to Telegram's
+    servers. It's used to mimmick all methods of a ``python-telegram-bot`` instance, without a single network connection.
+    All methods described in :py:class:`telegram.Bot` are functional and here are described only
+    the special methods added for testing functionality.
 
 
-
-    Attributes:
-        sent_messages ([dict<sent message>]): A list of every message sent with this bot.
-
-    It will contain
-    the data dict usually passed to the methods actually sending data to telegram. With an added field
-    named ``method`` which will contain the method used to send this message to the server.
-
-    Examples:
-        A call to ``send_message(1, "hello")`` will return the following::
-
-        {'text': 'hello', 'chat_id': 1, 'method': 'send_message'}
-
-        A call to ``edit_message_text(text="test 2", inline_message_id=404, disable_web_page_preview=True)``::
-
-        {'inline_message_id': 404, 'text': 'test 2', 'method': 'edit_message_text', 'disable_web_page_preview': True}
     Parameters:
-        username (Optional[str]): Username for this bot. Defaults to 'MockBot'"""
-
+        username (Optional[str]): Username for this bot. Defaults to 'MockBot'.
+    """
     def __init__(self, username="MockBot", **kwargs):
         self._updates = []
         self._bot = None
@@ -70,10 +54,34 @@ class Mockbot(TelegramObject):
 
     @property
     def sent_messages(self):
+        """
+        A list of every message sent with this bot.
+
+        It contains the data dict usually passed to the methods that actually send data to Telegram, with an added field
+        named ``method`` which will contain the method used to send this message to the server.
+
+        Examples:
+            A call to
+
+            ``send_message(1, "hello")``
+
+            will return the following
+
+            ``{'text': 'hello', 'chat_id': 1, 'method': 'send_message'}``
+
+            A call to
+
+            ``edit_message_text(text="test 2", inline_message_id=404, disable_web_page_preview=True)``::
+
+            results in
+
+            ``{'inline_message_id': 404, 'text': 'test 2', 'method': 'edit_message_text', 'disable_web_page_preview': True}``
+        """
         return self._sendmessages
 
     @property
     def updates(self):
+        """Contains a list of updates received by the bot."""
         tmp = self._updates
         self._updates = []
         return tmp
@@ -98,25 +106,30 @@ class Mockbot(TelegramObject):
     @property
     @info
     def id(self):
+        """Return the bot's ID."""
         return self._bot.id
 
     @property
     @info
     def first_name(self):
+        """Return the bot's first name as a string."""
         return self._bot.first_name
 
     @property
     @info
     def last_name(self):
+        """Return the bot's last name as a string."""
         return self._bot.last_name
 
     @property
     @info
     def username(self):
+        """Return the bot's username as a string."""
         return self._bot.username
 
     @property
     def name(self):
+        """Return the username handle as a string."""
         return '@{0}'.format(self.username)
 
     def message(func):
@@ -193,6 +206,18 @@ class Mockbot(TelegramObject):
         return self.get_me(args, kwargs)
 
     def get_me(self, timeout=None, **kwargs):
+        """Return a bot, a ``telegram.User`` instance.
+
+        Arguments:
+            id ([int]): The ID for the bot.
+            first_name ([str]): The first name of the user or bot.
+            is_bot ([bool]): True if the user is a bot.
+            last_name ([str]): The last name of the user or bot.
+            username ([str]): The username of the user or bot.
+
+        Returns:
+            :class:`telegram.User`: An user or a bot with the supplied arguments.
+        """
         self._bot = User(0, "Mockbot", True, last_name="Bot", username=self._username)
         return self._bot
 
@@ -755,8 +780,8 @@ class Mockbot(TelegramObject):
 
     def insert_update(self, update):
         """
-        This inserts an update into the the bot's storage. these will be retrieved on a call to
-        get_updates which is used by the :py:class:`telegram.Updater`. This way the updater can function without any
+        Inserts an update into the bot's storage. These will be retrieved on a call to
+        ``get_updates`` which is used by the :py:class:`telegram.Updater`. This way the updater can function without any
         modifications.
 
         Args:
@@ -776,6 +801,7 @@ class Mockbot(TelegramObject):
                    network_delay=None,
                    read_latency=2.,
                    **kwargs):
+        """Retrieve the updates contained in the bot's storage."""
         return self.updates
 
     @deprecated(reason["PEP8"])

@@ -5,7 +5,7 @@ Here are some small examples to show how a developer can use ``PTBtest`` to writ
 unit tests for a ``python-telegram-bot`` bot.
 
 All examples are licensed under the `CC0
-License <https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/LICENSE.txt>`__
+License <../examples/LICENSE.txt>`__
 and are therefore fully dedicated to the public domain. You can use them
 as the base for your own bots without worrying about copyrights.
 

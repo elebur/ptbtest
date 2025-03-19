@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module provides a class to generate telegram callback queries"""
+"""This module provides a class to generate Telegram callback queries."""
 
 import uuid
 
@@ -34,7 +34,7 @@ class CallbackQueryGenerator(PtbGenerator):
     Attributes:
         bot (ptbtest.Mockbot): Bot to encode with the messages
 
-    Args:
+    Paramaters:
         bot (Optional[ptbtest.Mockbot]): supply your own for a custom botname
     """
 
@@ -53,24 +53,22 @@ class CallbackQueryGenerator(PtbGenerator):
         self, user=None, chat_instance=None, message=None, data=None, inline_message_id=None, game_short_name=None
     ):
         """
-
         Returns a telegram.Update object containing a callback_query.
 
         Notes:
-            One of message and inline_message_id must be present
-            One of data and game_short_name must be present
+            One of *message* and *inline_message_id* must be present.
+            One of *data* and *game_short_name* must be present.
 
         Parameters:
-            user (Optional[telegram.User]): User that initiated the callback_query
-            chat_instance (Optional[str]): unique identifier, not used
-            message (Optional[telegram.Message]): Message the callback_query button belongs to
-            inline_message_id (Optional[str]): Message the callback_query button belongs to
-            data (Optional[string]): Data attached to the button
-            game_short_name (Optional[str]): game identifier with this button
+            user (Optional[telegram.User]): User that initiated the callback_query.
+            chat_instance (Optional[str]): unique identifier, not used.
+            message (Optional[telegram.Message]): Message the callback_query button belongs to.
+            inline_message_id (Optional[str]): Message the callback_query button belongs to.
+            data (Optional[string]): Data attached to the button.
+            game_short_name (Optional[str]): game identifier with this button.
 
         Returns:
             telegram.Update: containing a :py:class:`telegram.CallbackQuery`
-
         """
         # Required
         if user:
