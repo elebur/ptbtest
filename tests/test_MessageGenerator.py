@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import datetime
+from nis import match
 
 import pytest
 
@@ -54,7 +55,7 @@ class TestMessageGeneratorCore:
 
     def test_not_private(self):
         u = MessageGenerator().get_message(private=False)
-        assert u.message.chat.chat_type == "group"
+        assert u.message.chat.type == "group"
         assert u.message.from_user.id != u.message.chat.id
 
     def test_with_user(self):
@@ -83,11 +84,9 @@ class TestMessageGeneratorCore:
         assert u.message.from_user.id != u.message.chat.id
         assert u.message.chat.id == chat.id
 
-        with pytest.raises(BadChatException) as exc:
+        with pytest.raises(BadChatException, match="get_channel_post"):
             chat = cg.get_chat(chat_type="channel")
             MessageGenerator().get_message(chat=chat)
-
-        assert "get_channel_post" in str(exc.value)
 
         with pytest.raises(BadChatException):
             MessageGenerator().get_message(chat="Not a telegram.Chat")
@@ -364,16 +363,12 @@ class TestMessageGeneratorStatusMessages:
 
 class TestMessageGeneratorAttachments:
     def test_caption_solo(self):
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match="caption without"):
             MessageGenerator().get_message(caption="my cap")
 
-        assert "caption without" in str(exc.value)
-
     def test_more_than_one(self):
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match="more than one"):
             MessageGenerator().get_message(photo=True, video=True)
-
-        assert "more than one" in str(exc.value)
 
     def test_location(self):
         loc = Location(50.012, -32.11)
@@ -383,10 +378,8 @@ class TestMessageGeneratorAttachments:
         u = MessageGenerator().get_message(location=True)
         assert isinstance(u.message.location, Location)
 
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match=r"telegram\.Location"):
             MessageGenerator().get_message(location="location")
-
-        assert "telegram.Location" in str(exc.value)
 
     def test_venue(self):
         ven = Venue(Location(1.0, 1.0), "some place", "somewhere")
@@ -396,9 +389,8 @@ class TestMessageGeneratorAttachments:
         u = MessageGenerator().get_message(venue=True)
         assert isinstance(u.message.venue, Venue)
 
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match=r"telegram.Venue"):
             MessageGenerator().get_message(venue="Venue")
-        assert "telegram.Venue" in str(exc.value)
 
     def test_contact(self):
         con = Contact("0612345", "testman")
@@ -408,9 +400,8 @@ class TestMessageGeneratorAttachments:
         u = MessageGenerator().get_message(contact=True)
         assert isinstance(u.message.contact, Contact)
 
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match=r"telegram.Contact"):
             MessageGenerator().get_message(contact="contact")
-        assert "telegram.Contact" in str(exc.value)
 
     def test_voice(self):
         voice = Voice("idyouknow", 12, 1)
@@ -424,10 +415,8 @@ class TestMessageGeneratorAttachments:
         u = MessageGenerator().get_message(voice=True)
         assert isinstance(u.message.voice, Voice)
 
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match=r"telegram\.Voice"):
             MessageGenerator().get_message(voice="voice")
-
-        assert "telegram.Voice" in str(exc.value)
 
     def test_video(self):
         video = Video("idyouknow", "file_unique_id", 200, 200, 10)
@@ -441,10 +430,8 @@ class TestMessageGeneratorAttachments:
         u = MessageGenerator().get_message(video=True)
         assert isinstance(u.message.video, Video)
 
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match=r"telegram\.Video"):
             MessageGenerator().get_message(video="video")
-
-        assert "telegram.Video" in str(exc.value)
 
     def test_sticker(self):
         sticker = Sticker("idyouknow", "sticker_unique_id", 30, 30, True, True, "REGULAR")
@@ -458,10 +445,8 @@ class TestMessageGeneratorAttachments:
         u = MessageGenerator().get_message(sticker=True)
         assert isinstance(u.message.sticker, Sticker)
 
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match=r"telegram\.Sticker"):
             MessageGenerator().get_message(sticker="sticker")
-
-        assert "telegram.Sticker" in str(exc.value)
 
     def test_document(self):
         document = Document("document_id", "idyouknow", file_name="test.pdf")
@@ -475,10 +460,8 @@ class TestMessageGeneratorAttachments:
         u = MessageGenerator().get_message(document=True)
         assert isinstance(u.message.document, Document)
 
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match=r"telegram\.Document"):
             MessageGenerator().get_message(document="document")
-
-        assert "telegram.Document" in str(exc.value)
 
     def test_audio(self):
         audio = Audio("idyouknow", 23, 60)
@@ -492,10 +475,8 @@ class TestMessageGeneratorAttachments:
         u = MessageGenerator().get_message(audio=True)
         assert isinstance(u.message.audio, Audio)
 
-        with pytest.raises(BadMessageException) as exc:
+        with pytest.raises(BadMessageException, match=r"telegram\.Audio"):
             MessageGenerator().get_message(audio="audio")
-
-        assert "telegram.Audio" in str(exc.value)
 
     def test_photo(self):
         photo = [PhotoSize("2", "photo_unique_id", 1, 1, file_size=3)]
@@ -510,14 +491,11 @@ class TestMessageGeneratorAttachments:
         assert isinstance(u.message.photo, tuple)
         assert isinstance(u.message.photo[0], PhotoSize)
 
-        with pytest.raises(BadMessageException) as exc1:
+        with pytest.raises(BadMessageException, match=r"telegram\.Photo"):
             MessageGenerator().get_message(photo="photo")
-        assert "telegram.Photo" in str(exc1.value)
 
-        with pytest.raises(BadMessageException) as exc2:
+        with pytest.raises(BadMessageException, match=r"telegram\.Photo"):
             MessageGenerator().get_message(photo=[1, 2, 3])
-        assert "telegram.Photo" in str(exc2.value)
-
 
 class TestMessageGeneratorEditedMessage:
     def test_edited_message(self):
@@ -558,13 +536,11 @@ class TestMessageGeneratorChannelPost:
         u = MessageGenerator().get_channel_post(chat=channel)
         assert channel.title == u.channel_post.chat.title
 
-        with pytest.raises(BadChatException) as exc1:
+        with pytest.raises(BadChatException, match=r"telegram\.Chat"):
             MessageGenerator().get_channel_post(chat="chat")
-        assert "telegram.Chat" in str(exc1.value)
 
-        with pytest.raises(BadChatException) as exc2:
+        with pytest.raises(BadChatException, match=r"chat\.type") as exc2:
             MessageGenerator().get_channel_post(chat=group)
-        assert "chat.type" in str(exc2.value)
 
     def test_with_user(self):
         ug = UserGenerator()

@@ -15,6 +15,7 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+import re
 
 import pytest
 from telegram.constants import ChatType
@@ -56,17 +57,17 @@ class TestChatGenerator:
 
     @pytest.mark.parametrize(["chat_type"], [(ChatType.PRIVATE,), (ChatType.CHANNEL,)])
     def test_negative_cid_with_channel_and_private(self, mock_chat, chat_type):
-        with pytest.raises(ValueError) as exc:
-            mock_chat.get_chat(cid=-1, chat_type=chat_type)
+        exc_msg = re.escape("Only groups and supergroups can have the negative 'cid'")
 
-        assert "Only groups and supergroups can have the negative 'cid'" == str(exc.value)
+        with pytest.raises(ValueError, match=exc_msg):
+            mock_chat.get_chat(cid=-1, chat_type=chat_type)
 
     @pytest.mark.parametrize(["chat_type"], [(ChatType.GROUP,), (ChatType.SUPERGROUP,)])
     def test_positive_cid_with_group_and_supergroup(self, mock_chat, chat_type):
-        with pytest.raises(ValueError) as exc:
-            mock_chat.get_chat(cid=1, chat_type=chat_type)
+        exc_msg = re.escape("Only private chats and channels can have the positive 'cid'")
 
-        assert "Only private chats and channels can have the positive 'cid'" == str(exc.value)
+        with pytest.raises(ValueError, match=exc_msg):
+            mock_chat.get_chat(cid=1, chat_type=chat_type)
 
     def test_with_cid_not_private(self, mock_chat):
         c = mock_chat.get_chat(chat_type="group", cid=-1)
@@ -117,7 +118,7 @@ class TestChatGenerator:
 
     def test_private_no_username(self):
         c = ChatGenerator().get_chat(chat_type="private")
-        
+
         assert c.id > 0
         assert c.username == c.first_name + c.last_name
         assert c.type == "private"
@@ -173,7 +174,7 @@ class TestChatGenerator:
             chat_type="supergroup", username="mygroup", title="Awesome Group")
 
         assert c.title == "Awesome Group"
-        assert  c.username == "mygroup"
+        assert c.username == "mygroup"
 
     def test_channel(self):
         c = ChatGenerator().get_chat(chat_type="channel")
@@ -202,7 +203,6 @@ class TestChatGenerator:
 
     @pytest.mark.parametrize(["chat_type"], [(ChatType.PRIVATE,), (ChatType.CHANNEL,)])
     def test_topics_enabled_for_private_and_channel(self, mock_chat, chat_type):
-        with pytest.raises(ValueError) as exc:
+        exc_msg = re.escape("'is_forum' can be True for groups and supergroups only")
+        with pytest.raises(ValueError, match=exc_msg):
             mock_chat.get_chat(cid=1, chat_type=chat_type, is_forum=True)
-
-        assert "'is_forum' can be True for groups and supergroups only" == str(exc.value)
