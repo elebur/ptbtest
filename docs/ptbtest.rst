@@ -6,16 +6,16 @@ Submodules
 
 .. toctree::
 
-   ptbtest.callbackquerygenerator
-   ptbtest.chatgenerator
-   ptbtest.entityparser
-   ptbtest.errors
-   ptbtest.inlinequerygenerator
-   ptbtest.messagegenerator
    ptbtest.mockbot
    ptbtest.ptbgenerator
-   ptbtest.updategenerator
+   ptbtest.chatgenerator
    ptbtest.usergenerator
+   ptbtest.messagegenerator
+   ptbtest.updategenerator
+   ptbtest.callbackquerygenerator
+   ptbtest.inlinequerygenerator
+   ptbtest.entityparser
+   ptbtest.errors
 
 
 Module contents
@@ -25,3 +25,4 @@ Module contents
     :members:
     :undoc-members:
     :show-inheritance:
+    :member-order: bysource
