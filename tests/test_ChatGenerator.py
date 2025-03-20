@@ -116,6 +116,16 @@ class TestChatGenerator:
         assert c.first_name
         assert c.last_name
 
+    def test_user_id_overrides_chat_id(self, mock_chat):
+        """
+        If both *user* and *id* are sent then *user* has higher priority.
+        """
+        user_id = 3141592
+        user = UserGenerator().get_user(user_id=user_id)
+        chat = mock_chat.get_chat(id=1234, user=user)
+
+        assert chat.id == user_id
+
     @pytest.mark.parametrize(["chat_type"],[(ChatType.GROUP,), (ChatType.SUPERGROUP,), (ChatType.CHANNEL,)])
     def test_chat_with_user_but_not_private_chat_turns_into_private_and_send_warning(self, mock_chat, chat_type):
         user = UserGenerator().get_user()
