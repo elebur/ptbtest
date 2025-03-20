@@ -126,6 +126,19 @@ class TestChatGenerator:
 
         assert chat.id == user_id
 
+    def test_private_chat_without_user_but_with_id_and_username(self, mock_chat):
+        """
+        Checks that calling *get_chat* without a *user* but with an *id* and a *username*
+        will populate corresponding fields in a *user* object.
+        """
+        username = "ringo_starr"
+        chat_id = 771940
+
+        chat = mock_chat.get_chat(id=chat_id, username=username, type="private")
+        assert chat.id == chat_id
+        assert chat.username == username
+        assert chat.type == "private"
+
     @pytest.mark.parametrize(["chat_type"],[(ChatType.GROUP,), (ChatType.SUPERGROUP,), (ChatType.CHANNEL,)])
     def test_chat_with_user_but_not_private_chat_turns_into_private_and_send_warning(self, mock_chat, chat_type):
         user = UserGenerator().get_user()
