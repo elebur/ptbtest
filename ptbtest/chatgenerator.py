@@ -99,7 +99,7 @@ class ChatGenerator(PtbGenerator):
 
         chat_user = user
         if not chat_user and chat_type == ChatType.PRIVATE:
-            chat_user = UserGenerator().get_user(username=username)
+            chat_user = UserGenerator().get_user(username=username, user_id=id)
 
         chat_title = title
         chat_username = username
