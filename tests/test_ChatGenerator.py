@@ -38,6 +38,19 @@ class TestChatGenerator:
         assert c.username == c.first_name + c.last_name
         assert c.is_forum is False
 
+    @pytest.mark.parametrize(["chat_type"],
+                             [
+                                 (ChatType.GROUP,),
+                                 (ChatType.SUPERGROUP,),
+                                 (ChatType.CHANNEL,),
+                                 (ChatType.PRIVATE,)
+                             ])
+    def test_each_chat_type(self, mock_chat, chat_type):
+        c = mock_chat.get_chat(type=chat_type)
+        assert c.type == chat_type
+
+
+class TestId:
     def test_positive_id_only(self, mock_chat):
         c = mock_chat.get_chat(id=1)
 
@@ -76,17 +89,6 @@ class TestChatGenerator:
         c = mock_chat.get_chat(type="supergroup", id=-1)
         assert c.type == "supergroup"
 
-    @pytest.mark.parametrize(["chat_type"],
-                             [
-                                 (ChatType.GROUP,),
-                                 (ChatType.SUPERGROUP,),
-                                 (ChatType.CHANNEL,),
-                                 (ChatType.PRIVATE,)
-                             ])
-    def test_each_chat_type(self, mock_chat, chat_type):
-        c = mock_chat.get_chat(type=chat_type)
-        assert c.type == chat_type
-
     @pytest.mark.parametrize(["chat_type"], [(ChatType.GROUP,), (ChatType.SUPERGROUP,)])
     def test_group_and_supergroup_get_negative_auto_id(self, mock_chat, chat_type):
         c = mock_chat.get_chat(type=chat_type)
@@ -97,6 +99,8 @@ class TestChatGenerator:
         c = mock_chat.get_chat(type=chat_type)
         assert c.id > 0
 
+
+class TestPrivateChat:
     def test_private_from_user(self):
         u = UserGenerator().get_user()
         c = ChatGenerator().get_chat(user=u)
@@ -162,6 +166,8 @@ class TestChatGenerator:
         with pytest.raises(TypeError):
             ChatGenerator().get_chat(user="invalid user")
 
+
+class TestGroupAndSupergroup:
     def test_group_chat(self):
         c = ChatGenerator().get_chat(type="group")
 
@@ -210,6 +216,8 @@ class TestChatGenerator:
         assert c.title == "Awesome Group"
         assert c.username == "mygroup"
 
+
+class TestChannel:
     def test_channel(self):
         c = ChatGenerator().get_chat(type="channel")
 
@@ -223,6 +231,8 @@ class TestChatGenerator:
         assert c.title == "Awesome Group"
         assert c.username == "AwesomeGroup"
 
+
+class TestTopics:
     def test_topics_enabled_for_groups(self, mock_chat):
         ch = mock_chat.get_chat(type="group", is_forum=True)
         assert ch.is_forum is True
