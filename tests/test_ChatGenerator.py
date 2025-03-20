@@ -38,42 +38,42 @@ class TestChatGenerator:
         assert c.username == c.first_name + c.last_name
         assert c.is_forum is False
 
-    def test_positive_cid_only(self, mock_chat):
-        c = mock_chat.get_chat(cid=1)
+    def test_positive_id_only(self, mock_chat):
+        c = mock_chat.get_chat(id=1)
 
         assert c.type == "private"
         assert c.username == c.first_name + c.last_name
 
-    def test_negative_cid_only(self, mock_chat):
-        c = mock_chat.get_chat(cid=-1)
+    def test_negative_id_only(self, mock_chat):
+        c = mock_chat.get_chat(id=-1)
         assert c.type == ChatType.GROUP
 
-    def test_zero_cid(self, mock_chat):
-        c = mock_chat.get_chat(cid=0)
+    def test_zero_id(self, mock_chat):
+        c = mock_chat.get_chat(id=0)
 
         assert c.id > 0
         assert c.type == "private"
         assert c.username == c.first_name + c.last_name
 
     @pytest.mark.parametrize(["chat_type"], [(ChatType.PRIVATE,), (ChatType.CHANNEL,)])
-    def test_negative_cid_with_channel_and_private(self, mock_chat, chat_type):
-        exc_msg = re.escape("Only groups and supergroups can have the negative 'cid'")
+    def test_negative_id_with_channel_and_private(self, mock_chat, chat_type):
+        exc_msg = re.escape("Only groups and supergroups can have the negative 'id'")
 
         with pytest.raises(ValueError, match=exc_msg):
-            mock_chat.get_chat(cid=-1, type=chat_type)
+            mock_chat.get_chat(id=-1, type=chat_type)
 
     @pytest.mark.parametrize(["chat_type"], [(ChatType.GROUP,), (ChatType.SUPERGROUP,)])
-    def test_positive_cid_with_group_and_supergroup(self, mock_chat, chat_type):
-        exc_msg = re.escape("Only private chats and channels can have the positive 'cid'")
+    def test_positive_id_with_group_and_supergroup(self, mock_chat, chat_type):
+        exc_msg = re.escape("Only private chats and channels can have the positive 'id'")
 
         with pytest.raises(ValueError, match=exc_msg):
-            mock_chat.get_chat(cid=1, type=chat_type)
+            mock_chat.get_chat(id=1, type=chat_type)
 
-    def test_with_cid_not_private(self, mock_chat):
-        c = mock_chat.get_chat(type="group", cid=-1)
+    def test_with_id_not_private(self, mock_chat):
+        c = mock_chat.get_chat(type="group", id=-1)
         assert c.type == "group"
 
-        c = mock_chat.get_chat(type="supergroup", cid=-1)
+        c = mock_chat.get_chat(type="supergroup", id=-1)
         assert c.type == "supergroup"
 
     @pytest.mark.parametrize(["chat_type"],
@@ -216,4 +216,4 @@ class TestChatGenerator:
     def test_topics_enabled_for_private_and_channel(self, mock_chat, chat_type):
         exc_msg = re.escape("'is_forum' can be True for groups and supergroups only")
         with pytest.raises(ValueError, match=exc_msg):
-            mock_chat.get_chat(cid=1, type=chat_type, is_forum=True)
+            mock_chat.get_chat(id=1, type=chat_type, is_forum=True)

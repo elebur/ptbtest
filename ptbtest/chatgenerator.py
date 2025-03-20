@@ -41,7 +41,7 @@ class ChatGenerator(PtbGenerator):
         super().__init__()
 
     def get_chat(self,
-                 cid: Optional[int] = None,
+                 id: Optional[int] = None,
                  type: Optional[Union[ChatType, str]] = None,
                  title: Optional[str] = None,
                  username: Optional[str] = None,
@@ -58,7 +58,7 @@ class ChatGenerator(PtbGenerator):
         generated user.
 
         Args:
-            cid (Optional[int]): ID of the returned chat.
+            id (Optional[int]): ID of the returned chat.
             type (Optional[Union[ChatType, str]]): Type of the chat can be either
                 telegram.constants.ChatType or the string literal ("private", "group", "supergroup", "channel").
             title (Optional[str]): Title  for the group/supergroup/channel.
@@ -70,20 +70,20 @@ class ChatGenerator(PtbGenerator):
         Returns:
             telegram.Chat: A telegram Chat object.
         """
-        if cid:
+        if id:
             if type:
-                if cid < 0 and type not in (ChatType.GROUP, ChatType.SUPERGROUP):
-                    raise ValueError("Only groups and supergroups can have the negative 'cid'")
-                elif cid > 0 and type not in (ChatType.PRIVATE, ChatType.CHANNEL):
-                    raise ValueError("Only private chats and channels can have the positive 'cid'")
+                if id < 0 and type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+                    raise ValueError("Only groups and supergroups can have the negative 'id'")
+                elif id > 0 and type not in (ChatType.PRIVATE, ChatType.CHANNEL):
+                    raise ValueError("Only private chats and channels can have the positive 'id'")
         else:
             is_group = True if type in (ChatType.GROUP, ChatType.SUPERGROUP) else False
-            cid = self.gen_id(is_group)
-        chat_id = cid
+            id = self.gen_id(is_group)
+        chat_id = id
 
         chat_type = type
         if not chat_type:
-            chat_type = ChatType.GROUP if cid < 0 else ChatType.PRIVATE
+            chat_type = ChatType.GROUP if id < 0 else ChatType.PRIVATE
 
         if is_forum and chat_type not in (ChatType.GROUP, ChatType.SUPERGROUP):
             raise ValueError("'is_forum' can be True for groups and supergroups only")
