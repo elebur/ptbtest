@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import re
+from optparse import TitledHelpFormatter
 
 import pytest
 from telegram.constants import ChatType
@@ -175,6 +176,7 @@ class TestGroupAndSupergroup:
         assert c.type == "group"
         assert c.api_kwargs.get("all_members_are_administrators") is False
         assert isinstance(c.title, str)
+        assert c.username is None
 
     def test_group_chat_with_group_name(self):
         c = ChatGenerator().get_chat(type="group", title="My Group")
@@ -354,3 +356,49 @@ class TestGetChannelChatMethod:
         assert chat.id == chat_id
         assert chat.title == chat_title
         assert chat.username == chat_username
+
+
+class TestGetGroupChat:
+    def test_without_parameters(self, mock_chat):
+        chat = mock_chat.get_group_chat()
+
+        assert chat.type == ChatType.GROUP
+        assert chat.id < 0
+        assert chat.title
+        assert chat.username is None
+        assert chat.is_forum is False
+
+    def test_with_all_parameters(self, mock_chat):
+        chat_id = -27182818
+        chat_title = "Test Group"
+        chat_username = "test_group_username"
+        chat_is_forum = True
+        chat_is_supergroup = True
+        chat_all_members_are_administrators = True
+        chat = mock_chat.get_group_chat(id=chat_id,
+                                        title=chat_title,
+                                        username=chat_username,
+                                        is_forum=chat_is_forum,
+                                        is_supergroup=chat_is_supergroup,
+                                        all_members_are_administrators=chat_all_members_are_administrators)
+
+        assert chat.type == ChatType.SUPERGROUP
+        assert chat.id == chat_id
+        assert chat.title == chat_title
+        assert chat.username == chat_username
+        assert chat.is_forum == chat_is_forum
+        assert chat.api_kwargs["all_members_are_administrators"] == chat_all_members_are_administrators
+
+    def test_simple_group_creation(self, mock_chat):
+        chat = mock_chat.get_group_chat(is_supergroup=False)
+
+        assert chat.type == ChatType.GROUP
+        assert chat.id < 0
+        assert chat.username is None
+
+    def test_supergroup_creation(self, mock_chat):
+        chat = mock_chat.get_group_chat(is_supergroup=True)
+
+        assert chat.type == ChatType.SUPERGROUP
+        assert chat.id < 0
+        assert chat.username
