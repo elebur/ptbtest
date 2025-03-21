@@ -210,3 +210,23 @@ class ChatGenerator(PtbGenerator):
                              username=username,
                              is_forum=is_forum,
                              all_members_are_administrators=all_members_are_administrators)
+
+    def get_random_chat(self) -> Chat:
+        """
+        The convenient method for generating a chat of random type.
+
+        Returns:
+            telegram.Chat: A telegram.Chat object with random type.
+        """
+
+        def get_supergroup_chat():
+            return self.get_group_chat(is_supergroup=True)
+
+        methods = [
+            self.get_private_chat,
+            self.get_channel_chat,
+            self.get_group_chat,
+            get_supergroup_chat
+        ]
+
+        return random.choice(methods)()
