@@ -64,11 +64,11 @@ class ChatGenerator(PtbGenerator):
             title (Optional[str]): Title  for the group/supergroup/channel.
             username (Optional[str]): Username for the private/supergroup/channel.
             user (Optional[telegram.User]): If given, a private chat for the supplied user will be generated.
-            is_forum (bool): True, if the supergroup chat is a forum (has topics enabled)
+            is_forum (bool): True, if the supergroup chat is a forum (has topics enabled). Default is False.
             all_members_are_administrators (Optional[bool]): Sets this flag for a group.
 
         Returns:
-            telegram.Chat: A telegram Chat object.
+            telegram.Chat: A telegram.Chat object.
         """
         if id:
             if type:
@@ -180,3 +180,33 @@ class ChatGenerator(PtbGenerator):
 
         return self.get_chat(id=id, title=title, username=username, type=ChatType.CHANNEL)
 
+    def get_group_chat(self,
+                       id: Optional[int] = None,
+                       title: Optional[str] = None,
+                       username: Optional[str] = None,
+                       is_forum: bool = False,
+                       is_supergroup: bool = False,
+                       *,
+                       all_members_are_administrators: bool = False) -> Chat:
+        """
+        The convenient method for generating [super]group chats.
+        If any of the arguments are omitted the values will be chosen randomly.
+
+        Args:
+            id (Optional[int]): ID of the returned chat.
+            title (Optional[str]): Title  for the group/supergroup/channel.
+            username (Optional[str]): Username for the private/supergroup/channel.
+            is_forum (bool): True, if the supergroup chat is a forum (has topics enabled). Default is False.
+            is_supergroup (bool): True, if the chat must be supergroup. Default is False.
+            all_members_are_administrators (Optional[bool]): Sets this flag for a group.
+
+        Returns:
+            telegram.Chat: A telegram.Chat object.
+        """
+        chat_type = ChatType.SUPERGROUP if is_supergroup else ChatType.GROUP
+        return self.get_chat(id=id,
+                             type=chat_type,
+                             title=title,
+                             username=username,
+                             is_forum=is_forum,
+                             all_members_are_administrators=all_members_are_administrators)
