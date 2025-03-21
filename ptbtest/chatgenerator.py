@@ -147,7 +147,7 @@ class ChatGenerator(PtbGenerator):
             last_name (Optional[str]): The last name for the user.
 
         Returns:
-            telegram.Chat: A telegram Chat object with the 'private' ChatType.
+            telegram.Chat: A telegram.Chat object with the 'private' ChatType.
         """
         # The 'get_chat' method doesn't allow to send `first_name` and `last_name` parameters.
         # If it is necessary to set these parameters we must generate new User object.
@@ -160,3 +160,23 @@ class ChatGenerator(PtbGenerator):
                                                  last_name=last_name)
 
         return self.get_chat(id=id, user=chat_user, username=username, type=ChatType.PRIVATE)
+
+    def get_channel_chat(self,
+                         id: Optional[int] = None,
+                         title: Optional[str] = None,
+                         username: Optional[str] = None) -> Chat:
+        """
+        The convenient method for generating channel chats.
+        If any of the arguments are omitted the values will be chosen randomly.
+
+        Args:
+            id (Optional[int]): ID of the returned chat.
+            title (Optional[str]): Title  for the group/supergroup/channel.
+            username (Optional[str]): Username for the private/supergroup/channel.
+
+        Returns:
+            telegram.Chat: A telegram.Chat object with 'channel' ChatType.
+        """
+
+        return self.get_chat(id=id, title=title, username=username, type=ChatType.CHANNEL)
+
