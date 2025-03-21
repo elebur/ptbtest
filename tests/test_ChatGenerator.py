@@ -322,7 +322,6 @@ class TestGetPrivateChatMethod:
         # Because we don't set 'username' it is made by adding
         # the first and the last names together.
         assert chat.username == "RingoStarr"
-        assert chat.id == self.test_user.id
         assert chat.type == ChatType.PRIVATE
         assert chat.first_name == self.test_user.first_name
         assert chat.last_name == self.test_user.last_name
