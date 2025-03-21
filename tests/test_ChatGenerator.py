@@ -50,6 +50,20 @@ class TestChatGenerator:
         c = mock_chat.get_chat(type=chat_type)
         assert c.type == chat_type
 
+    def test_get_random_chat(self, mock_chat):
+
+        # All possible chat types as a `set`.
+        chat_types = {ChatType.PRIVATE, ChatType.GROUP, ChatType.SUPERGROUP, ChatType.CHANNEL}
+
+        generated_types = set()
+        # It is unlikely that during 300 hundreds calls any of the types will be missed.
+        # So at the end of the `for` loop `generated_types` must consist of all the types.
+        for _ in range(300):
+            chat = mock_chat.get_random_chat()
+            generated_types.add(chat.type)
+
+        assert chat_types == generated_types
+
 
 class TestId:
     def test_positive_id_only(self, mock_chat):
