@@ -334,3 +334,23 @@ class TestGetPrivateChatMethod:
         assert chat.username[-5:] == "Starr"
         assert chat.type == ChatType.PRIVATE
         assert chat.last_name == test_user.last_name
+
+
+class TestGetChannelChatMethod:
+    def test_without_parameters(self, mock_chat):
+        chat = mock_chat.get_channel_chat()
+
+        assert chat.type == ChatType.CHANNEL
+        assert chat.id > 0
+
+    def test_with_all_parameters(self, mock_chat):
+        chat_id = 27182818
+        chat_title = "Test Channel"
+        chat_username = "test_channel_username"
+
+        chat = mock_chat.get_channel_chat(id=chat_id, title=chat_title, username=chat_username)
+
+        assert chat.type == ChatType.CHANNEL
+        assert chat.id == chat_id
+        assert chat.title == chat_title
+        assert chat.username == chat_username
