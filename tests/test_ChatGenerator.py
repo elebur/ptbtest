@@ -21,10 +21,11 @@ import pytest
 from telegram.constants import ChatType
 
 from ptbtest import ChatGenerator, UserGenerator
+from tests.test_UserGenerator import mock_user
 
 
 @pytest.fixture(scope="function")
-def mock_chat():
+def mock_chat() -> ChatGenerator:
     return ChatGenerator()
 
 
@@ -250,3 +251,38 @@ class TestTopics:
         exc_msg = re.escape("'is_forum' can be True for groups and supergroups only")
         with pytest.raises(ValueError, match=exc_msg):
             mock_chat.get_chat(id=1, type=chat_type, is_forum=True)
+
+
+class TestGetPrivateChatMethod:
+    user_data = {
+        "user_id": 771940,
+        "username": "ringo_starr",
+        "first_name": "Ringo",
+        "last_name": "Starr"
+    }
+
+    def test_with_default_parameters(self, mock_chat):
+        chat = mock_chat.get_private_chat()
+
+        assert chat.type == ChatType.PRIVATE
+        assert chat.id > 0
+        assert chat.first_name
+        assert chat.last_name
+        assert chat.username
+
+    def test_with_all_parameters_set(self, mock_chat):
+        user = UserGenerator().get_user(**self.user_data)
+
+        chat = mock_chat.get_private_chat()
+
+    def test_with_user_but_without_first_and_last_name(self):
+        pass
+
+    def test_with_user_but_without_first_name(self):
+        pass
+
+    def test_with_user_but_without_last_name(self):
+        pass
+
+    def test_with_user_and_with_first_and_last_name(self):
+        pass
