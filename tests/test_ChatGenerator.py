@@ -253,15 +253,6 @@ class TestTopics:
 
 
 class TestGetPrivateChatMethod:
-    user_data = {
-        "user_id": 771940,
-        "username": "ringo_starr",
-        "first_name": "Ringo",
-        "last_name": "Starr"
-    }
-
-    test_user = UserGenerator().get_user(**user_data)
-
     def test_with_default_parameters(self, mock_chat):
         chat = mock_chat.get_private_chat()
 
@@ -271,75 +262,75 @@ class TestGetPrivateChatMethod:
         assert chat.last_name
         assert chat.username
 
-    def test_with_all_parameters_set(self, mock_chat):
+    def test_with_all_parameters_set(self, mock_chat, test_user):
         chat_id = 211156
         chat_username = "chat_username"
         chat_fname = "FirstName"
         chat_lname = "LastName"
 
         chat = mock_chat.get_private_chat(id=chat_id,
-                                          user=self.test_user,
+                                          user=test_user,
                                           username=chat_username,
                                           first_name=chat_fname,
                                           last_name=chat_lname)
 
-        assert chat.username == self.test_user.username
-        assert chat.id == self.test_user.id
+        assert chat.username == test_user.username
+        assert chat.id == test_user.id
         assert chat.type == ChatType.PRIVATE
-        assert chat.first_name == self.test_user.first_name
-        assert chat.last_name == self.test_user.last_name
+        assert chat.first_name == test_user.first_name
+        assert chat.last_name == test_user.last_name
 
-    def test_with_user_but_without_first_and_last_name(self, mock_chat):
-        chat = mock_chat.get_private_chat(user=self.test_user)
+    def test_with_user_but_without_first_and_last_name(self, mock_chat, test_user):
+        chat = mock_chat.get_private_chat(user=test_user)
 
-        assert chat.username == self.test_user.username
-        assert chat.id == self.test_user.id
+        assert chat.username == test_user.username
+        assert chat.id == test_user.id
         assert chat.type == ChatType.PRIVATE
-        assert chat.first_name == self.test_user.first_name
-        assert chat.last_name == self.test_user.last_name
+        assert chat.first_name == test_user.first_name
+        assert chat.last_name == test_user.last_name
 
-    def test_with_user_and_last_name_but_without_first_name(self, mock_chat):
-        chat = mock_chat.get_private_chat(user=self.test_user, last_name="LastName")
+    def test_with_user_and_last_name_but_without_first_name(self, mock_chat, test_user):
+        chat = mock_chat.get_private_chat(user=test_user, last_name="LastName")
 
-        assert chat.username == self.test_user.username
-        assert chat.id == self.test_user.id
+        assert chat.username == test_user.username
+        assert chat.id == test_user.id
         assert chat.type == ChatType.PRIVATE
-        assert chat.first_name == self.test_user.first_name
-        assert chat.last_name == self.test_user.last_name
+        assert chat.first_name == test_user.first_name
+        assert chat.last_name == test_user.last_name
 
-    def test_with_user_and_first_name_but_without_last_name(self, mock_chat):
-        chat = mock_chat.get_private_chat(user=self.test_user, first_name="FirstName")
+    def test_with_user_and_first_name_but_without_last_name(self, mock_chat, test_user):
+        chat = mock_chat.get_private_chat(user=test_user, first_name="FirstName")
 
-        assert chat.username == self.test_user.username
-        assert chat.id == self.test_user.id
+        assert chat.username == test_user.username
+        assert chat.id == test_user.id
         assert chat.type == ChatType.PRIVATE
-        assert chat.first_name == self.test_user.first_name
-        assert chat.last_name == self.test_user.last_name
+        assert chat.first_name == test_user.first_name
+        assert chat.last_name == test_user.last_name
 
-    def test_without_user_but_with_first_and_last_name(self, mock_chat):
-        chat = mock_chat.get_private_chat(first_name=self.test_user.first_name, last_name=self.test_user.last_name)
+    def test_without_user_but_with_first_and_last_name(self, mock_chat, test_user):
+        chat = mock_chat.get_private_chat(first_name=test_user.first_name, last_name=test_user.last_name)
 
         # Because we don't set 'username' it is made by adding
         # the first and the last names together.
         assert chat.username == "RingoStarr"
         assert chat.type == ChatType.PRIVATE
-        assert chat.first_name == self.test_user.first_name
-        assert chat.last_name == self.test_user.last_name
+        assert chat.first_name == test_user.first_name
+        assert chat.last_name == test_user.last_name
 
-    def test_without_user_but_with_first_name(self, mock_chat):
-        chat = mock_chat.get_private_chat(first_name=self.test_user.first_name)
+    def test_without_user_but_with_first_name(self, mock_chat, test_user):
+        chat = mock_chat.get_private_chat(first_name=test_user.first_name)
 
         # username == first_name + last_name
         # The 'first_name' is provided while the 'last_name' is generated.
         assert chat.username[:5] == "Ringo"
         assert chat.type == ChatType.PRIVATE
-        assert chat.first_name == self.test_user.first_name
+        assert chat.first_name == test_user.first_name
 
-    def test_without_user_but_with_last_name(self, mock_chat):
-        chat = mock_chat.get_private_chat(last_name=self.test_user.last_name)
+    def test_without_user_but_with_last_name(self, mock_chat, test_user):
+        chat = mock_chat.get_private_chat(last_name=test_user.last_name)
 
         # username == first_name + last_name
         # The 'last_name' is provided while the 'first_name' is generated.
         assert chat.username[-5:] == "Starr"
         assert chat.type == ChatType.PRIVATE
-        assert chat.last_name == self.test_user.last_name
+        assert chat.last_name == test_user.last_name
