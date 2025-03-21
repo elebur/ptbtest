@@ -137,7 +137,7 @@ class ChatGenerator(PtbGenerator):
                          last_name: Optional[str] = None) -> Chat:
         """
         The convenient method for generating private chats.
-        If any of the arguments are omitted the names will be chosen randomly.
+        If any of the arguments are omitted the values will be chosen randomly.
 
         Parameters:
             id (Optional[int]): ID of the returned chat.
@@ -153,10 +153,10 @@ class ChatGenerator(PtbGenerator):
         # If it is necessary to set these parameters we must generate new User object.
         # If the `user` parameter is set then the parameters will be taken from it.
         chat_user = user
-        if not chat_user and first_name or last_name:
-            chat_user = UserGenerator().get_user(id=id,
+        if not chat_user and (first_name or last_name):
+            chat_user = UserGenerator().get_user(user_id=id,
                                                  username=username,
                                                  first_name=first_name,
                                                  last_name=last_name)
 
-        return self.get_chat(id=id, user=chat_user, username=username)
+        return self.get_chat(id=id, user=chat_user, username=username, type=ChatType.PRIVATE)
