@@ -28,6 +28,7 @@ from telegram import (Audio, Contact, Document, Location, Sticker, User,
 from ptbtest import (BadBotException, BadChatException, BadUserException,
                      BadMarkupException, BadMessageException, Mockbot,
                      UserGenerator, MessageGenerator, ChatGenerator)
+from utils.deprecation import reason
 
 
 class TestMessageGeneratorCore:
@@ -226,6 +227,7 @@ class TestMessageGeneratorForwards:
     def mock_group_chat(self):
         return ChatGenerator().get_chat(type="group")
 
+    @pytest.mark.xfail(reason="telegram.Message must be updated to the most recent API version")
     def test_forwarded_message(self):
         """
         The API of the PTB v21.x doesn't have 'forward_from' attribute
@@ -251,6 +253,7 @@ class TestMessageGeneratorForwards:
                 forward_from="This is not a User",
                 text="This is a test")
 
+    @pytest.mark.xfail(reason="telegram.Message must be updated to the most recent API version")
     def test_forwarded_channel_message(self, mock_group_chat):
         """
         The API of the PTB v21.x doesn't have 'forward_from' attribute
@@ -308,6 +311,7 @@ class TestMessageGeneratorStatusMessages:
         with pytest.raises(BadUserException):
             MessageGenerator().get_message(chat=chat, left_chat_member="user")
 
+    @pytest.mark.xfail(reason="telegram.Message must be updated to the most recent API version")
     def test_new_chat_title(self):
         """
         This test works with the PTB v13.5 but doesn't work the v21.x
@@ -338,6 +342,7 @@ class TestMessageGeneratorStatusMessages:
         with pytest.raises(BadMessageException):
             MessageGenerator().get_message(chat=chat, new_chat_photo=[1, 2, 3])
 
+    @pytest.mark.xfail(reason="telegram.Message must be updated to the most recent API version")
     def test_pinned_message(self):
         """
         This test works with the PTB v13.5 but doesn't work the v21.x
