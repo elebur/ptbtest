@@ -21,7 +21,6 @@ import pytest
 from telegram.constants import ChatType
 
 from ptbtest import ChatGenerator, UserGenerator
-from tests.test_UserGenerator import mock_user
 
 
 @pytest.fixture(scope="function")
@@ -261,6 +260,8 @@ class TestGetPrivateChatMethod:
         "last_name": "Starr"
     }
 
+    test_user = UserGenerator().get_user(**user_data)
+
     def test_with_default_parameters(self, mock_chat):
         chat = mock_chat.get_private_chat()
 
@@ -271,18 +272,75 @@ class TestGetPrivateChatMethod:
         assert chat.username
 
     def test_with_all_parameters_set(self, mock_chat):
-        user = UserGenerator().get_user(**self.user_data)
+        chat_id = 211156
+        chat_username = "chat_username"
+        chat_fname = "FirstName"
+        chat_lname = "LastName"
 
-        chat = mock_chat.get_private_chat()
+        chat = mock_chat.get_private_chat(id=chat_id,
+                                          user=self.test_user,
+                                          username=chat_username,
+                                          first_name=chat_fname,
+                                          last_name=chat_lname)
 
-    def test_with_user_but_without_first_and_last_name(self):
-        pass
+        assert chat.username == self.test_user.username
+        assert chat.id == self.test_user.id
+        assert chat.type == ChatType.PRIVATE
+        assert chat.first_name == self.test_user.first_name
+        assert chat.last_name == self.test_user.last_name
 
-    def test_with_user_but_without_first_name(self):
-        pass
+    def test_with_user_but_without_first_and_last_name(self, mock_chat):
+        chat = mock_chat.get_private_chat(user=self.test_user)
 
-    def test_with_user_but_without_last_name(self):
-        pass
+        assert chat.username == self.test_user.username
+        assert chat.id == self.test_user.id
+        assert chat.type == ChatType.PRIVATE
+        assert chat.first_name == self.test_user.first_name
+        assert chat.last_name == self.test_user.last_name
 
-    def test_with_user_and_with_first_and_last_name(self):
-        pass
+    def test_with_user_and_last_name_but_without_first_name(self, mock_chat):
+        chat = mock_chat.get_private_chat(user=self.test_user, last_name="LastName")
+
+        assert chat.username == self.test_user.username
+        assert chat.id == self.test_user.id
+        assert chat.type == ChatType.PRIVATE
+        assert chat.first_name == self.test_user.first_name
+        assert chat.last_name == self.test_user.last_name
+
+    def test_with_user_and_first_name_but_without_last_name(self, mock_chat):
+        chat = mock_chat.get_private_chat(user=self.test_user, first_name="FirstName")
+
+        assert chat.username == self.test_user.username
+        assert chat.id == self.test_user.id
+        assert chat.type == ChatType.PRIVATE
+        assert chat.first_name == self.test_user.first_name
+        assert chat.last_name == self.test_user.last_name
+
+    def test_without_user_but_with_first_and_last_name(self, mock_chat):
+        chat = mock_chat.get_private_chat(first_name=self.test_user.first_name, last_name=self.test_user.last_name)
+
+        # Because we don't set 'username' it is made by adding
+        # the first and the last names together.
+        assert chat.username == "RingoStarr"
+        assert chat.id == self.test_user.id
+        assert chat.type == ChatType.PRIVATE
+        assert chat.first_name == self.test_user.first_name
+        assert chat.last_name == self.test_user.last_name
+
+    def test_without_user_but_with_first_name(self, mock_chat):
+        chat = mock_chat.get_private_chat(first_name=self.test_user.first_name)
+
+        # username == first_name + last_name
+        # The 'first_name' is provided while the 'last_name' is generated.
+        assert chat.username[:5] == "Ringo"
+        assert chat.type == ChatType.PRIVATE
+        assert chat.first_name == self.test_user.first_name
+
+    def test_without_user_but_with_last_name(self, mock_chat):
+        chat = mock_chat.get_private_chat(last_name=self.test_user.last_name)
+
+        # username == first_name + last_name
+        # The 'last_name' is provided while the 'first_name' is generated.
+        assert chat.username[-5:] == "Starr"
+        assert chat.type == ChatType.PRIVATE
+        assert chat.last_name == self.test_user.last_name
