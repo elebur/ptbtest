@@ -136,5 +136,5 @@ class EntityParser():
         for url in urls.finditer(message):
             entities.append(
                 MessageEntity('url', url.start(), url.end() - url.start()))
-        
+
         return message, entities
