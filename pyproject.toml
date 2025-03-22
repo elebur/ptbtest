@@ -72,9 +72,8 @@ select = [
   "ERA001", "PLC0415",
   "PLC2401", "PLC2403",
   "RUF001", "RUF002",
-  "RUF003", "RUF043",
-  "RUF200", "S101", "S306",
-  "T100", "UP035"
+  "RUF003", "RUF200", "S101",
+  "S306", "T100", "UP035"
 ]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
