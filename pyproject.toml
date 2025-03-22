@@ -9,7 +9,7 @@ dynamic = ["version"]
 description = 'A test suite for use with python-telegram-bot.'
 readme = "readme.MD"
 requires-python = ">=3.9"
-license = "GPL-3.0-only"
+license-expression = "GPL-3.0-only"
 license-files = ["LICENSE", "LICENSE.lesser"]
 keywords = ["python", "telegram", "bot", "unittest"]
 authors = [
@@ -72,7 +72,7 @@ select = [
   "ERA001", "PLC0415",
   "PLC2401", "PLC2403",
   "RUF001", "RUF002",
-  "RUF003", "RUF200", "S101",
+  "RUF003", "S101",
   "S306", "T100", "UP035"
 ]
 
