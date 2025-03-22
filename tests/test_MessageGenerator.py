@@ -16,19 +16,15 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import datetime
-from nis import match
-
-import pytest
-
 from collections.abc import Sequence
 
+import pytest
 from telegram import (Audio, Contact, Document, Location, Sticker, User,
                       Update, Venue, Video, Voice, PhotoSize, Message)
 
 from ptbtest import (BadBotException, BadChatException, BadUserException,
                      BadMarkupException, BadMessageException, Mockbot,
                      UserGenerator, MessageGenerator, ChatGenerator)
-from utils.deprecation import reason
 
 
 class TestMessageGeneratorCore:
