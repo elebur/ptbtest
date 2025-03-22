@@ -63,6 +63,23 @@ extra-dependencies = [
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:ptbtest tests}"
 
+# RUFF
+[tool.ruff.lint]
+# 1. Enable flake8-bugbear (`B`) rules, in addition to the defaults.
+select = [
+  "A", "F", "PLE", "W",
+  "C901", "D107", "D417",
+  "D419", "E4", "E7", "E9",
+  "ERA001", "PLC0415",
+  "PLC2401", "PLC2403",
+  "RUF001", "RUF002",
+  "RUF003", "RUF043",
+  "RUF200", "S101", "S306",
+  "T100", "UP035"
+]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"nis".msg = "The nis module is deprecated, see https://peps.python.org/pep-0594/#nis."
 
 # COVERAGE
 [tool.coverage.run]
