@@ -65,7 +65,6 @@ check = "mypy --install-types --non-interactive {args:ptbtest tests}"
 
 # RUFF
 [tool.ruff.lint]
-# 1. Enable flake8-bugbear (`B`) rules, in addition to the defaults.
 select = [
   "A", "F", "PLE", "W",
   "C901", "D107", "D417",
