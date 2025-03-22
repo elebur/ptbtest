@@ -540,7 +540,7 @@ class TestMessageGeneratorChannelPost:
         with pytest.raises(BadChatException, match=r"telegram\.Chat"):
             MessageGenerator().get_channel_post(chat="chat")
 
-        with pytest.raises(BadChatException, match=r"chat\.type") as exc2:
+        with pytest.raises(BadChatException, match=r"chat\.type"):
             MessageGenerator().get_channel_post(chat=group)
 
     def test_with_user(self):
