@@ -358,35 +358,6 @@ class MessageGenerator(PtbGenerator):
                     "audio must either be True or telegram.Audio")
         return audio, contact, document, location, photo, sticker, venue, video, voice
 
-#     def _handle_forward(self, forward_date, forward_from, forward_from_chat,
-#                         forward_from_message_id):
-#         if forward_from and not isinstance(forward_from, User):
-#             raise BadUserException()
-#         if forward_from_chat:
-#             if not isinstance(forward_from_chat, Chat):
-#                 raise BadChatException
-#             if forward_from_chat.type != "channel":
-#                 raise BadChatException(
-#                     'forward_from_chat must be of type "channel"')
-#             if not forward_from:
-#                 forward_from = UserGenerator().get_user()
-#         if forward_from and not isinstance(forward_date, int):
-#             if not isinstance(forward_date, datetime.datetime):
-#                 now = datetime.datetime.now()
-#             else:
-#                 now = forward_date
-#             try:
-#                 # Python 3.3+
-#                 forward_date = int(now.timestamp())
-#             except AttributeError:
-#                 # Python 3 (< 3.3) and Python 2
-#                 forward_date = int(time.mktime(now.timetuple()))
-#         if (forward_from_message_id and
-#                 not isinstance(forward_from_message_id, int)) or (
-#                     forward_from_chat and not forward_from_message_id):
-#             forward_from_message_id = next(self.idgen)
-#         return forward_date, forward_from, forward_from_message_id
-
     def _handle_status(self, channel_chat_created, chat, delete_chat_photo,
                        group_chat_created, left_chat_member,
                        migrate_from_chat_id, migrate_to_chat_id,
