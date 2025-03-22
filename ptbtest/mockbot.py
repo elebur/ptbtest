@@ -170,7 +170,6 @@ class Mockbot(TelegramObject):
             if mid:
                 dat['reply_to_message'] = self._mg.get_message(
                     id=mid, chat=dat['chat']).message
-            #dat['forward_from_message_id'] = dat.pop('message_id', None)
             cid = dat.pop('from_chat_id', None)
             if cid:
                 dat['forward_from_chat'] = self._cg.get_chat(
