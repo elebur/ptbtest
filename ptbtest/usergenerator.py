@@ -17,8 +17,9 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram users"""
 import random
+from typing import Optional
 
-from .ptbgenerator import PtbGenerator
+from ptbtest.ptbgenerator import PtbGenerator
 from telegram import User
 
 
@@ -38,8 +39,11 @@ class UserGenerator(PtbGenerator):
     def __init__(self):
         super().__init__()
 
-    def get_user(self, first_name=None, last_name=None, username=None,
-                 user_id=None):
+    def get_user(self,
+                 first_name: Optional[str] = None,
+                 last_name: Optional[str] = None,
+                 username: Optional[str] = None,
+                 user_id: Optional[int] = None) -> User:
         """
         Returns a telegram.User object with the optionally given name(s) or username.
         If any of the arguments are omitted the names will be chosen randomly and the
