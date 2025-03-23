@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram callback queries"""
+import random
 import uuid
 
 from telegram import ChosenInlineResult
@@ -85,7 +86,6 @@ class InlineQueryGenerator(PtbGenerator):
             if isinstance(location, Location):
                 pass
             elif isinstance(location, bool):
-                import random
                 location = Location(
                     random.uniform(-180, 180), random.uniform(-90, 90))
             else:
@@ -137,7 +137,6 @@ class InlineQueryGenerator(PtbGenerator):
             if isinstance(location, Location):
                 pass
             elif isinstance(location, bool):
-                import random
                 location = Location(
                     random.uniform(-180, 180), random.uniform(-90, 90))
             else:

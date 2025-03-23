@@ -26,6 +26,7 @@ import time
 from telegram import (Location, TelegramObject, User)
 from telegram.error import TelegramError
 
+
 from utils.deprecation import deprecated, reason
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -204,15 +205,11 @@ class Mockbot(TelegramObject):
     def getMe(self, *args, **kwargs):
         return self.get_me(args, kwargs)
 
-    def get_me(self, timeout=None, **kwargs):
+    def get_me(self, **kwargs):
         """Return a bot, a ``telegram.User`` instance.
 
         Arguments:
-            id ([int]): The ID for the bot.
-            first_name ([str]): The first name of the user or bot.
-            is_bot ([bool]): True if the user is a bot.
-            last_name ([str]): The last name of the user or bot.
-            username ([str]): The username of the user or bot.
+            **kwargs: A dictionary with arguments for the bot
 
         Returns:
             :class:`telegram.User`: An user or a bot with the supplied arguments.

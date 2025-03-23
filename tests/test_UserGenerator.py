@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
+import random
+
 import pytest
 
 from ptbtest import UserGenerator
@@ -55,6 +57,7 @@ class TestUserGenerator:
         assert a.id != b.id
 
     def test_compare_same_user_with_different_names(self, mock_user):
+        random.seed(678)
         a = mock_user.get_user(user_id=1)
         b = mock_user.get_user(user_id=1)
         assert a == b

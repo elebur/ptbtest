@@ -1,4 +1,4 @@
-# ruff: noqa: S311
+# ruff: noqa: A001, A002, S311
 # A library that provides a testing suite fot python-telegram-bot
 # which can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
@@ -18,7 +18,8 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram mesages"""
 import datetime
-import time
+import random
+import uuid
 
 from ptbtest import (UserGenerator, ChatGenerator, Mockbot)
 from ptbtest.updategenerator import update
@@ -182,7 +183,7 @@ class MessageGenerator(PtbGenerator):
             sticker (Optional[telegram.Sticker] or True): Either the right object or True to generate one
             video (Optional[telegram.Video or True]): Either the right object or True to generate one
             voice (Optional[telegram.Voice or True]): Either the right object or True to generate one
-            caption (Optional[str or True]: Either the right object or True to generate one
+            caption (Optional[str or True]): Either the right object or True to generate one
             contact (optional[telegram.Contact or True]): Either the right object or True to generate one
             location (optional[telegram.Location or True]): Either the right object or True to generate one
             venue (Optional[telegram.Venue or True]): Either the right object or True to generate one
@@ -465,17 +466,14 @@ class MessageGenerator(PtbGenerator):
 
     def _get_photosize(self):
         tmp = []
-        import uuid
-        from random import randint
         for _ in range(2):
-            w, h = randint(40, 400), randint(40, 400)
+            w, h = random.randint(40, 400), random.randint(40, 400)
             s = w * h * 0.3
             tmp.append(PhotoSize("random_photo_size_name", str(uuid.uuid4()), w, h, file_size=s))
         return tmp
 
     def _get_location(self):
-        from random import uniform
-        return Location(uniform(-180.0, 180.0), uniform(-90.0, 90.0))
+        return Location(random.uniform(-180.0, 180.0), random.uniform(-90.0, 90.0))
 
     def _get_venue(self):
         loc = self._get_location()
@@ -487,34 +485,25 @@ class MessageGenerator(PtbGenerator):
         return Contact("06123456789", user.first_name)
 
     def _get_voice(self):
-        import uuid
-        from random import randint
-        return Voice(str(uuid.uuid4()), randint(1, 120), randint(1, 60))
+        return Voice(str(uuid.uuid4()), random.randint(1, 120), random.randint(1, 60))
 
     def _get_video(self, data=None):
-        import uuid
-        from random import randint
         if data:
             return Video(**data)
         return Video(
             "random_name", str(uuid.uuid4()),
-            randint(40, 400), randint(40, 400), randint(2, 300))
+            random.randint(40, 400), random.randint(40, 400), random.randint(2, 300))
 
     def _get_sticker(self, data=None):
-        import uuid
-        from random import randint
         if data:
-            data['width'] = randint(20, 200)
-            data['height'] = randint(20, 200)
+            data['width'] = random.randint(20, 200)
+            data['height'] = random.randint(20, 200)
             return Sticker(**data)
         return Sticker(str(uuid.uuid4()), "sticker_unique_id",
-                       randint(20, 200), randint(20, 200), True, True, "REGULAR")
+                       random.randint(20, 200), random.randint(20, 200), True, True, "REGULAR")
 
     def _get_document(self):
-        import uuid
         return Document("document_random_name", str(uuid.uuid4()), file_name="somedoc.pdf")
 
     def _get_audio(self):
-        import uuid
-        from random import randint
-        return Audio(str(uuid.uuid4()), randint(1, 120), randint(1, 60), title="Some song")
+        return Audio(str(uuid.uuid4()), random.randint(1, 120), random.randint(1, 60), title="Some song")
