@@ -33,13 +33,13 @@ from telegram import (Audio, Chat, Contact, Document, Location, Message,
 
 class MessageGenerator(PtbGenerator):
     """
-        Message generator class.
+    Message generator class.
 
-        Attributes:
-            bot (ptbtest.Mockbot): Bot to encode with the messages
+    Attributes:
+        bot (ptbtest.Mockbot): Bot to encode with the messages
 
-        Args:
-            bot (Optional[ptbtest.Mockbot]): supply your own for a custom botname
+    Arguments:
+        bot (Optional[ptbtest.Mockbot]): supply your own for a custom botname
     """
 
     def __init__(self, bot=None):
@@ -64,7 +64,7 @@ class MessageGenerator(PtbGenerator):
     @update("edited_channel_post")
     def get_edited_channel_post(self, channel_post=None, **kwargs):
         """
-        Parameters:
+        Arguments:
             channel_post (Optional(telegram.Message)): The edited_channel_post will the same user, chat and message_id
             **kwargs: See get_message for the full list
 
@@ -86,7 +86,7 @@ class MessageGenerator(PtbGenerator):
     @update("channel_post")
     def get_channel_post(self, chat=None, user=None, **kwargs):
         """
-        Parameters:
+        Arguments:
             chat (Optional[telegram.Chat]): Chat with type='channel' to use with this update
             user (Optional[telegram.User]): User for the update. None if omitted
             **kwargs: See get_message
@@ -109,7 +109,7 @@ class MessageGenerator(PtbGenerator):
     @update("edited_message")
     def get_edited_message(self, message=None, **kwargs):
         """
-        Parameters:
+        Arguments:
             message (Optional(telegram.Message)): The edited_message will have the same user, chat and message_id
             **kwargs: See get_message for the full list
 
@@ -168,35 +168,38 @@ class MessageGenerator(PtbGenerator):
             whenever a list of telegram.PhotoSize objects is expected but not supplied it will always be a
             list with two random sizes between 40-400 pixels. These will not be valid file id's
 
-        Parameters:
+        Arguments:
+            id (Optional [int]): The user's id
             user (Optional[telegram.User]): User the message is from (m.from_user)
             chat (Optional[telegram.Chat]): Chat the message is from (m.chat).
             private (Optional[bool]): If the message is private (optionally with the supplied user) default=True
-            text (str): The text for the message, can make use of markdown or html, make sure to specify with parse_mode
-            parse_mode (Optional[str]): "HTML" or "Markdown" parses the text and fills entities
-            entities (Optional[lst(telegram.MessageEntity)]): when text and parsemode are set this will be filled with the entities in the text.  # noqa: E501
             reply_to_message (Optional[telegram.Message): Messages this one is a reply to
+            text (str): The text for the message, can make use of markdown or html, make sure to specify with parse_mode
+            entities (Optional[lst(telegram.MessageEntity)]): when text and parsemode are set this will be filled with the entities in the text.  # noqa: E501
+            audio (Optional[telegram.Audio] or True): Either the right object or True to generate one
+            document (Optional[telegram.Document or True]): Either the right object or True to generate one
+            photo (Optional[lst(telegram.PhotoSize) or True]): Either the right object or True to generate one
+            sticker (Optional[telegram.Sticker] or True): Either the right object or True to generate one
+            video (Optional[telegram.Video or True]): Either the right object or True to generate one
+            voice (Optional[telegram.Voice or True]): Either the right object or True to generate one
+            caption (Optional[str or True]: Either the right object or True to generate one
+            contact (optional[telegram.Contact or True]): Either the right object or True to generate one
+            location (optional[telegram.Location or True]): Either the right object or True to generate one
+            venue (Optional[telegram.Venue or True]): Either the right object or True to generate one
             new_chat_members (Optional[seq(telegram.User)]): New member(s) for this chat
             left_chat_member (Optional[telegram.User]): Member left this chat
             new_chat_title (Optional[str]): New title for the chat
             new_chat_photo (Optional[lst(telegram.Photosize)] or True): New picture for the group
-            pinned_message (Optional[telegram.Message]): Pinned message for supergroups
-            channel_chat_created (Optional[True]): Not integrated
-            migrate_from_chat_id (Optional[int]): Not integrated
-            migrate_to_chat_id (Optional[int]): Not integrated
-            supergroup_chat_created (Optional[True]): Not integrated
-            group_chat_created (Optional[True]): Not integrated
             delete_chat_photo (Optional[True]): Not integrated
-            venue (Optional[telegram.Venue or True]): Either the right object or True to generate one
-            location (optional[telegram.Location or True]): Either the right object or True to generate one
-            contact (optional[telegram.Contact or True]): Either the right object or True to generate one
-            caption (Optional[str or True]: Either the right object or True to generate one
-            voice (Optional[telegram.Voice or True]): Either the right object or True to generate one
-            video (Optional[telegram.Video or True]): Either the right object or True to generate one
-            sticker (Optional[telegram.Sticker] or True): Either the right object or True to generate one
-            photo (Optional[lst(telegram.PhotoSize) or True]): Either the right object or True to generate one
-            document (Optional[telegram.Document or True]): Either the right object or True to generate one
-            audio (Optional[telegram.Audio] or True): Either the right object or True to generate one
+            group_chat_created (Optional[True]): Not integrated
+            supergroup_chat_created (Optional[True]): Not integrated
+            migrate_to_chat_id (Optional[int]): Not integrated
+            migrate_from_chat_id (Optional[int]): Not integrated
+            channel_chat_created (Optional[True]): Not integrated
+            pinned_message (Optional[telegram.Message]): Pinned message for supergroups
+            parse_mode (Optional[str]): "HTML" or "Markdown" parses the text and fills entities
+            channel (Optional[str]): If the message was sent via a channel
+            via_bot (Optional[bool]): If the message was sent via a bot
 
         Returns:
             telegram.Update: A telegram update object containing a :py:class:`telegram.Message`.

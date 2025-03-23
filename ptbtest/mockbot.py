@@ -38,8 +38,7 @@ class Mockbot(TelegramObject):
     All methods described in :py:class:`telegram.Bot` are functional and here are described only
     the special methods added for testing functionality.
 
-
-    Parameters:
+    Arguments:
         username (Optional[str]): Username for this bot. Defaults to 'MockBot'.
     """
     def __init__(self, username="MockBot", **kwargs):
@@ -784,7 +783,7 @@ class Mockbot(TelegramObject):
         ``get_updates`` which is used by the :py:class:`telegram.Updater`. This way the updater can function without any
         modifications.
 
-        Args:
+        Arguments:
             update (telegram.Update): The update to insert in the queue.
         """
         self._updates.append(update)
