@@ -38,6 +38,7 @@ class InlineQueryGenerator(PtbGenerator):
     """
 
     def __init__(self, bot=None):
+        """Initialize the inline query generator, with an optional bot."""
         PtbGenerator.__init__(self)
         self.ug = UserGenerator()
         if not bot:

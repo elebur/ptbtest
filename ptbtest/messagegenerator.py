@@ -43,6 +43,7 @@ class MessageGenerator(PtbGenerator):
     """
 
     def __init__(self, bot=None):
+        """Initialize the message generator, with an optional bot."""
         PtbGenerator.__init__(self)
         self.idgen = self._gen_id()
         self.ug = UserGenerator()

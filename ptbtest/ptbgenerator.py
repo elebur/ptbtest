@@ -23,6 +23,7 @@ class PtbGenerator:
     """Base class for all generators."""
 
     def __init__(self):
+        """Initialize the base class generator."""
         pass
 
     @staticmethod

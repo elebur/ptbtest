@@ -28,6 +28,7 @@ class EntityParser():
     """
 
     def __init__(self):
+        """Initialize the entity parser."""
         pass
 
     @staticmethod

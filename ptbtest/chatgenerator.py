@@ -38,6 +38,7 @@ class ChatGenerator(PtbGenerator):
     )
 
     def __init__(self):
+        """Initialize the chat generator."""
         super().__init__()
 
     def get_chat(self,

@@ -37,6 +37,7 @@ class UserGenerator(PtbGenerator):
     )
 
     def __init__(self):
+        """Initialize the user generator."""
         super().__init__()
 
     def get_user(self,
