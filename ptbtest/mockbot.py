@@ -138,19 +138,12 @@ class Mockbot(TelegramObject):
         def decorator(self, *args, **kwargs):
             data = func(self, *args, **kwargs)
 
-            if kwargs.get('reply_to_message_id'):
-                data['reply_to_message_id'] = kwargs.get('reply_to_message_id')
+            values = ('reply_to_message_id', 'disable_notification', 'reply_markup')
+            for v in values:
+                if k := kwargs.get(v):
+                    to_json = (v == 'reply_markup' and isinstance(k, TelegramObject))
+                    data[v] = k.to_json() if to_json else k
 
-            if kwargs.get('disable_notification'):
-                data['disable_notification'] = kwargs.get(
-                    'disable_notification')
-
-            if kwargs.get('reply_markup'):
-                reply_markup = kwargs.get('reply_markup')
-                if isinstance(reply_markup, TelegramObject):
-                    data['reply_markup'] = reply_markup.to_json()
-                else:
-                    data['reply_markup'] = reply_markup
             data['method'] = func.__name__
             self._sendmessages.append(data)
             if data['method'] in ['send_chat_action']:
@@ -158,9 +151,16 @@ class Mockbot(TelegramObject):
             dat = kwargs.copy()
             dat.update(data)
             del (dat['method'])
-            dat.pop('disable_web_page_preview', "")
-            dat.pop('disable_notification', "")
-            dat.pop('reply_markup', "")
+
+            # Those keys aren't needed in a message, so they're deleted
+            useless = ('disable_web_page_preview', 'disable_notification',
+                       'reply_markup', 'inline_message_id', 'performer',
+                       'title', 'duration', 'phone_number', 'first_name',
+                       'last_name', 'filename', 'latitude', 'longitude',
+                       'foursquare_id', 'address', 'game_short_name')
+            for k in useless:
+                dat.pop(k, "")
+
             dat['user'] = self.get_me()
             cid = dat.pop('chat_id', None)
             if cid:
@@ -175,20 +175,6 @@ class Mockbot(TelegramObject):
             if cid:
                 dat['forward_from_chat'] = self._cg.get_chat(
                     id=cid, type='channel')
-            dat.pop('inline_message_id', None)
-            dat.pop('performer', '')
-            dat.pop('title', '')
-            dat.pop('duration', '')
-            dat.pop('duration', '')
-            dat.pop('phone_number', '')
-            dat.pop('first_name', '')
-            dat.pop('last_name', '')
-            dat.pop('filename', '')
-            dat.pop('latitude', '')
-            dat.pop('longitude', '')
-            dat.pop('foursquare_id', '')
-            dat.pop('address', '')
-            dat.pop('game_short_name', '')
             dat['document'] = dat.pop('document2', None)
             dat['audio'] = dat.pop('audio2', None)
             dat['voice'] = dat.pop('voice2', None)
