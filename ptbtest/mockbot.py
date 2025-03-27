@@ -131,7 +131,7 @@ class Mockbot(TelegramObject):
     @property
     def name(self):
         """Return the username handle as a string."""
-        return '@{0}'.format(self.username)
+        return f'@{self.username}'
 
     def message(func):
         @functools.wraps(func)
