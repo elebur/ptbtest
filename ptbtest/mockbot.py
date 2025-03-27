@@ -163,26 +163,28 @@ class Mockbot(TelegramObject):
 
             dat['user'] = self.get_me()
             cid = dat.pop('chat_id', None)
-            if cid:
-                dat['chat'] = self._cg.get_chat(id=cid)
-            else:
-                dat['chat'] = None
+            dat['chat'] = self._cg.get_chat(id=cid) if cid else None
+
             mid = dat.pop('reply_to_message_id', None)
             if mid:
                 dat['reply_to_message'] = self._mg.get_message(
                     id=mid, chat=dat['chat']).message
+
             cid = dat.pop('from_chat_id', None)
             if cid:
                 dat['forward_from_chat'] = self._cg.get_chat(
                     id=cid, type='channel')
+
             dat['document'] = dat.pop('document2', None)
             dat['audio'] = dat.pop('audio2', None)
             dat['voice'] = dat.pop('voice2', None)
             dat['video'] = dat.pop('video2', None)
             dat['sticker'] = dat.pop('sticker2', None)
+
             phot = dat.pop('photo', None)
             if phot:
                 dat['photo'] = True
+
             return self._mg.get_message(**dat).message
 
         return decorator
