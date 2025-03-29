@@ -27,7 +27,7 @@ from telegram import (Location, TelegramObject, User)
 from telegram.error import TelegramError
 
 
-from utils.deprecation import deprecated, reason
+from .utils.deprecation import deprecated, reason
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

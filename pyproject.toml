@@ -33,9 +33,10 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/AlexHorta/ptbtest#readme"
-Issues = "https://github.com/AlexHorta/ptbtest/issues"
-Source = "https://github.com/AlexHorta/ptbtest"
+Documentation = "https://github.com/ptbtest-dev/ptbtest#readme"
+Issues = "https://github.com/ptbtest-dev/ptbtest/issues"
+Source = "https://github.com/ptbtest-dev/ptbtest"
+
 
 
 # HATCH
@@ -62,6 +63,14 @@ extra-dependencies = [
 
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:ptbtest tests}"
+
+[tool.hatch.build]
+packages = ["ptbtest", "utils"]
+
+[tool.hatch.build.targets.sdist]
+
+[tool.hatch.build.targets.wheel]
+
 
 # RUFF
 [tool.ruff.lint]
