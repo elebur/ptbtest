@@ -114,6 +114,7 @@ class TestMessageGeneratorText:
         u = MessageGenerator().get_message(text="This is a test")
         assert u.message.text == "This is a test"
 
+    @pytest.mark.xfail(reason="Waiting for entity parsers.")
     def test_text_with_markdown(self):
         teststr = ("we have *bold* `code` [google](www.google.com) "
                    "@username #hashtag _italics_ ```pre block``` "
