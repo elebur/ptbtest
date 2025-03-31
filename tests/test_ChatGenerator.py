@@ -335,7 +335,6 @@ class TestGetPrivateChatMethod:
     def test_without_user_but_with_first_name(self, mock_chat, test_user):
         chat = mock_chat.get_private_chat(first_name=test_user.first_name)
 
-        # username == first_name + last_name
         # The 'first_name' is provided while the 'last_name' is generated.
         assert chat.username[:5] == "Ringo"
         assert chat.type == ChatType.PRIVATE
@@ -344,7 +343,6 @@ class TestGetPrivateChatMethod:
     def test_without_user_but_with_last_name(self, mock_chat, test_user):
         chat = mock_chat.get_private_chat(last_name=test_user.last_name)
 
-        # username == first_name + last_name
         # The 'last_name' is provided while the 'first_name' is generated.
         assert chat.username[-5:] == "Starr"
         assert chat.type == ChatType.PRIVATE

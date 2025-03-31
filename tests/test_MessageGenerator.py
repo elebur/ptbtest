@@ -167,35 +167,17 @@ class TestMessageGeneratorText:
 
         u = MessageGenerator().get_message(text=teststr, parse_mode="HTML")
         assert len(u.message.entities) == 9
+        
+        tol = {"bold": (8, 4), "code": (13, 4), "italic": (44, 7),
+               "pre": (52, 9), "text_link": (18, 6, "www.google.com"), "mention": (25, 9),
+               "hashtag": (35, 8), "url": (62, 20), "bot_command": (83, 6)}
         for ent in u.message.entities:
-            if ent.type == "bold":
-                assert ent.offset == 8
-                assert ent.length == 4
-            elif ent.type == "code":
-                assert ent.offset == 13
-                assert ent.length == 4
-            elif ent.type == "italic":
-                assert ent.offset == 44
-                assert ent.length == 7
-            elif ent.type == "pre":
-                assert ent.offset == 52
-                assert ent.length == 9
-            elif ent.type == "text_link":
-                assert ent.offset == 18
-                assert ent.length == 6
-                assert ent.url == "www.google.com"
-            elif ent.type == "mention":
-                assert ent.offset == 25
-                assert ent.length == 9
-            elif ent.type == "hashtag":
-                assert ent.offset == 35
-                assert ent.length == 8
-            elif ent.type == "url":
-                assert ent.offset == 62
-                assert ent.length == 20
-            elif ent.type == "bot_command":
-                assert ent.offset == 83
-                assert ent.length == 6
+            t = str(ent.type)
+            if t == "text_link":
+                assert ent.url == tol[t][2]
+            assert t in tol
+            assert ent.offset == tol[t][0]
+            assert ent.length == tol[t][1]
 
         with pytest.raises(BadMarkupException):
             MessageGenerator().get_message(
@@ -540,7 +522,7 @@ class TestMessageGeneratorChannelPost:
         with pytest.raises(BadChatException, match=r"telegram\.Chat"):
             MessageGenerator().get_channel_post(chat="chat")
 
-        with pytest.raises(BadChatException, match=r"chat\.type") as exc2:
+        with pytest.raises(BadChatException, match=r"chat\.type"):
             MessageGenerator().get_channel_post(chat=group)
 
     def test_with_user(self):

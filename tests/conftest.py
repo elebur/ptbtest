@@ -13,3 +13,4 @@ def test_user(request) -> User:
                                     username="ringo_starr",
                                     first_name="Ringo",
                                     last_name="Starr")
+

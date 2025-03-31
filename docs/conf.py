@@ -15,7 +15,8 @@ import sys
 
 sys.path.insert(0, os.path.abspath('../'))
 
-import telegram
+# This import is used in Read the Docs. Don't remove.
+import telegram # noqa: F401
 
 # -- Project information -----------------------------------------------------
 

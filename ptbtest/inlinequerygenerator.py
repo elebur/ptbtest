@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram callback queries"""
+import random
 import uuid
 
 from telegram import ChosenInlineResult
@@ -33,11 +34,12 @@ class InlineQueryGenerator(PtbGenerator):
         Attributes:
             bot (ptbtest.Mockbot): Bot to encode with the messages
 
-        Args:
+        Arguments:
             bot (Optional[ptbtest.Mockbot]): supply your own for a custom botname
     """
 
     def __init__(self, bot=None):
+        """Initialize the inline query generator, with an optional bot."""
         PtbGenerator.__init__(self)
         self.ug = UserGenerator()
         if not bot:
@@ -54,19 +56,16 @@ class InlineQueryGenerator(PtbGenerator):
                          offset=None,
                          location=None):
         """
-
         Returns a telegram.Update object containing a inline_query.
 
-
-        Parameters:
+        Arguments:
+            user (Optional[telegram.User): If omitted, will be randomly generated
+            query (Optional[str]): The query string to be used
+            offset (Optional[str]): Offset of the results to be returned
             location (Optional[telegram.Location or True]): simulates a location
-            offset (Optional[str]):
-            query (Optional[str]):
-            user (Optional[telegram.User): If omitted will be randomly generated
 
         Returns:
             telegram.Update: an update containing a :py:class:`telegram.InlineQuery`
-
         """
 
         if user:
@@ -87,7 +86,6 @@ class InlineQueryGenerator(PtbGenerator):
             if isinstance(location, Location):
                 pass
             elif isinstance(location, bool):
-                import random
                 location = Location(
                     random.uniform(-180, 180), random.uniform(-90, 90))
             else:
@@ -111,7 +109,7 @@ class InlineQueryGenerator(PtbGenerator):
         """
         Returns a telegram.Update object containing a inline_query.
 
-        Parameters:
+        Arguments:
             result_id (str): The result_id belonging to this chosen result
             inline_message_id (Optional[str]): Of omitted will be generated
             location (Optional[telegram.Location or True]): simulates a location
@@ -139,7 +137,6 @@ class InlineQueryGenerator(PtbGenerator):
             if isinstance(location, Location):
                 pass
             elif isinstance(location, bool):
-                import random
                 location = Location(
                     random.uniform(-180, 180), random.uniform(-90, 90))
             else:

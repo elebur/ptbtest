@@ -1,4 +1,4 @@
-# ruff: noqa: S311
+# ruff: noqa: A001, A002, S311
 # A library that provides a testing suite fot python-telegram-bot
 # which can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
@@ -18,7 +18,8 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """This module provides a class to generate telegram mesages"""
 import datetime
-import time
+import random
+import uuid
 
 from ptbtest import (UserGenerator, ChatGenerator, Mockbot)
 from ptbtest.updategenerator import update
@@ -33,16 +34,17 @@ from telegram import (Audio, Chat, Contact, Document, Location, Message,
 
 class MessageGenerator(PtbGenerator):
     """
-        Message generator class.
+    Message generator class.
 
-        Attributes:
-            bot (ptbtest.Mockbot): Bot to encode with the messages
+    Attributes:
+        bot (ptbtest.Mockbot): Bot to encode with the messages
 
-        Args:
-            bot (Optional[ptbtest.Mockbot]): supply your own for a custom botname
+    Arguments:
+        bot (Optional[ptbtest.Mockbot]): supply your own for a custom botname
     """
 
     def __init__(self, bot=None):
+        """Initialize the message generator, with an optional bot."""
         PtbGenerator.__init__(self)
         self.idgen = self._gen_id()
         self.ug = UserGenerator()
@@ -63,7 +65,7 @@ class MessageGenerator(PtbGenerator):
     @update("edited_channel_post")
     def get_edited_channel_post(self, channel_post=None, **kwargs):
         """
-        Parameters:
+        Arguments:
             channel_post (Optional(telegram.Message)): The edited_channel_post will the same user, chat and message_id
             **kwargs: See get_message for the full list
 
@@ -85,7 +87,7 @@ class MessageGenerator(PtbGenerator):
     @update("channel_post")
     def get_channel_post(self, chat=None, user=None, **kwargs):
         """
-        Parameters:
+        Arguments:
             chat (Optional[telegram.Chat]): Chat with type='channel' to use with this update
             user (Optional[telegram.User]): User for the update. None if omitted
             **kwargs: See get_message
@@ -108,7 +110,7 @@ class MessageGenerator(PtbGenerator):
     @update("edited_message")
     def get_edited_message(self, message=None, **kwargs):
         """
-        Parameters:
+        Arguments:
             message (Optional(telegram.Message)): The edited_message will have the same user, chat and message_id
             **kwargs: See get_message for the full list
 
@@ -167,35 +169,38 @@ class MessageGenerator(PtbGenerator):
             whenever a list of telegram.PhotoSize objects is expected but not supplied it will always be a
             list with two random sizes between 40-400 pixels. These will not be valid file id's
 
-        Parameters:
+        Arguments:
+            id (Optional [int]): The user's id
             user (Optional[telegram.User]): User the message is from (m.from_user)
             chat (Optional[telegram.Chat]): Chat the message is from (m.chat).
             private (Optional[bool]): If the message is private (optionally with the supplied user) default=True
-            text (str): The text for the message, can make use of markdown or html, make sure to specify with parse_mode
-            parse_mode (Optional[str]): "HTML" or "Markdown" parses the text and fills entities
-            entities (Optional[lst(telegram.MessageEntity)]): when text and parsemode are set this will be filled with the entities in the text.  # noqa: E501
             reply_to_message (Optional[telegram.Message): Messages this one is a reply to
+            text (str): The text for the message, can make use of markdown or html, make sure to specify with parse_mode
+            entities (Optional[lst(telegram.MessageEntity)]): when text and parsemode are set this will be filled with the entities in the text.  # noqa: E501
+            audio (Optional[telegram.Audio] or True): Either the right object or True to generate one
+            document (Optional[telegram.Document or True]): Either the right object or True to generate one
+            photo (Optional[lst(telegram.PhotoSize) or True]): Either the right object or True to generate one
+            sticker (Optional[telegram.Sticker] or True): Either the right object or True to generate one
+            video (Optional[telegram.Video or True]): Either the right object or True to generate one
+            voice (Optional[telegram.Voice or True]): Either the right object or True to generate one
+            caption (Optional[str or True]): Either the right object or True to generate one
+            contact (optional[telegram.Contact or True]): Either the right object or True to generate one
+            location (optional[telegram.Location or True]): Either the right object or True to generate one
+            venue (Optional[telegram.Venue or True]): Either the right object or True to generate one
             new_chat_members (Optional[seq(telegram.User)]): New member(s) for this chat
             left_chat_member (Optional[telegram.User]): Member left this chat
             new_chat_title (Optional[str]): New title for the chat
             new_chat_photo (Optional[lst(telegram.Photosize)] or True): New picture for the group
-            pinned_message (Optional[telegram.Message]): Pinned message for supergroups
-            channel_chat_created (Optional[True]): Not integrated
-            migrate_from_chat_id (Optional[int]): Not integrated
-            migrate_to_chat_id (Optional[int]): Not integrated
-            supergroup_chat_created (Optional[True]): Not integrated
-            group_chat_created (Optional[True]): Not integrated
             delete_chat_photo (Optional[True]): Not integrated
-            venue (Optional[telegram.Venue or True]): Either the right object or True to generate one
-            location (optional[telegram.Location or True]): Either the right object or True to generate one
-            contact (optional[telegram.Contact or True]): Either the right object or True to generate one
-            caption (Optional[str or True]: Either the right object or True to generate one
-            voice (Optional[telegram.Voice or True]): Either the right object or True to generate one
-            video (Optional[telegram.Video or True]): Either the right object or True to generate one
-            sticker (Optional[telegram.Sticker] or True): Either the right object or True to generate one
-            photo (Optional[lst(telegram.PhotoSize) or True]): Either the right object or True to generate one
-            document (Optional[telegram.Document or True]): Either the right object or True to generate one
-            audio (Optional[telegram.Audio] or True): Either the right object or True to generate one
+            group_chat_created (Optional[True]): Not integrated
+            supergroup_chat_created (Optional[True]): Not integrated
+            migrate_to_chat_id (Optional[int]): Not integrated
+            migrate_from_chat_id (Optional[int]): Not integrated
+            channel_chat_created (Optional[True]): Not integrated
+            pinned_message (Optional[telegram.Message]): Pinned message for supergroups
+            parse_mode (Optional[str]): "HTML" or "Markdown" parses the text and fills entities
+            channel (Optional[str]): If the message was sent via a channel
+            via_bot (Optional[bool]): If the message was sent via a bot
 
         Returns:
             telegram.Update: A telegram update object containing a :py:class:`telegram.Message`.
@@ -358,35 +363,6 @@ class MessageGenerator(PtbGenerator):
                     "audio must either be True or telegram.Audio")
         return audio, contact, document, location, photo, sticker, venue, video, voice
 
-#     def _handle_forward(self, forward_date, forward_from, forward_from_chat,
-#                         forward_from_message_id):
-#         if forward_from and not isinstance(forward_from, User):
-#             raise BadUserException()
-#         if forward_from_chat:
-#             if not isinstance(forward_from_chat, Chat):
-#                 raise BadChatException
-#             if forward_from_chat.type != "channel":
-#                 raise BadChatException(
-#                     'forward_from_chat must be of type "channel"')
-#             if not forward_from:
-#                 forward_from = UserGenerator().get_user()
-#         if forward_from and not isinstance(forward_date, int):
-#             if not isinstance(forward_date, datetime.datetime):
-#                 now = datetime.datetime.now()
-#             else:
-#                 now = forward_date
-#             try:
-#                 # Python 3.3+
-#                 forward_date = int(now.timestamp())
-#             except AttributeError:
-#                 # Python 3 (< 3.3) and Python 2
-#                 forward_date = int(time.mktime(now.timetuple()))
-#         if (forward_from_message_id and
-#                 not isinstance(forward_from_message_id, int)) or (
-#                     forward_from_chat and not forward_from_message_id):
-#             forward_from_message_id = next(self.idgen)
-#         return forward_date, forward_from, forward_from_message_id
-
     def _handle_status(self, channel_chat_created, chat, delete_chat_photo,
                        group_chat_created, left_chat_member,
                        migrate_from_chat_id, migrate_to_chat_id,
@@ -490,17 +466,14 @@ class MessageGenerator(PtbGenerator):
 
     def _get_photosize(self):
         tmp = []
-        import uuid
-        from random import randint
         for _ in range(2):
-            w, h = randint(40, 400), randint(40, 400)
+            w, h = random.randint(40, 400), random.randint(40, 400)
             s = w * h * 0.3
             tmp.append(PhotoSize("random_photo_size_name", str(uuid.uuid4()), w, h, file_size=s))
         return tmp
 
     def _get_location(self):
-        from random import uniform
-        return Location(uniform(-180.0, 180.0), uniform(-90.0, 90.0))
+        return Location(random.uniform(-180.0, 180.0), random.uniform(-90.0, 90.0))
 
     def _get_venue(self):
         loc = self._get_location()
@@ -512,34 +485,25 @@ class MessageGenerator(PtbGenerator):
         return Contact("06123456789", user.first_name)
 
     def _get_voice(self):
-        import uuid
-        from random import randint
-        return Voice(str(uuid.uuid4()), randint(1, 120), randint(1, 60))
+        return Voice(str(uuid.uuid4()), random.randint(1, 120), random.randint(1, 60))
 
     def _get_video(self, data=None):
-        import uuid
-        from random import randint
         if data:
             return Video(**data)
         return Video(
             "random_name", str(uuid.uuid4()),
-            randint(40, 400), randint(40, 400), randint(2, 300))
+            random.randint(40, 400), random.randint(40, 400), random.randint(2, 300))
 
     def _get_sticker(self, data=None):
-        import uuid
-        from random import randint
         if data:
-            data['width'] = randint(20, 200)
-            data['height'] = randint(20, 200)
+            data['width'] = random.randint(20, 200)
+            data['height'] = random.randint(20, 200)
             return Sticker(**data)
         return Sticker(str(uuid.uuid4()), "sticker_unique_id",
-                       randint(20, 200), randint(20, 200), True, True, "REGULAR")
+                       random.randint(20, 200), random.randint(20, 200), True, True, "REGULAR")
 
     def _get_document(self):
-        import uuid
         return Document("document_random_name", str(uuid.uuid4()), file_name="somedoc.pdf")
 
     def _get_audio(self):
-        import uuid
-        from random import randint
-        return Audio(str(uuid.uuid4()), randint(1, 120), randint(1, 60), title="Some song")
+        return Audio(str(uuid.uuid4()), random.randint(1, 120), random.randint(1, 60), title="Some song")

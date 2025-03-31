@@ -26,7 +26,8 @@ import time
 from telegram import (Location, TelegramObject, User)
 from telegram.error import TelegramError
 
-from utils.deprecation import deprecated, reason
+
+from .utils.deprecation import deprecated, reason
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -38,11 +39,11 @@ class Mockbot(TelegramObject):
     All methods described in :py:class:`telegram.Bot` are functional and here are described only
     the special methods added for testing functionality.
 
-
-    Parameters:
+    Arguments:
         username (Optional[str]): Username for this bot. Defaults to 'MockBot'.
     """
     def __init__(self, username="MockBot", **kwargs):
+        """Initialize the mockbot, with an optional username."""
         self._updates = []
         self._bot = None
         self._username = username
@@ -130,26 +131,19 @@ class Mockbot(TelegramObject):
     @property
     def name(self):
         """Return the username handle as a string."""
-        return '@{0}'.format(self.username)
+        return f'@{self.username}'
 
     def message(func):
         @functools.wraps(func)
         def decorator(self, *args, **kwargs):
             data = func(self, *args, **kwargs)
 
-            if kwargs.get('reply_to_message_id'):
-                data['reply_to_message_id'] = kwargs.get('reply_to_message_id')
+            values = ('reply_to_message_id', 'disable_notification', 'reply_markup')
+            for v in values:
+                if k := kwargs.get(v):
+                    to_json = (v == 'reply_markup' and isinstance(k, TelegramObject))
+                    data[v] = k.to_json() if to_json else k
 
-            if kwargs.get('disable_notification'):
-                data['disable_notification'] = kwargs.get(
-                    'disable_notification')
-
-            if kwargs.get('reply_markup'):
-                reply_markup = kwargs.get('reply_markup')
-                if isinstance(reply_markup, TelegramObject):
-                    data['reply_markup'] = reply_markup.to_json()
-                else:
-                    data['reply_markup'] = reply_markup
             data['method'] = func.__name__
             self._sendmessages.append(data)
             if data['method'] in ['send_chat_action']:
@@ -157,46 +151,40 @@ class Mockbot(TelegramObject):
             dat = kwargs.copy()
             dat.update(data)
             del (dat['method'])
-            dat.pop('disable_web_page_preview', "")
-            dat.pop('disable_notification', "")
-            dat.pop('reply_markup', "")
+
+            # Those keys aren't needed in a message, so they're deleted
+            useless = ('disable_web_page_preview', 'disable_notification',
+                       'reply_markup', 'inline_message_id', 'performer',
+                       'title', 'duration', 'phone_number', 'first_name',
+                       'last_name', 'filename', 'latitude', 'longitude',
+                       'foursquare_id', 'address', 'game_short_name')
+            for k in useless:
+                dat.pop(k, "")
+
             dat['user'] = self.get_me()
             cid = dat.pop('chat_id', None)
-            if cid:
-                dat['chat'] = self._cg.get_chat(id=cid)
-            else:
-                dat['chat'] = None
+            dat['chat'] = self._cg.get_chat(id=cid) if cid else None
+
             mid = dat.pop('reply_to_message_id', None)
             if mid:
                 dat['reply_to_message'] = self._mg.get_message(
                     id=mid, chat=dat['chat']).message
-            #dat['forward_from_message_id'] = dat.pop('message_id', None)
+
             cid = dat.pop('from_chat_id', None)
             if cid:
                 dat['forward_from_chat'] = self._cg.get_chat(
                     id=cid, type='channel')
-            dat.pop('inline_message_id', None)
-            dat.pop('performer', '')
-            dat.pop('title', '')
-            dat.pop('duration', '')
-            dat.pop('duration', '')
-            dat.pop('phone_number', '')
-            dat.pop('first_name', '')
-            dat.pop('last_name', '')
-            dat.pop('filename', '')
-            dat.pop('latitude', '')
-            dat.pop('longitude', '')
-            dat.pop('foursquare_id', '')
-            dat.pop('address', '')
-            dat.pop('game_short_name', '')
+
             dat['document'] = dat.pop('document2', None)
             dat['audio'] = dat.pop('audio2', None)
             dat['voice'] = dat.pop('voice2', None)
             dat['video'] = dat.pop('video2', None)
             dat['sticker'] = dat.pop('sticker2', None)
+
             phot = dat.pop('photo', None)
             if phot:
                 dat['photo'] = True
+
             return self._mg.get_message(**dat).message
 
         return decorator
@@ -205,15 +193,11 @@ class Mockbot(TelegramObject):
     def getMe(self, *args, **kwargs):
         return self.get_me(args, kwargs)
 
-    def get_me(self, timeout=None, **kwargs):
+    def get_me(self, **kwargs):
         """Return a bot, a ``telegram.User`` instance.
 
         Arguments:
-            id ([int]): The ID for the bot.
-            first_name ([str]): The first name of the user or bot.
-            is_bot ([bool]): True if the user is a bot.
-            last_name ([str]): The last name of the user or bot.
-            username ([str]): The username of the user or bot.
+            **kwargs: A dictionary with arguments for the bot
 
         Returns:
             :class:`telegram.User`: An user or a bot with the supplied arguments.
@@ -784,7 +768,7 @@ class Mockbot(TelegramObject):
         ``get_updates`` which is used by the :py:class:`telegram.Updater`. This way the updater can function without any
         modifications.
 
-        Args:
+        Arguments:
             update (telegram.Update): The update to insert in the queue.
         """
         self._updates.append(update)

@@ -1,3 +1,4 @@
+# ruff: noqa: A001, A002
 # A library that provides a testing suite fot python-telegram-bot
 # which can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
@@ -38,6 +39,7 @@ class ChatGenerator(PtbGenerator):
     )
 
     def __init__(self):
+        """Initialize the chat generator."""
         super().__init__()
 
     def get_chat(self,
@@ -57,7 +59,7 @@ class ChatGenerator(PtbGenerator):
         When called without arguments will return a telegram.Chat object for a private chat with a randomly
         generated user.
 
-        Args:
+        Arguments:
             id (Optional[int]): ID of the returned chat.
             type (Optional[Union[ChatType, str]]): Type of the chat can be either
                 telegram.constants.ChatType or the string literal ("private", "group", "supergroup", "channel").
@@ -139,7 +141,7 @@ class ChatGenerator(PtbGenerator):
         The convenient method for generating private chats.
         If any of the arguments are omitted the values will be chosen randomly.
 
-        Parameters:
+        Arguments:
             id (Optional[int]): ID of the returned chat.
             user (Optional[telegram.User]): If given, a private chat for the supplied user will be generated.
             username (Optional[str]): A username for the user.

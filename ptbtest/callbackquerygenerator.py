@@ -39,6 +39,7 @@ class CallbackQueryGenerator(PtbGenerator):
     """
 
     def __init__(self, bot=None):
+        """Initialize the callback query generator, with an optional bot."""
         PtbGenerator.__init__(self)
         self.ug = UserGenerator()
         if not bot:
@@ -50,7 +51,13 @@ class CallbackQueryGenerator(PtbGenerator):
 
     @update("callback_query")
     def get_callback_query(
-        self, user=None, chat_instance=None, message=None, data=None, inline_message_id=None, game_short_name=None
+        self,
+        user=None,
+        chat_instance=None,
+        message=None,
+        data=None,
+        inline_message_id=None,
+        game_short_name=None
     ):
         """
         Returns a telegram.Update object containing a callback_query.
@@ -59,12 +66,12 @@ class CallbackQueryGenerator(PtbGenerator):
             One of *message* and *inline_message_id* must be present.
             One of *data* and *game_short_name* must be present.
 
-        Parameters:
+        Arguments:
             user (Optional[telegram.User]): User that initiated the callback_query.
             chat_instance (Optional[str]): unique identifier, not used.
             message (Optional[telegram.Message]): Message the callback_query button belongs to.
-            inline_message_id (Optional[str]): Message the callback_query button belongs to.
             data (Optional[string]): Data attached to the button.
+            inline_message_id (Optional[str]): Message the callback_query button belongs to.
             game_short_name (Optional[str]): game identifier with this button.
 
         Returns:
