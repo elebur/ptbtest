@@ -15,42 +15,252 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-"""This module provides a helperclass to transform marked_up messages to plaintext with entities"""
+"""
+This module provides a helper class to transform
+marked-up messages to plain text with entities.
+Docs: https://core.telegram.org/bots/api#formatting-options
+"""
 import re
+from typing import Tuple, Any, Sequence
+from urllib.parse import urlparse
 
-from ptbtest.errors import BadMarkupException
 from telegram import MessageEntity
 
+from ptbtest.errors import BadMarkupException
 
-class EntityParser():
+
+def get_utf_16_length(char: str) -> int:
     """
-    Placeholder class for the static parser methods
+    Telegram uses UTF-16 for message entities:
+    https://core.telegram.org/api/entities#utf-16
+
+    A simple way of computing
+    the entity length is converting the text to UTF-16,
+    and then taking the byte length divided
+    by 2 (=number of UTF-16 code units).
+    Source: https://core.telegram.org/api/entities#computing-entity-length
     """
+    return len(char.encode("utf-16-le")) // 2
 
-    def __init__(self):
-        pass
 
+def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
+    """
+    Safely gets item from the sequence by its index.
+    If the `index` is out of the range, then the default value is returned.
+    """
+    return seq[index] if index < len(seq) else default
+
+
+def check_and_normalize_url(url: str) -> str:
+    if not url or url.startswith(" ") or url.endswith(" "):
+        return ""
+
+    result = url
+
+    # If the protocol is not specified, setting 'http' protocol
+    if "://" not in result:
+        result = "http://" + result
+
+    try:
+        parse_url = urlparse(result)
+    except ValueError:
+        return ""
+
+    if parse_url.scheme not in ("http", "https", "ton", "tg", "tonsite"):
+        return ""
+
+    # Adding trailing slash only for URLs without path. E.g.
+    # https://www.example.com - adds the slash.
+    # https://www.example.com/login - doesn't add the slash.
+    if not parse_url.path and not result.endswith("/"):
+        result += "/"
+
+    return result
+
+
+class EntityParser:
     @staticmethod
-    def parse_markdown(message):
+    def parse_markdown(text: str) -> Tuple[str, Tuple[MessageEntity, ...]]:
         """
-
-        Args:
-            message (str): Message with Markdown text to be transformed
+        The method looks for Markdown V1 entities in the given text.
+        Telegram documentation: https://core.telegram.org/bots/api#markdown-style
+        Parameters:
+            text (str): Message with a Markdown V1 text to be transformed
 
         Returns:
-            (message(str), entities(list(telegram.MessageEntity))): The entities found in the message and
-            the message after parsing.
+            (message, entities): The message as a plain text and entities found in the text.
         """
-        invalids = re.compile(
-            r'''(\*_|\*```|\*`|\*\[.*?\]\(.*?\)|_\*|_```|_`|_\[.*?\]\(.*?\)|```\*|```_|
-                                  ```\[.*?\]\(.*?\)|`\*|`_|`\[.*?\]\(.*?\)|\[.*?\]\(.*?\)\*|
-                                  \[.*?\]\(.*?\)_|\[.*?\]\(.*?\)```|\[.*?\]\(.*?\)`)'''
-        )
-        tags = re.compile(r'(([`]{3}|\*|_|`)(.*?)(\2))')
-        text_links = re.compile(r'(\[(?P<text>.*?)\]\((?P<url>.*?)\))')
+        entities = list()
+        striped_text = text.strip()
+        text_size = len(striped_text)
+        utf16_offset = 0
+        new_text = list()
 
-        return EntityParser.__parse_text("Markdown", message, invalids, tags,
-                                         text_links)
+        # https://github.com/TelegramMessenger/libprisma#supported-languages
+        pre_code_language_pattern = re.compile(r"^([a-z0-9-]+)\s*")
+
+        i = 0
+        while i < text_size:
+            ch = striped_text[i]
+            if ch == "\\" and get_item(striped_text, i+1) in "_*`[":
+                # Skip the escape symbol (\).
+                i += 1
+                new_text.append(striped_text[i])
+                # Go to the next char in the given string.
+                i += 1
+                utf16_offset += 1
+                continue
+
+            # Current char is NOT an entity beginning.
+            # Save it 'as is' and go on to the next char
+            if ch not in "_*`[":
+                # Here it might be any symbol, and it can have any length.
+                # E.g. 'A' has 1 code unit, '©' has 1 code unit, '😊' has 2 code units.
+                utf16_offset += get_utf_16_length(ch)
+                new_text.append(ch)
+                i += 1
+                continue
+
+            # Telegram returns error messages with the offset specified in bytes.
+            # The length of strings and byte strings might be different. E.g.:
+            # len('A©😊') == 3, while len('A©😊'.encode()) == 7.
+            # This value is used only for the error message.
+            begin_index_utf16 = len(striped_text[:i].encode())
+            begin_index = i
+            end_character = ch
+
+            if ch == "[":
+                end_character = "]"
+
+            # Skipping the entity's opening char.
+            i += 1
+            language = ""
+
+            is_pre = False
+            if ch == "`" and i + 2 < text_size and striped_text[i:i+2] == "``":
+                # The code entity has three chars (```).
+                # The first one was skipped few lines above
+                # (`i += 1` just above this `if`).
+                # Increasing the counter by 2 to skip the rest of the entity's
+                # symbols and jump to the text.
+                i += 2
+                is_pre = True
+                # Trying to get language name.
+                # E.g.:
+                # ```python <- this name
+                # print("Hello, world!")
+                # ```
+                if lang_match := pre_code_language_pattern.match(striped_text[i:]):
+                    # .group(0) contains trailing space too.
+                    # .group(1) contains the language name only.
+                    language = lang_match.group(1)
+                    i += len(language)
+
+                if striped_text[i] in "\r\n":
+                    i += 1
+
+            entity_offset = utf16_offset
+
+            entity_content_pattern = fr"^(.*?)\{end_character}"
+            if is_pre:
+                entity_content_pattern = r"^(.*?)```"
+
+            # Here we parse all content inside the entity
+            # up to closing symbol (which is not included).
+            if entity_content_match := re.match(entity_content_pattern,
+                                                striped_text[i:],
+                                                re.DOTALL):
+                entity_end_char = "```" if is_pre else end_character
+                entity_content = (entity_content_match.group()
+                                  .removesuffix(entity_end_char))
+                i += len(entity_content)
+
+                # If this is the end of the message, then remove ALL trailing
+                # whitespaces and new line characters.
+                if i + len(entity_end_char) == text_size:
+                    entity_content = entity_content.rstrip()
+
+                # If the current entity is a link (starts with '[')...
+                if ch == "[":
+                    # ... and there is a whitespace or a newline between
+                    # square brackets and parentheses
+                    if m := re.match(r"^]\s+\([^)]+\)", striped_text[i:]):
+                        # Saving the content of the square brackets 'as is'.
+                        new_text.append(entity_content)
+                        # `+1` here is the length of the entity's end char (`]`).
+                        i += 1
+                        continue
+                    # ... or if there is nothing after the entity or there are
+                    # only whitespaces, then remove all whitespaces at the end
+                    # of the string.
+                    # Here the trailing whitespace WON'T be striped:
+                    # `[inline URL ](http://www.example.com) with trailing text.`
+                    # While here the whitespace WILL be striped:
+                    # `[inline URL ](http://www.example.com)`
+                    elif (get_item(striped_text, i + 1) == "(" and
+                            not re.match(r"^]\(.*?\)\s*\S.*", striped_text[i:])):
+                        entity_content = entity_content.rstrip()
+
+                utf16_offset += get_utf_16_length(entity_content)
+                new_text.append(entity_content)
+            # The code reached the end of the text, but the end
+            # of the entity wasn't found.
+            if i == text_size or not entity_content_match:
+                # `telegram.Bot` raises `telegram.error.BadRequest` error.
+                raise BadMarkupException(f"Can't parse entities: can't find end of the entity "
+                                         f"starting at byte offset {begin_index_utf16}")
+
+            if entity_offset != utf16_offset:
+                entity_length = utf16_offset - entity_offset
+                if ch == "_":
+                    entities.append(MessageEntity(MessageEntity.ITALIC,
+                                                  entity_offset,
+                                                  entity_length))
+                elif ch == "*":
+                    entities.append(MessageEntity(MessageEntity.BOLD,
+                                                  entity_offset,
+                                                  entity_length))
+                elif ch == "[":
+                    url = ""
+                    if get_item(striped_text, i + 1) == "(":
+                        i += 2
+                        while i < text_size and striped_text[i] != ")":
+                            url += striped_text[i]
+                            i += 1
+                    # If there is no part with the URL (only square brackets:
+                    # `[no URL part here]`) and the current entity is the only
+                    # entity for now (the left most in the text), then we must strip
+                    # all whitespaces at the beginning of the string.
+                    else:
+                        if len(new_text) == 1:
+                            new_text[-1] = new_text[-1].lstrip()
+
+                    if checked_url := check_and_normalize_url(url):
+                        # By some reason Markdown V1 ignores inline mentions.
+                        # E.g.: [inline mention of a user](tg://user?id=123456789)
+                        if not checked_url.startswith("tg://"):
+                            entities.append(MessageEntity(MessageEntity.TEXT_LINK,
+                                                          entity_offset,
+                                                          entity_length,
+                                                          url=checked_url))
+                elif ch == "`":
+                    if is_pre:
+                        entities.append(MessageEntity(MessageEntity.PRE,
+                                                      entity_offset,
+                                                      entity_length,
+                                                      language=language))
+
+                    else:
+                        entities.append(MessageEntity(MessageEntity.CODE,
+                                                      entity_offset,
+                                                      entity_length))
+
+            if is_pre:
+                i += 2
+            i += 1
+
+        return "".join(new_text).rstrip(), tuple(entities)
+
 
     @staticmethod
     def parse_html(message):
@@ -122,12 +332,12 @@ class EntityParser():
             entities.append(
                 MessageEntity('mention',
                               mention.start(), mention.end() - mention.start(
-                              )))
+                    )))
         for hashtag in hashtags.finditer(message):
             entities.append(
                 MessageEntity('hashtag',
                               hashtag.start(), hashtag.end() - hashtag.start(
-                              )))
+                    )))
         for botcommand in botcommands.finditer(message):
             entities.append(
                 MessageEntity('bot_command',
@@ -136,5 +346,5 @@ class EntityParser():
         for url in urls.finditer(message):
             entities.append(
                 MessageEntity('url', url.start(), url.end() - url.start()))
-        
+
         return message, entities
