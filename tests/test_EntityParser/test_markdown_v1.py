@@ -786,3 +786,9 @@ class TestMisc:
         resp = self.ep.parse_markdown(input)
 
         assert resp == (result, ())
+
+    @pytest.mark.parametrize("input, offset", (("A", 24), ("©", 25), ("😊", 27)))
+    def test_error_message_with_different_characters(self, input, offset):
+        text = f"Text with '{input}' and broken*entity"
+        with pytest.raises(BadMarkupException, match=ERR_MSG.format(offset=offset)):
+            self.ep.parse_markdown(text)
