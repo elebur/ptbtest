@@ -48,7 +48,19 @@ def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
     Safely gets item from the sequence by its index.
     If the `index` is out of the range, then the default value is returned.
     """
-    return seq[index] if index < len(seq) else default
+    # An empty sequence.
+    if not seq:
+        return default
+
+    # The positive index, but it is out of the range.
+    if index > 0 and index >= len(seq):
+        return default
+
+    # The negative index, but it is out of the range.
+    if index < 0 and abs(index) > len(seq):
+        return default
+
+    return seq[index]
 
 
 def check_and_normalize_url(url: str) -> str:
