@@ -104,13 +104,3 @@ class TestCheckAndNormalizeUrl:
         assert check_and_normalize_url("http://example.com/") == "http://example.com/"
         assert check_and_normalize_url("http://example.com/path") == "http://example.com/path"
         assert check_and_normalize_url("http://example.com/path/") == "http://example.com/path/"
-
-
-    """
-    broken url
-    "[inline URL](http://www.example.com/ asfdasdfasdf"
-     "[inline URL](http://www.exa   mple"
-    "[inline url](https://www.exmaple.com/ asldfj/asldfj?slafj=lklk&aljsdfkj=asldf j)"
-    """
-
-    pass
