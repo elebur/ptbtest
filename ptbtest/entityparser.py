@@ -271,7 +271,11 @@ class EntityParser:
                 i += 2
             i += 1
 
-        return "".join(new_text).rstrip(), tuple(entities)
+        result_str = "".join(new_text).rstrip()
+        if not result_str:
+            raise BadMarkupException("Text must be non-empty")
+
+        return result_str, tuple(entities)
 
 
     @staticmethod
