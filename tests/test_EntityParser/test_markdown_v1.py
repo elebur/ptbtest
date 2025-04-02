@@ -1,5 +1,4 @@
 import re
-from nis import match
 
 import pytest
 from telegram import MessageEntity
