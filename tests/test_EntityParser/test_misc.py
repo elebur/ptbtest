@@ -2,7 +2,8 @@ import pytest
 
 from ptbtest.entityparser import (EntityParser,
                                   get_utf_16_length,
-                                  get_item)
+                                  get_item,
+                                  check_and_normalize_url)
 
 
 def test_get_utf_16_length():
@@ -71,3 +72,45 @@ class TestGetItem:
     def test_empty_sequence(self):
         assert get_item([], 0) is None
         assert get_item([], 3, "empty") == "empty"
+
+
+class TestCheckAndNormalizeUrl:
+
+    def test_empty_string(self):
+        assert not check_and_normalize_url("")
+
+    def test_leading_and_trailing_whitespaces(self):
+        assert not check_and_normalize_url(" http://example.com")
+        assert not check_and_normalize_url("http://example.com ")
+        assert not check_and_normalize_url(" http://example.com ")
+
+    def test_valid_protocols(self):
+        assert check_and_normalize_url("http://example.com") == "http://example.com/"
+        assert check_and_normalize_url("https://example.com/") == "https://example.com/"
+        assert check_and_normalize_url("ton://example.com") == "ton://example.com/"
+        assert check_and_normalize_url("tg://example.com") == "tg://example.com/"
+        assert check_and_normalize_url("tonsite://example.com") == "tonsite://example.com/"
+
+    def test_no_protocol(self):    # No protocol
+        assert check_and_normalize_url("example.com") == "http://example.com/"
+
+    def test_wrong_protocol(self):
+        assert not check_and_normalize_url("ftp://example.com")
+        assert not check_and_normalize_url("htts://example.com")
+        assert not check_and_normalize_url("ws://example.com")
+
+    def test_trailing_slash(self):
+        assert check_and_normalize_url("http://example.com") == "http://example.com/"
+        assert check_and_normalize_url("http://example.com/") == "http://example.com/"
+        assert check_and_normalize_url("http://example.com/path") == "http://example.com/path"
+        assert check_and_normalize_url("http://example.com/path/") == "http://example.com/path/"
+
+
+    """
+    broken url
+    "[inline URL](http://www.example.com/ asfdasdfasdf"
+     "[inline URL](http://www.exa   mple"
+    "[inline url](https://www.exmaple.com/ asldfj/asldfj?slafj=lklk&aljsdfkj=asldf j)"
+    """
+
+    pass
