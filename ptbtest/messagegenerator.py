@@ -252,7 +252,7 @@ class MessageGenerator(PtbGenerator):
             migrate_from_chat_id=migrate_from_chat_id,
             channel_chat_created=channel_chat_created,
             pinned_message=pinned_message,
-            via_bot=self.bot)
+            via_bot=via_bot)
 
     def _handle_attachments(self, audio, contact, document, location, photo,
                             sticker, user, venue, video, voice, caption):
