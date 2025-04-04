@@ -51,10 +51,11 @@ class MessageGenerator(PtbGenerator):
         self.cg = ChatGenerator()
         if not bot:
             self.bot = Mockbot()
-        elif isinstance(bot, Mockbot):
-            self.bot = bot
+        # elif isinstance(bot, Mockbot):
+        #     self.bot = bot
         else:
-            raise BadBotException
+            self.bot = bot
+            # raise BadBotException
 
     def _gen_id(self):
         x = 1
@@ -131,6 +132,7 @@ class MessageGenerator(PtbGenerator):
     @update("message")
     def get_message(self,
                     id=None,
+                    date=None,
                     user=None,
                     chat=None,
                     private=True,
@@ -223,9 +225,9 @@ class MessageGenerator(PtbGenerator):
             audio, contact, document, location, photo, sticker, user, venue,
             video, voice, caption)
 
-        return Message(
+        m = Message(
             id or next(self.idgen),
-            datetime.datetime.now(),  # Adding to make tests/test_MessageGenerator.py::TestMessageGeneratorCore::test_private_message pass. Change to a suitable object later.
+            date or datetime.datetime.now(),  # Adding to make tests/test_MessageGenerator.py::TestMessageGeneratorCore::test_private_message pass. Change to a suitable object later.
             chat,
             from_user=user,
             text=text,
@@ -253,6 +255,12 @@ class MessageGenerator(PtbGenerator):
             channel_chat_created=channel_chat_created,
             pinned_message=pinned_message,
             via_bot=via_bot)
+
+        if self.bot:
+            m.set_bot(self.bot)
+
+        return m
+
 
     def _handle_attachments(self, audio, contact, document, location, photo,
                             sticker, user, venue, video, voice, caption):
