@@ -35,9 +35,9 @@ async def main():
         await process_updates(app, udpate_feeder)
 
         # Checking that the bot sent exactly one message.
-        assert len(mock_api.sent_messsages) == 1
+        assert len(mock_api.sent_messages) == 1
 
-        msg = mock_api.sent_messsages[-1]
+        msg = mock_api.sent_messages[-1]
         print("sent messages".center(80, "-"))
         print(mock_api.last_message)
 
@@ -61,7 +61,7 @@ async def main():
 
         await process_updates(app, udpate_feeder)
 
-        assert len(mock_api.sent_messsages) == 1
+        assert len(mock_api.sent_messages) == 1
 
         print("sent messages".center(80, "-"))
         print(mock_api.last_message)
