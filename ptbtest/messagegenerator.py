@@ -213,7 +213,7 @@ class MessageGenerator(PtbGenerator):
         if reply_to_message and not isinstance(reply_to_message, Message):
             raise BadMessageException
 
-        text, entities = self._handle_text(text, parse_mode)
+        # text, entities = self._handle_text(text, parse_mode)
 
         new_chat_photo = self._handle_status(
             channel_chat_created, chat, delete_chat_photo, group_chat_created,
