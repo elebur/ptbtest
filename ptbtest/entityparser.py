@@ -138,7 +138,6 @@ class EntityParser:
             # len('A©😊') == 3, while len('A©😊'.encode()) == 7.
             # This value is used only for the error message.
             begin_index_utf16 = len(striped_text[:i].encode())
-            begin_index = i
             end_character = ch
 
             if ch == "[":
@@ -151,7 +150,7 @@ class EntityParser:
             is_pre = False
             if ch == "`" and i + 2 < text_size and striped_text[i:i+2] == "``":
                 # The code entity has three chars (```).
-                # The first one was skipped few lines above
+                # The first one was skipped the few lines above
                 # (`i += 1` just above this `if`).
                 # Increasing the counter by 2 to skip the rest of the entity's
                 # symbols and jump to the text.
