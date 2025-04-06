@@ -20,7 +20,7 @@ def patch_app(app: Application, bot_fname=None, bot_username=None, bot_id=1):
                                                  username=bot_username,
                                                  user_id=bot_id)
     api = MockAPI(app.bot)
-    request_obj = PTBRequest(app.bot, api)
+    request_obj = PTBRequest(api)
     app.bot._request = (request_obj, request_obj)
 
     return app, api

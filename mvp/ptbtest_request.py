@@ -101,8 +101,7 @@ class MockAPI:
 
 class PTBRequest(BaseRequest):
 
-    def __init__(self, bot: Bot, api: MockAPI):
-        self._bot = bot
+    def __init__(self, api: MockAPI):
         self._api = api
 
     async def do_request(self, url: str, method: str, request_data: Optional[RequestData] = None,
