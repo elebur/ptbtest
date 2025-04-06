@@ -29,7 +29,7 @@ from telegram import MessageEntity
 from ptbtest.errors import BadMarkupException
 
 
-def get_utf_16_length(char: str) -> int:
+def get_utf_16_length(text: str) -> int:
     """
     Telegram uses UTF-16 for message entities:
     https://core.telegram.org/api/entities#utf-16
@@ -40,7 +40,7 @@ def get_utf_16_length(char: str) -> int:
     by 2 (=number of UTF-16 code units).
     Source: https://core.telegram.org/api/entities#computing-entity-length
     """
-    return len(char.encode("utf-16-le")) // 2
+    return len(text.encode("utf-16-le")) // 2
 
 
 def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
