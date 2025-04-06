@@ -44,7 +44,8 @@ class UserGenerator(PtbGenerator):
                  first_name: Optional[str] = None,
                  last_name: Optional[str] = None,
                  username: Optional[str] = None,
-                 user_id: Optional[int] = None) -> User:
+                 user_id: Optional[int] = None,
+                 is_bot: Optional[bool] = False) -> User:
         """
         Returns a telegram.User object with the optionally given name(s) or username.
         If any of the arguments are omitted the names will be chosen randomly and the
@@ -55,6 +56,7 @@ class UserGenerator(PtbGenerator):
             last_name (Optional[str]): Last name for the returned user.
             username (Optional[str]): Username for the returned user.
             user_id (Optional[int]): Id for the returned user.
+            is_bot (Optional[bool]): Whether the user is a bot or not.
 
         Returns:
             telegram.User: A telegram user object
@@ -66,10 +68,8 @@ class UserGenerator(PtbGenerator):
             last_name = random.choice(self.LAST_NAMES)
         if not username:
             username = first_name + last_name
-        return User(
-            user_id or self.gen_id(),
-            first_name,
-            False,
-            last_name=last_name,
-            username=username)
-
+        return User(user_id or self.gen_id(),
+                    first_name,
+                    is_bot,
+                    last_name=last_name,
+                    username=username)
