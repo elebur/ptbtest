@@ -52,7 +52,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if incoming_text == "help":
         response = "I will help you!"
     else:
-        response = incoming_text
+        response = f"Your message is '{incoming_text}'"
     await update.message.reply_text(response)
 
 

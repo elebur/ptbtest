@@ -27,7 +27,7 @@ class MockAPI:
         self._known_chats: dict[int, Chat] = dict()
         self._known_users: dict[int, User] = dict()
         # Updates from users.
-        self._incoming_updates: list[Update] = list()
+        self.incoming_updates: list[Update] = list()
 
         self._endpoints = {
             "getMe": self._get_me,
@@ -46,7 +46,7 @@ class MockAPI:
         return self._sent_messages
 
     @property
-    def last_message(self):
+    def last_sent_message(self):
         return self._sent_messages[-1]
 
     def clear_sent_messages(self):
@@ -67,14 +67,14 @@ class MockAPI:
         if user and user.id not in self._known_users:
             self._known_users[user.id] = user
 
-        self._incoming_updates.append(update)
+        self.incoming_updates.append(update)
 
     def get_updates(self) -> tuple[Update, ...]:
         """
         Returns all available updates.
         """
-        cp_updates = self._incoming_updates.copy()
-        self._incoming_updates.clear()
+        cp_updates = self.incoming_updates.copy()
+        self.incoming_updates.clear()
         return tuple(cp_updates)
 
     def _get_me(self, request_data) -> str:
