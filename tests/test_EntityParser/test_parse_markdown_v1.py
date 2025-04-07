@@ -7,6 +7,36 @@ from ptbtest.entityparser import EntityParser
 from ptbtest.errors import BadMarkupException
 
 
+class TestMessagesWithoutEntities:
+    ep = EntityParser()
+    def test_one_line(self):
+        text = "A string without any entity"
+        resp = self.ep.parse_markdown(text)
+        assert resp == ('A string without any entity', ())
+
+    def test_multiline(self):
+        text = "A multi\nline string without\n any entity"
+        resp = self.ep.parse_markdown(text)
+        assert resp == ('A multi\nline string without\n any entity', ())
+
+    def test_escaped_symbols(self):
+        text = ("A multi\nline string without\n any entity\n"
+                "but with escaped \[ entity's \` symbols \* in it\_")
+        resp = self.ep.parse_markdown(text)
+        assert resp == ("A multi\nline string without\n any entity\nbut with escaped [ entity's ` symbols * in it_", ())
+
+    @pytest.mark.parametrize("input, result", (
+            ("    A string with a whitespace at the beginning.", "A string with a whitespace at the beginning."),
+            ("A string with a whitespace at the end.    ", "A string with a whitespace at the end."),
+            ("    Leading and trailing whitespaces   ", "Leading and trailing whitespaces"),
+            ("   multiline string        \n    where each line has     \n    leading and trailing whitespaces      ",
+                "multiline string        \n    where each line has     \n    leading and trailing whitespaces"),
+    ))
+    def test_whitespace(self, input, result):
+        resp = self.ep.parse_markdown(input)
+        assert resp == (result, ())
+
+
 class TestBold:
     ep = EntityParser()
 
