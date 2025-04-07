@@ -2,10 +2,13 @@ import pytest
 from telegram import MessageEntity
 from telegram.constants import MessageEntityType
 
-from constants import ERR_MSG_CANT_PARSE_ENTITY_MD_V1, ERR_MSG_EMPTY_STR_MD_V1
 from ptbtest.entityparser import EntityParser
 from ptbtest.errors import BadMarkupException
 
+ERR_MSG_CANT_PARSE_ENTITY = ("Can't parse entities: can't find end of "
+                             "the entity starting at byte offset {offset}")
+
+ERR_MSG_EMPTY_STR = "Text must be non\-empty"
 
 class TestMessagesWithoutEntities:
     ep = EntityParser()
@@ -77,7 +80,7 @@ class TestBold:
                             (MessageEntity(length=9, offset=0, type=MessageEntityType.BOLD),))
 
     def test_escaped_symbol_inside_entity(self):
-        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY_MD_V1.format(offset=21)):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(offset=21)):
             self.ep.parse_markdown("An *escaped \* inside* entity")
 
     @pytest.mark.parametrize(["symbol", ], (("_", ), ("`", ), ("[", ), ("]",), ))
@@ -88,7 +91,7 @@ class TestBold:
                             (MessageEntity(length=34, offset=16, type=MessageEntityType.BOLD),))
 
     def test_unclosed_entity(self):
-        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY_MD_V1.format(offset=5)):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(offset=5)):
             self.ep.parse_markdown("Test *unclosed entity")
 
     @pytest.mark.parametrize(["symbol"], ((" ",), ("\n",)))
@@ -162,7 +165,7 @@ class TestItalic:
 
 
     def test_escaped_symbol_inside_entity(self):
-        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY_MD_V1.format(offset=21)):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(offset=21)):
             self.ep.parse_markdown("An _escaped \_ inside_ entity")
 
     @pytest.mark.parametrize(["symbol", ], (("*", ), ("`",), ("[",), ("]",), ))
@@ -173,7 +176,7 @@ class TestItalic:
                             (MessageEntity(length=36, offset=16, type=MessageEntityType.ITALIC),))
 
     def test_unclosed_entity(self):
-        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY_MD_V1.format(offset=5)):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(offset=5)):
             self.ep.parse_markdown("Test _unclosed entity")
 
     @pytest.mark.parametrize(["symbol"], ((" ",), ("\n",)))
@@ -246,7 +249,7 @@ class TestInlineCode:
                             (MessageEntity(length=11, offset=0, type=MessageEntityType.CODE),))
 
     def test_escaped_symbol_inside_entity(self):
-        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY_MD_V1.format(offset=21)):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(offset=21)):
             self.ep.parse_markdown("An `escaped \` inside` entity")
 
     @pytest.mark.parametrize(["symbol", ], (("*",), ("_",), ("[",), ("]",), ))
@@ -257,7 +260,7 @@ class TestInlineCode:
                             (MessageEntity(length=36, offset=17, type=MessageEntityType.CODE),))
 
     def test_unclosed_entity(self):
-        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY_MD_V1.format(offset=5)):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(offset=5)):
             self.ep.parse_markdown("Test `unclosed entity")
 
     @pytest.mark.parametrize(["symbol"], ((" ",), ("\n",)))
@@ -412,7 +415,7 @@ class TestPreCode:
                             (MessageEntity(language='d', length=44, offset=24, type=MessageEntityType.PRE),))
 
     def test_unclosed_entity(self):
-        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY_MD_V1.format(offset=5)):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(offset=5)):
             self.ep.parse_markdown("Test ```unclosed entity")
 
 
@@ -551,7 +554,7 @@ class TestInlineUrls:
                                        url='http://www.example.com/'),))
 
     def test_unclosed_square_brackets(self):
-        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY_MD_V1.format(offset=5)):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(offset=5)):
             self.ep.parse_markdown("Test [unclosed entity(http://example.com)")
 
     def test_unclosed_parentheses(self):
@@ -786,7 +789,7 @@ class TestEmptyEntities:
                                          ("*\n* _\n_ `\n`",),
                                          ))
     def test_empty_entity_and_empty_message(self, input):
-        with pytest.raises(BadMarkupException, match=ERR_MSG_EMPTY_STR_MD_V1):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_EMPTY_STR):
             self.ep.parse_markdown(input)
 
     @pytest.mark.parametrize(["input", "result"], (
@@ -845,5 +848,5 @@ class TestMisc:
     @pytest.mark.parametrize("input, offset", (("A", 24), ("©", 25), ("😊", 27)))
     def test_error_message_with_different_characters(self, input, offset):
         text = f"Text with '{input}' and broken*entity"
-        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY_MD_V1.format(offset=offset)):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(offset=offset)):
             self.ep.parse_markdown(text)
