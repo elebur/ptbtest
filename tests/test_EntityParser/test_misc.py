@@ -1,7 +1,4 @@
-import pytest
-
-from ptbtest.entityparser import (EntityParser,
-                                  get_utf_16_length,
+from ptbtest.entityparser import (get_utf_16_length,
                                   get_item,
                                   check_and_normalize_url)
 
