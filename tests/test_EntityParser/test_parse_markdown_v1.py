@@ -1,18 +1,10 @@
-import re
-
 import pytest
 from telegram import MessageEntity
 from telegram.constants import MessageEntityType
 
+from constants import ERR_MSG_CANT_PARSE, ERR_MSG_EMPTY_STR
 from ptbtest.entityparser import EntityParser
 from ptbtest.errors import BadMarkupException
-
-ERR_MSG_CANT_PARSE = re.escape("Can't parse entities: can't find end "
-                    "of the entity starting at byte offset")
-# Do it this way to prevent escaping of '{}' symbols.
-ERR_MSG_CANT_PARSE += " {offset}"
-
-ERR_MSG_EMPTY_STR = re.escape("Text must be non-empty")
 
 
 class TestBold:
