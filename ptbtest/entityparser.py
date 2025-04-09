@@ -109,7 +109,7 @@ class EntityParser:
         new_text = list()
 
         # https://github.com/TelegramMessenger/libprisma#supported-languages
-        pre_code_language_pattern = re.compile(r"^([a-z0-9-]+)\s*")
+        pre_code_language_pattern = re.compile(r"^([a-z0-9-]+)\s+")
 
         i = 0
         while i < text_size:

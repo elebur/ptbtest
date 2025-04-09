@@ -277,6 +277,14 @@ class TestPreCode:
         assert resp == (" pre code world",
                             (MessageEntity(language="hello", length=15, offset=0, type=MessageEntityType.PRE),))
         
+
+    def test_pre_code_on_one_line_one_word(self):
+        resp = self.ep.parse_markdown("```onelinepreentity```")
+
+        assert resp == ('onelinepreentity', (MessageEntity(length=16,
+                                                           offset=0,
+                                                           type=MessageEntityType.PRE),))
+
     def test_pre_code_without_specified_language(self):
         resp = self.ep.parse_markdown("```\ni = 0\ni += 1```")
         assert resp == ("i = 0\ni += 1", (MessageEntity(length=12, offset=0, type=MessageEntityType.PRE),))
