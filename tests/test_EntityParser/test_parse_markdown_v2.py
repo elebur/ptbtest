@@ -1,6 +1,8 @@
 import re
 
 import pytest
+from markdown_it.rules_inline import entity
+from telegram import MessageEntity
 from telegram.constants import MessageEntityType
 
 from ptbtest.entityparser import EntityParser
@@ -74,6 +76,21 @@ class TestEscaping:
         with pytest.raises(BadMarkupException, match=ERR_MSG_CHAR_MUST_BE_ESCAPED.format(r"|")):
             self.ep.parse_markdown_v2("A string with an escaped \|| character")
 
+    @pytest.mark.parametrize("e_char, e_type", (
+            ("*", MessageEntityType.BOLD),
+            ("_", MessageEntityType.ITALIC),
+            ("__", MessageEntityType.UNDERLINE),
+            ("~", MessageEntityType.STRIKETHROUGH),
+            ("||", MessageEntityType.SPOILER),
+            ("`", MessageEntityType.CODE),
+    ))
+    def test_unescaped_entity_characters(self, e_char, e_type):
+        template = "A string with an unescaped {0} character"
+        with pytest.raises(BadMarkupException,
+                           match=re.escape(ERR_MSG_CANT_PARSE_ENTITY.format(entity_type=e_type,
+                                                                            offset=27))):
+            self.ep.parse_markdown_v2(template.format(e_char))
+
     @pytest.mark.parametrize(["char"], RESERVED_REGULAR_CHARS)
     def test_unescaped_regular_characters(self, char):
         template = "A string with an unescaped {0} character"
@@ -100,3 +117,52 @@ class TestEscaping:
         with pytest.raises(BadMarkupException, match=ERR_MSG_CHAR_MUST_BE_ESCAPED.format("|")):
             self.ep.parse_markdown_v2("A string with |\|")
 
+
+class TestSimpleEntities:
+    ep = EntityParser()
+
+    @pytest.mark.parametrize("e_char, e_type", (
+            ("*", MessageEntityType.BOLD),
+            ("_", MessageEntityType.ITALIC),
+            ("__", MessageEntityType.UNDERLINE),
+            ("~", MessageEntityType.STRIKETHROUGH),
+            ("||", MessageEntityType.SPOILER),
+            ("`", MessageEntityType.CODE),
+    ))
+    def test_one_line_text_with_entity(self, e_char, e_type):
+        template = "A single line string {0}with an entity{0}"
+        resp = self.ep.parse_markdown_v2(template.format(e_char))
+        assert resp == ("A single line string with an entity",
+                            (MessageEntity(length=14, offset=21, type=e_type),))
+
+    @pytest.mark.parametrize("e_char, e_type", (
+            ("*", MessageEntityType.BOLD),
+            ("_", MessageEntityType.ITALIC),
+            ("__", MessageEntityType.UNDERLINE),
+            ("~", MessageEntityType.STRIKETHROUGH),
+            ("||", MessageEntityType.SPOILER),
+            ("`", MessageEntityType.CODE),
+    ))
+    def test_multi_line_text_with_entity(self, e_char, e_type):
+        template = "A multi line string {0}with\n an entity{0}"
+        resp = self.ep.parse_markdown_v2(template.format(e_char))
+        assert resp == ("A multi line string with\n an entity",
+                            (MessageEntity(length=15, offset=20, type=e_type),))
+
+    @pytest.mark.parametrize("e_char, e_type", (
+            ("*", MessageEntityType.BOLD),
+            ("_", MessageEntityType.ITALIC),
+            ("__", MessageEntityType.UNDERLINE),
+            ("~", MessageEntityType.STRIKETHROUGH),
+            ("||", MessageEntityType.SPOILER),
+            ("`", MessageEntityType.CODE),
+    ))
+    @pytest.mark.parametrize(["escaped_char"], RESERVED_ENTITY_CHARS + RESERVED_REGULAR_CHARS)
+    def test_entity_with_escaped_char_in_it(self, e_char, e_type, escaped_char):
+        template = (f"A multiline string with {e_char}entity\n"
+                    rf"and escaped char \{escaped_char} within{e_char} the entity")
+
+        resp = self.ep.parse_markdown_v2(template)
+        assert resp == (f"A multiline string with entity\n"
+                            f"and escaped char {escaped_char} within the entity",
+                        (MessageEntity(length=32, offset=24, type=e_type),))
