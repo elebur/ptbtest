@@ -1,4 +1,5 @@
 import re
+from re import match
 
 import pytest
 from markdown_it.rules_inline import entity
@@ -12,6 +13,7 @@ ERR_MSG_CANT_PARSE_ENTITY = ("Can't parse entities: can't find end of {entity_ty
                              " entity at byte offset {offset}")
 
 ERR_MSG_EMPTY_STR = "Message text is empty"
+ERR_TEXT_MUST_BE_NON_EMPTY = "Text must be non-empty"
 
 ERR_MSG_CHAR_MUST_BE_ESCAPED = ("Can't parse entities: character '{0}' is reserved"
                                 " and must be escaped with the preceding '\\'")
@@ -166,3 +168,51 @@ class TestSimpleEntities:
         assert resp == (f"A multiline string with entity\n"
                             f"and escaped char {escaped_char} within the entity",
                         (MessageEntity(length=32, offset=24, type=e_type),))
+
+    @pytest.mark.parametrize("e_char, e_type", (
+            ("*", MessageEntityType.BOLD),
+            ("_", MessageEntityType.ITALIC),
+            ("__", MessageEntityType.UNDERLINE),
+            ("~", MessageEntityType.STRIKETHROUGH),
+            ("||", MessageEntityType.SPOILER),
+            ("`", MessageEntityType.CODE),
+    ))
+    def test_with_leading_and_trailing_whitespace_inside_entity_in_different_parts_of_the_message(self, e_char, e_type):
+        text = f"{e_char}hello\n\n\n\nworld\n\n\n\n\n{e_char}    {e_char}and one\nmore   \n\n\nline\n\n   {e_char}"
+        resp = self.ep.parse_markdown_v2(text)
+
+        assert resp ==  ('hello\n\n\n\nworld\n\n\n\n\n    and one\nmore   \n\n\nline',
+                            (MessageEntity(length=19, offset=0, type=e_type),
+                             MessageEntity(length=22, offset=23, type=e_type)))
+
+    @pytest.mark.parametrize("e_char, e_type", (
+            ("*", MessageEntityType.BOLD),
+            ("_", MessageEntityType.ITALIC),
+            ("__", MessageEntityType.UNDERLINE),
+            ("~", MessageEntityType.STRIKETHROUGH),
+            ("||", MessageEntityType.SPOILER),
+            ("`", MessageEntityType.CODE),
+    ))
+    @pytest.mark.parametrize(["whitespace"], " \n")
+    def test_with_leading_and_trailing_whitespaces_outside_entities(self, e_char, e_type, whitespace):
+        text = f"{whitespace*4}New lines outside an {e_char} entity {e_char}\.{whitespace*4}"
+        resp = self.ep.parse_markdown_v2(text)
+        assert resp == ('New lines outside an  entity .',
+                        (MessageEntity(length=8, offset=21, type=e_type),))
+
+    @pytest.mark.parametrize("e_char, e_type", (
+            ("*", MessageEntityType.BOLD),
+            ("_", MessageEntityType.ITALIC),
+            ("__", MessageEntityType.UNDERLINE),
+            ("~", MessageEntityType.STRIKETHROUGH),
+            ("||", MessageEntityType.SPOILER),
+            ("`", MessageEntityType.CODE),
+    ))
+    @pytest.mark.parametrize(["whitespace"], " \n")
+    def test_with_leading_and_trailing_whitespaces_inside_entities(self, e_char, e_type, whitespace):
+        text = f"{e_char}{whitespace*3}Whitespaces{whitespace*5}{e_char} inside {e_char}{whitespace*2}entities{whitespace}{e_char}"
+        resp = self.ep.parse_markdown_v2(text)
+        assert resp ==  (f'{whitespace*3}Whitespaces{whitespace*5} inside {whitespace*2}entities',
+                         (MessageEntity(length=19, offset=0, type=e_type),
+                          MessageEntity(length=10, offset=27, type=e_type)))
+
