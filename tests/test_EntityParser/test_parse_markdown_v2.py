@@ -590,6 +590,27 @@ class TestInlineUrl:
                                                     url='http://ex.com/'),))
 
 
+class TestInlineMention:
+    """
+    Inline mentioning doesn't work with Markdown V2
+    """
+    ep = EntityParser()
+    def test_inline_mention(self):
+        resp = self.ep.parse_markdown_v2("[inline mention of a user](tg://user?id=1234)")
+        assert resp == ("inline mention of a user", ())
+
+
+class TestCustomEmoji:
+    @pytest.mark.xfail(reason="Need purchased @username")
+    def test_custom_emoji(self):
+        """
+        Custom emoji entities can only be used by bots
+        that purchased additional usernames on Fragment,
+        https://fragment.com/?filter=sale
+        """
+        assert 1 == 2, "Need purchased @username"
+
+
 class TestPre:
     ep = EntityParser()
     def test_pre_on_one_line(self):
