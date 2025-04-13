@@ -1,8 +1,6 @@
 import re
-from re import match
 
 import pytest
-from markdown_it.rules_inline import entity
 from telegram import MessageEntity
 from telegram.constants import MessageEntityType
 
@@ -591,3 +589,315 @@ class TestInlineUrl:
                                                     type=MessageEntityType.TEXT_LINK,
                                                     url='http://ex.com/'),))
 
+
+class TestPre:
+    ep = EntityParser()
+    def test_pre_on_one_line(self):
+        template = "A single line string with pre ```lua hello world```"
+        resp = self.ep.parse_markdown_v2(template)
+
+        entity = resp[1][0]
+
+        assert entity.language == "lua"
+        assert resp == ("A single line string with pre  hello world",
+                            (MessageEntity(language="lua",
+                                           length=12,
+                                           offset=30,
+                                           type=MessageEntityType.PRE),))
+
+    def test_pre_on_one_line_with_one_word(self):
+        resp = self.ep.parse_markdown_v2("```onelinepreentity```")
+
+        entity = resp[1][0]
+
+        assert entity.language is None
+        assert resp == ("onelinepreentity", (MessageEntity(length=16,
+                                                           offset=0,
+                                                           type=MessageEntityType.PRE),))
+
+    def test_pre_on_multiple_lines(self):
+        template = "A single \nline string with pre ```bash \nhello\n world```"
+        resp = self.ep.parse_markdown_v2(template)
+
+        entity = resp[1][0]
+
+        assert entity.language == "bash"
+        assert resp == ("A single \nline string with pre  \nhello\n world",
+                            (MessageEntity(language="bash",
+                                           length=14,
+                                           offset=31,
+                                           type=MessageEntityType.PRE),))
+
+    @pytest.mark.parametrize(["escaped_char"], (RESERVED_ENTITY_CHARS +
+                                                RESERVED_REGULAR_CHARS +
+                                                "|\|" + "_\_"))
+    def test_pre_with_escaped_char_in_it(self, escaped_char):
+        template = (f"A multiline string with ```entity\n"
+                    rf"and escaped char \{escaped_char} within``` the entity")
+
+        resp = self.ep.parse_markdown_v2(template)
+        entity = resp[1][0]
+
+        assert entity.language == "entity"
+        assert resp == (f"A multiline string with and escaped char {escaped_char} within the entity",
+                        (MessageEntity(language="entity",
+                                       length=25,
+                                       offset=24,
+                                       type=MessageEntityType.PRE),))
+
+    @pytest.mark.parametrize(["e_char"], (("*",),("_",),("__",),("~",),("||",),))
+    def test_with_unescaped_entities(self, e_char):
+        text = f"```python code {e_char}with unescaped entities{e_char} inside```"
+        resp = self.ep.parse_markdown_v2(text)
+        length = 38
+        if len(e_char) == 2:
+            length += 2
+
+        entity = resp[1][0]
+
+        assert entity.language == "python"
+        assert resp == (f" code {e_char}with unescaped entities{e_char} inside",
+                        (MessageEntity(language="python", length=length, offset=0, type=MessageEntityType.PRE),))
+
+    @pytest.mark.parametrize(["e_char"], (("\*",),("\_",),("\_\_",),("\~",),("\|\|",),("\`",)))
+    def test_with_escaped_entities(self, e_char):
+        text = f"```python code {e_char}with unescaped entities{e_char} inside```"
+        resp = self.ep.parse_markdown_v2(text)
+        length = 38
+        if len(e_char) == 4:
+            length += 2
+        ch = e_char.replace("\\", "")
+        assert resp == (f" code {ch}with unescaped entities{ch} inside",
+                        (MessageEntity(language="python", length=length, offset=0,
+                                       type=MessageEntityType.PRE),))
+
+        entity = resp[1][0]
+        assert entity.language == "python"
+
+
+    @pytest.mark.parametrize(["char"], "abc,?&#@")
+    def test_with_escaped_ascii(self, char):
+        text = rf"```lua code with an escaped ASCII character \{char}```"
+        resp = self.ep.parse_markdown_v2(text)
+
+        entity = resp[1][0]
+        assert entity.language == "lua"
+        assert resp == (f" code with an escaped ASCII character {char}",
+                        (MessageEntity(language="lua", length=39, offset=0,
+                                       type=MessageEntityType.PRE),))
+
+    @pytest.mark.parametrize(["char"], "€À÷ÿЙ")
+    def test_with_escaped_non_ascii(self, char):
+        text = rf"```lua code with an escaped non\-ASCII character \{char}```"
+        resp = self.ep.parse_markdown_v2(text)
+
+        entity = resp[1][0]
+        assert entity.language == "lua"
+        assert resp == (f" code with an escaped non-ASCII character \\{char}",
+                        (MessageEntity(language="lua", length=44, offset=0,
+                                       type=MessageEntityType.PRE),))
+
+    def test_with_escaped_whitespace(self):
+        text = rf"```lua code with an escaped ASCII character \ ```"
+        resp = self.ep.parse_markdown_v2(text)
+
+        entity = resp[1][0]
+        assert entity.language == "lua"
+        assert resp == (" code with an escaped ASCII character",
+                        (MessageEntity(language="lua", length=37,
+                                       offset=0, type=MessageEntityType.PRE),))
+
+    def test_pre_without_lang(self):
+        resp1 = self.ep.parse_markdown_v2("```\ncode\nsnippet without\nlanguage```")
+
+        entity = resp1[1][0]
+        assert entity.language is None
+        assert resp1 == ("code\nsnippet without\nlanguage",
+                         (MessageEntity(length=29, offset=0, type=MessageEntityType.PRE),))
+
+        resp2 = self.ep.parse_markdown_v2("Leading text```\ncode\nsnippet without\nlanguage```")
+
+        entity2 = resp2[1][0]
+        assert entity2.language is None
+        assert resp2 == ("Leading textcode\nsnippet without\nlanguage",
+                         (MessageEntity(length=29, offset=12, type=MessageEntityType.PRE),))
+
+    def test_language_without_content(self):
+        with pytest.raises(BadMarkupException, match="Text must be non\-empty"):
+            self.ep.parse_markdown_v2("```lua ```")
+
+    def test_all_pre_code(self):
+        resp = self.ep.parse_markdown_v2("```hello pre code world```")
+
+        entity = resp[1][0]
+        assert entity.language == "hello"
+        assert resp == (" pre code world",
+                        (MessageEntity(language="hello", length=15, offset=0, type=MessageEntityType.PRE),))
+
+    def test_pre_code_without_specified_language(self):
+        resp = self.ep.parse_markdown_v2("```\ni = 0\ni += 1```")
+
+        entity = resp[1][0]
+        assert entity.language is None
+        assert resp == ("i = 0\ni += 1", (MessageEntity(length=12, offset=0,
+                                                        type=MessageEntityType.PRE),))
+
+    def test_pre_code_with_specified_language_inline(self):
+        resp = self.ep.parse_markdown_v2("```python i = 0\ni += 1```")
+
+        entity = resp[1][0]
+        assert entity.language == "python"
+        assert resp == (" i = 0\ni += 1",
+                        (MessageEntity(language="python", length=13,
+                                       offset=0, type=MessageEntityType.PRE),))
+
+    def test_pre_code_with_specified_language_on_new_line(self):
+        resp = self.ep.parse_markdown_v2("```python\ni = 0\ni += 1```")
+
+        entity = resp[1][0]
+        assert entity.language == "python"
+        assert resp == ("i = 0\ni += 1",
+                        (MessageEntity(language="python", length=12,
+                                       offset=0, type=MessageEntityType.PRE),))
+
+    def test_pre_code_with_specified_language_with_multiple_new_lines_inbetween(self):
+        resp = self.ep.parse_markdown_v2("```python\n\n\n\ni = 0\ni += 1```")
+
+        entity = resp[1][0]
+        assert entity.language == "python"
+        assert resp == ("\n\n\ni = 0\ni += 1",
+                        (MessageEntity(language="python", length=15, offset=0, type=MessageEntityType.PRE),))
+
+    @pytest.mark.parametrize(["lang", ], (("python",), ("asm6502",), ("nand2tetris-hdl",),
+                                          ("firestore-security-rules",), ("d",), ("avro-idl",)))
+    def test_pre_code_with_different_languages(self, lang):
+        resp_new_line = self.ep.parse_markdown_v2(f"```{lang}\ni = 0\ni += 1```")
+
+        entity_newline = resp_new_line[1][0]
+        assert entity_newline.language == lang
+        assert resp_new_line == ("i = 0\ni += 1",
+                                 (MessageEntity(language=f"{lang}", length=12,
+                                                offset=0, type=MessageEntityType.PRE),))
+
+        resp_whitespace = self.ep.parse_markdown_v2(f"```{lang} i = 0\ni += 1```")
+        entity_whitespace = resp_whitespace[1][0]
+        assert entity_whitespace.language == lang
+        assert resp_whitespace == (" i = 0\ni += 1",
+                                   (MessageEntity(language=f"{lang}", length=13,
+                                                  offset=0, type=MessageEntityType.PRE),))
+
+    def test_at_the_beginning(self):
+        resp = self.ep.parse_markdown_v2("```lua\nprint('hello\nworld')``` inline code world")
+
+        entity = resp[1][0]
+        assert entity.language == "lua"
+        assert resp == ("print('hello\nworld') inline code world",
+                        (MessageEntity(language="lua", length=20,
+                                       offset=0, type=MessageEntityType.PRE),))
+
+    def test_at_the_end(self):
+        resp = self.ep.parse_markdown_v2("pre code at the end of the message ```lua\nprint('hello\nworld')```")
+        entity = resp[1][0]
+        assert entity.language == "lua"
+        assert resp == ("pre code at the end of the message print('hello\nworld')",
+                        (MessageEntity(language="lua", length=20,
+                                       offset=35, type=MessageEntityType.PRE),))
+
+    def test_in_the_middle(self):
+        resp = self.ep.parse_markdown_v2("pre code text ```python i = 0\ni += 1``` of the message")
+        entity = resp[1][0]
+        assert entity.language == "python"
+        assert resp == ("pre code text  i = 0\ni += 1 of the message",
+                        (MessageEntity(language="python", length=13,
+                                       offset=14, type=MessageEntityType.PRE),))
+
+    def test_multiple_inline_code_parts(self):
+        resp = self.ep.parse_markdown_v2("Multiple code snippets ```python i = 0\ni += 1\n print(i)``` "
+                                      "within one message ```lua\nprint('hello\nworld')```\.")
+
+        entity1 = resp[1][0]
+        assert entity1.language == "python"
+
+        entity2 = resp[1][1]
+        assert entity2.language == "lua"
+
+        assert resp == ("Multiple code snippets  i = 0\ni += 1\n print(i) within one message print('hello\nworld').",
+                        (MessageEntity(language="python", length=23, offset=23, type=MessageEntityType.PRE),
+                         MessageEntity(language="lua", length=20, offset=66, type=MessageEntityType.PRE)))
+
+    def test_multiline_multiple_inline_code_parts(self):
+        text = ("A snippet number one: \n```python\ni = 11\ni -= 2\nprint(i)```\n\n"
+                "A snippet number two: ```c\nint i = 0;\ni = i + 22;\n```\n\n")
+        resp = self.ep.parse_markdown_v2(text)
+
+        entity1 = resp[1][0]
+        assert entity1.language == "python"
+
+        entity2 = resp[1][1]
+        assert entity2.language == "c"
+
+        assert resp == (
+        "A snippet number one: \ni = 11\ni -= 2\nprint(i)\n\nA snippet number two: int i = 0;\ni = i + 22;",
+        (MessageEntity(language="python", length=22, offset=23, type=MessageEntityType.PRE),
+         MessageEntity(language="c", length=22, offset=69, type=MessageEntityType.PRE)))
+
+    def test_escaped_backquote_symbol(self):
+        resp = self.ep.parse_markdown_v2("```lua i = 2\ni-2``` with an escaped \` symbol")
+        entity = resp[1][0]
+        assert entity.language == "lua"
+        assert resp == (" i = 2\ni-2 with an escaped ` symbol",
+                        (MessageEntity(language="", length=10, offset=0, type=MessageEntityType.PRE),))
+
+    @pytest.mark.parametrize(["symbol"], ((" ",), ("\n",)))
+    def test_with_leading_and_trailing_whitespace_outside_of_entity(self, symbol):
+        text = f"{symbol * 2}```python def f(ch):\n    return ch*8```{symbol * 3}"
+        resp = self.ep.parse_markdown_v2(text)
+
+        entity = resp[1][0]
+        assert entity.language == "python"
+        assert resp == (" def f(ch):\n    return ch*8",
+                        (MessageEntity(language="", length=27, offset=0, type=MessageEntityType.PRE),))
+
+    def test_with_leading_and_trailing_whitespace_inside_entity(self):
+        symbol = " "
+        text = f"```{symbol * 6}python def f(ch):\n    return ch*8{symbol * 23}```"
+        resp = self.ep.parse_markdown_v2(text)
+
+        entity = resp[1][0]
+        assert entity.language is None
+        assert resp == ("      python def f(ch):\n    return ch*8",
+                        (MessageEntity(length=39, offset=0, type=MessageEntityType.PRE),))
+
+    def test_with_leading_and_trailing_newline_inside_entity(self):
+        symbol = "\n"
+        text = f"```{symbol * 6}python def f(ch):\n    return ch*8{symbol * 23}```"
+        resp = self.ep.parse_markdown_v2(text)
+
+        entity = resp[1][0]
+        assert entity.language is None
+        assert resp == ("\n\n\n\n\npython def f(ch):\n    return ch*8",
+                        (MessageEntity(length=38, offset=0, type=MessageEntityType.PRE),))
+
+    @pytest.mark.parametrize(["symbol"], ((" ",), ("\n",)))
+    def test_with_leading_and_trailing_whitespace_inside_entity_in_different_parts_of_the_message(self, symbol):
+        text = "```lua hello\n\n\n\nworld\n\n\n\n\n```    ```excel one\nmore   \n\n\ntime\n\n   ```"
+        resp = self.ep.parse_markdown_v2(text)
+
+        entity1 = resp[1][0]
+        assert entity1.language == "lua"
+
+        entity2 = resp[1][1]
+        assert entity2.language == "excel"
+        assert resp == (" hello\n\n\n\nworld\n\n\n\n\n     one\nmore   \n\n\ntime",
+                        (MessageEntity(language="lua", length=20, offset=0, type=MessageEntityType.PRE),
+                         MessageEntity(language="excel", length=19, offset=24, type=MessageEntityType.PRE)))
+
+    def test_unclosed_entity(self):
+        msg = ERR_MSG_CANT_PARSE_ENTITY.format(offset=5, entity_type="precode")
+        with pytest.raises(BadMarkupException, match=msg):
+            self.ep.parse_markdown_v2("Test ```unclosed entity")
+
+    def test_unclosed_with_single_backquote_at_the_end(self):
+        msg = ERR_MSG_CANT_PARSE_ENTITY.format(offset=59, entity_type="code")
+        with pytest.raises(BadMarkupException, match=msg):
+            self.ep.parse_markdown_v2(" ```unclosed pre entity with one single backquote at the end`")
