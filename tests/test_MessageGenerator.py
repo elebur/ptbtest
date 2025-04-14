@@ -168,7 +168,7 @@ class TestMessageGeneratorText:
 
         u = MessageGenerator().get_message(text=teststr, parse_mode="HTML")
         assert len(u.message.entities) == 9
-        
+
         tol = {"bold": (8, 4), "code": (13, 4), "italic": (44, 7),
                "pre": (52, 9), "text_link": (18, 6, "www.google.com"), "mention": (25, 9),
                "hashtag": (35, 8), "url": (62, 20), "bot_command": (83, 6)}

@@ -50,19 +50,19 @@ class TestBold:
                              MessageEntity(length=5, offset=20, type=MessageEntityType.BOLD)))
 
     def test_escaped_symbol(self):
-        resp = self.ep.parse_markdown("*Bold text* with an escaped \* symbol")
+        resp = self.ep.parse_markdown(r"*Bold text* with an escaped \* symbol")
         assert resp == ("Bold text with an escaped * symbol",
                             (MessageEntity(length=9, offset=0, type=MessageEntityType.BOLD),))
 
     def test_escaped_symbol_inside_entity(self):
         with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE.format(offset=21)):
-            self.ep.parse_markdown("An *escaped \* inside* entity")
+            self.ep.parse_markdown(r"An *escaped \* inside* entity")
 
     @pytest.mark.parametrize(["symbol", ], (("_", ), ("`", ), ("[", ), ("]",), ))
     def test_other_entity_symbols_inside_bold_entity(self, symbol):
         text = rf"A string with a *bold text and an escaped \{symbol} inside*."
         resp = self.ep.parse_markdown(text)
-        assert resp == (f"A string with a bold text and an escaped \{symbol} inside.",
+        assert resp == (fr"A string with a bold text and an escaped \{symbol} inside.",
                             (MessageEntity(length=34, offset=16, type=MessageEntityType.BOLD),))
 
     def test_unclosed_entity(self):
@@ -134,20 +134,20 @@ class TestItalic:
                              MessageEntity(length=7, offset=20, type=MessageEntityType.ITALIC)))
 
     def test_escaped_symbol(self):
-        resp = self.ep.parse_markdown("_ITALIC text_ with an escaped \_ symbol")
+        resp = self.ep.parse_markdown(r"_ITALIC text_ with an escaped \_ symbol")
         assert resp == ("ITALIC text with an escaped _ symbol",
                             (MessageEntity(length=11, offset=0, type=MessageEntityType.ITALIC),))
 
 
     def test_escaped_symbol_inside_entity(self):
         with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE.format(offset=21)):
-            self.ep.parse_markdown("An _escaped \_ inside_ entity")
+            self.ep.parse_markdown(r"An _escaped \_ inside_ entity")
 
     @pytest.mark.parametrize(["symbol", ], (("*", ), ("`",), ("[",), ("]",), ))
     def test_other_entity_symbols_inside_italic_entity(self, symbol):
         text = rf"A string with a _ITALIC text and an escaped \{symbol} inside_."
         resp = self.ep.parse_markdown(text)
-        assert resp == (f"A string with a ITALIC text and an escaped \{symbol} inside.",
+        assert resp == (rf"A string with a ITALIC text and an escaped \{symbol} inside.",
                             (MessageEntity(length=36, offset=16, type=MessageEntityType.ITALIC),))
 
     def test_unclosed_entity(self):
@@ -219,19 +219,19 @@ class TestInlineCode:
                              MessageEntity(length=5, offset=26, type=MessageEntityType.CODE)))
 
     def test_escaped_symbol(self):
-        resp = self.ep.parse_markdown("`inline code` with an escaped \` symbol")
+        resp = self.ep.parse_markdown(r"`inline code` with an escaped \` symbol")
         assert resp ==  ("inline code with an escaped ` symbol",
                             (MessageEntity(length=11, offset=0, type=MessageEntityType.CODE),))
 
     def test_escaped_symbol_inside_entity(self):
         with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE.format(offset=21)):
-            self.ep.parse_markdown("An `escaped \` inside` entity")
+            self.ep.parse_markdown(r"An `escaped \` inside` entity")
 
     @pytest.mark.parametrize(["symbol", ], (("*",), ("_",), ("[",), ("]",), ))
     def test_other_entity_symbols_inside_italic_entity(self, symbol):
         text = rf"A string with an `inline code and an escaped \{symbol} inside`."
         resp = self.ep.parse_markdown(text)
-        assert resp == (f"A string with an inline code and an escaped \{symbol} inside.",
+        assert resp == (rf"A string with an inline code and an escaped \{symbol} inside.",
                             (MessageEntity(length=36, offset=17, type=MessageEntityType.CODE),))
 
     def test_unclosed_entity(self):
@@ -276,7 +276,7 @@ class TestPreCode:
 
         assert resp == (" pre code world",
                             (MessageEntity(language="hello", length=15, offset=0, type=MessageEntityType.PRE),))
-        
+
 
     def test_pre_code_on_one_line_one_word(self):
         resp = self.ep.parse_markdown("```onelinepreentity```")
@@ -347,7 +347,7 @@ class TestPreCode:
                              MessageEntity(language='c', length=22, offset=69, type=MessageEntityType.PRE)))
 
     def test_escaped_symbol(self):
-        resp = self.ep.parse_markdown("```lua i = 2\ni-2``` with an escaped \` symbol")
+        resp = self.ep.parse_markdown("```lua i = 2\ni-2``` with an escaped \\` symbol")
         assert resp ==  (' i = 2\ni-2 with an escaped ` symbol',
                          (MessageEntity(language='lua', length=10, offset=0, type=MessageEntityType.PRE),))
 
@@ -385,7 +385,7 @@ class TestPreCode:
                              MessageEntity(language='excel', length=19, offset=24, type=MessageEntityType.PRE)))
 
     def test_escaped_symbol_inside_entity(self):
-        resp = self.ep.parse_markdown("A snippet:```python escaped \` inside``` entity")
+        resp = self.ep.parse_markdown(r"A snippet:```python escaped \` inside``` entity")
 
         assert resp == ('A snippet: escaped \\` inside entity',
                             (MessageEntity(language='python', length=18, offset=10, type=MessageEntityType.PRE),))
@@ -488,7 +488,7 @@ class TestInlineUrls:
 
     def test_escaped_symbol(self):
         resp = self.ep.parse_markdown("A message with an [inline url](example.com/)"
-                                      "and escaped symbols \[].")
+                                      r"and escaped symbols \[].")
         entity = resp[1][0]
 
         assert entity.url == "http://example.com/"
@@ -592,24 +592,24 @@ class TestInlineUrls:
         entity = resp[1][0]
         assert entity.url == "http://www.example.com/"
 
-        assert resp == (f"A string with trailing whitespace inside square brackets in it.",
+        assert resp == ("A string with trailing whitespace inside square brackets in it.",
                         (MessageEntity(length=23,
                                        offset=34,
                                        type=MessageEntityType.TEXT_LINK,
                                        url='http://www.example.com/'),))
 
     @pytest.mark.parametrize(
-        "input, result", (("An  [inline URL](  http://www.example.com  )   ", ('An  inline URL', ())),
-                          ("An  [inline URL](  http://www.example.com  )   Some text", ('An  inline URL   Some text', ())),
-                          ("An  [inline URL](http://www.example.com  )   Some text", ('An  inline URL   Some text', ())),
-                          ("An  [inline URL](  http://www.example.com)   Some text", ('An  inline URL   Some text', ())),
-                          ("An  [inline URL](  http://www.example.com  )", ('An  inline URL', ())),
-                          ("An  [inline URL](  http://www.example.com)", ('An  inline URL', ())),
-                          ("An  [inline URL](http://www.example.com  )   ", ('An  inline URL', ())),
-                          ("An  [inline URL](http://www.example.com  )", ('An  inline URL', ())),
-                          ))
-    def test_with_whitespaces_inside_parentheses(self, input, result):
-        resp = self.ep.parse_markdown(input)
+        "in_str, result", (("An  [inline URL](  http://www.example.com  )   ", ('An  inline URL', ())),
+                           ("An  [inline URL](  http://www.example.com  )   Some text", ('An  inline URL   Some text', ())),
+                           ("An  [inline URL](http://www.example.com  )   Some text", ('An  inline URL   Some text', ())),
+                           ("An  [inline URL](  http://www.example.com)   Some text", ('An  inline URL   Some text', ())),
+                           ("An  [inline URL](  http://www.example.com  )", ('An  inline URL', ())),
+                           ("An  [inline URL](  http://www.example.com)", ('An  inline URL', ())),
+                           ("An  [inline URL](http://www.example.com  )   ", ('An  inline URL', ())),
+                           ("An  [inline URL](http://www.example.com  )", ('An  inline URL', ())),
+                           ))
+    def test_with_whitespaces_inside_parentheses(self, in_str, result):
+        resp = self.ep.parse_markdown(in_str)
         assert resp == result
 
     @pytest.mark.xfail(reason="Need to implement parse_url_entities")
@@ -763,7 +763,7 @@ class TestInlineUrls:
 class TestEmptyEntities:
     ep = EntityParser()
 
-    @pytest.mark.parametrize(["input"], (("*  *    ** **    ", ),
+    @pytest.mark.parametrize(["in_str"], (("*  *    ** **    ", ),
                                          ("_   _ _  _            __", ),
                                          ( "```    \n\n  ```",),
                                          ("  ```python    \n\n  ``` ```    ```   ", ),
@@ -771,19 +771,19 @@ class TestEmptyEntities:
                                          ("** __ `` ```lua\n``` * * _   _    `     \n\n\n`",),
                                          ("*\n* _\n_ `\n`",),
                                          ))
-    def test_empty_entity_and_empty_message(self, input):
+    def test_empty_entity_and_empty_message(self, in_str):
         with pytest.raises(BadMarkupException, match=ERR_MSG_EMPTY_STR):
-            self.ep.parse_markdown(input)
+            self.ep.parse_markdown(in_str)
 
-    @pytest.mark.parametrize(["input", "result"], (
+    @pytest.mark.parametrize(["in_str", "result"], (
             ("*  *    text **    ", ('      text', (MessageEntity(length=2, offset=0, type=MessageEntityType.BOLD),))),
             ("    _   _ text __ ", ('    text', (MessageEntity(length=3, offset=0, type=MessageEntityType.ITALIC),))),
             ("`    `  text `   ` text ``", ('      text     text', (MessageEntity(length=4, offset=0, type=MessageEntityType.CODE),
                                                                     MessageEntity(length=3, offset=11, type=MessageEntityType.CODE)))),
             ("```python\n\n\n``` text ``````", ('\n\n text', (MessageEntity(language='python', length=2, offset=0, type=MessageEntityType.PRE),)))
     ))
-    def test_empty_entity_with_text(self, input, result):
-        resp = self.ep.parse_markdown(input)
+    def test_empty_entity_with_text(self, in_str, result):
+        resp = self.ep.parse_markdown(in_str)
         assert resp == result
 
 
@@ -816,20 +816,20 @@ class TestMisc:
                              MessageEntity(length=37, offset=82, type=MessageEntityType.PRE),
                              MessageEntity(language='python', length=79, offset=120, type=MessageEntityType.PRE)))
 
-    @pytest.mark.parametrize("input, result", (("[no parentheses]", "no parentheses"),
-                                               ("[ no parentheses ]", "no parentheses"),
-                                               ("[no parentheses ]", "no parentheses"),
-                                               ("[no parentheses ] some trailing text", "no parentheses  some trailing text"),
-                                               ("[ no parentheses ] some trailing text", "no parentheses  some trailing text"),
-                                               ("some leading text [ no parentheses ] some trailing text", "some leading text  no parentheses  some trailing text"),
-    ))
-    def test_square_brackets_without_parentheses(self, input, result):
-        resp = self.ep.parse_markdown(input)
+    @pytest.mark.parametrize("in_str, result", (("[no parentheses]", "no parentheses"),
+                                                ("[ no parentheses ]", "no parentheses"),
+                                                ("[no parentheses ]", "no parentheses"),
+                                                ("[no parentheses ] some trailing text", "no parentheses  some trailing text"),
+                                                ("[ no parentheses ] some trailing text", "no parentheses  some trailing text"),
+                                                ("some leading text [ no parentheses ] some trailing text", "some leading text  no parentheses  some trailing text"),
+                                                ))
+    def test_square_brackets_without_parentheses(self, in_str, result):
+        resp = self.ep.parse_markdown(in_str)
 
         assert resp == (result, ())
 
-    @pytest.mark.parametrize("input, offset", (("A", 24), ("©", 25), ("😊", 27)))
-    def test_error_message_with_different_characters(self, input, offset):
-        text = f"Text with '{input}' and broken*entity"
+    @pytest.mark.parametrize("in_str, offset", (("A", 24), ("©", 25), ("😊", 27)))
+    def test_error_message_with_different_characters(self, in_str, offset):
+        text = f"Text with '{in_str}' and broken*entity"
         with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE.format(offset=offset)):
             self.ep.parse_markdown(text)

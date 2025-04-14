@@ -21,7 +21,8 @@ marked-up messages to plain text with entities.
 Docs: https://core.telegram.org/bots/api#formatting-options
 """
 import re
-from typing import Tuple, Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 from urllib.parse import urlparse
 
 from telegram import MessageEntity
@@ -92,7 +93,7 @@ def check_and_normalize_url(url: str) -> str:
 
 class EntityParser:
     @staticmethod
-    def parse_markdown(text: str) -> Tuple[str, Tuple[MessageEntity, ...]]:
+    def parse_markdown(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
         """
         The method looks for Markdown V1 entities in the given text.
         Telegram documentation: https://core.telegram.org/bots/api#markdown-style
@@ -138,7 +139,6 @@ class EntityParser:
             # len('A©😊') == 3, while len('A©😊'.encode()) == 7.
             # This value is used only for the error message.
             begin_index_utf16 = len(striped_text[:i].encode())
-            begin_index = i
             end_character = ch
 
             if ch == "[":
@@ -160,7 +160,7 @@ class EntityParser:
                 # Trying to get language name.
                 # E.g.:
                 # ```python <- this name
-                # print("Hello, world!")
+                # code snippet here
                 # ```
                 if lang_match := pre_code_language_pattern.match(striped_text[i:]):
                     # .group(0) contains trailing space too.
@@ -196,7 +196,7 @@ class EntityParser:
                 if ch == "[":
                     # ... and there is a whitespace or a newline between
                     # square brackets and parentheses
-                    if m := re.match(r"^]\s+\([^)]+\)", striped_text[i:]):
+                    if re.match(r"^]\s+\([^)]+\)", striped_text[i:]):
                         # Saving the content of the square brackets 'as is'.
                         new_text.append(entity_content)
                         # `+1` here is the length of the entity's end char (`]`).

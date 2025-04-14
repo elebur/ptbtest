@@ -30,19 +30,19 @@ class TestMessagesWithoutEntities:
 
     def test_escaped_symbols(self):
         text = ("A multi\nline string without\n any entity\n"
-                "but with escaped \[ entity's \` symbols \* in it\_")
+                r"but with escaped \[ entity's \` symbols \* in it\_")
         resp = self.ep.parse_markdown(text)
         assert resp == ("A multi\nline string without\n any entity\nbut with escaped [ entity's ` symbols * in it_", ())
 
-    @pytest.mark.parametrize("input, result", (
+    @pytest.mark.parametrize("in_str, result", (
             ("    A string with a whitespace at the beginning.", "A string with a whitespace at the beginning."),
             ("A string with a whitespace at the end.    ", "A string with a whitespace at the end."),
             ("    Leading and trailing whitespaces   ", "Leading and trailing whitespaces"),
             ("   multiline string        \n    where each line has     \n    leading and trailing whitespaces      ",
                 "multiline string        \n    where each line has     \n    leading and trailing whitespaces"),
     ))
-    def test_whitespace(self, input, result):
-        resp = self.ep.parse_markdown(input)
+    def test_whitespace(self, in_str, result):
+        resp = self.ep.parse_markdown(in_str)
         assert resp == (result, ())
 
 
