@@ -922,3 +922,134 @@ class TestPre:
         msg = ERR_MSG_CANT_PARSE_ENTITY.format(offset=59, entity_type="code")
         with pytest.raises(BadMarkupException, match=msg):
             self.ep.parse_markdown_v2(" ```unclosed pre entity with one single backquote at the end`")
+
+
+class TestBlockquote:
+    ep = EntityParser()
+    def test_one_line_blockquote(self):
+        text = ">Block quotation started"
+        resp = self.ep.parse_markdown_v2(text)
+
+        assert resp == ('Block quotation started',
+                            (MessageEntity(length=23, offset=0,
+                                           type=MessageEntityType.BLOCKQUOTE),))
+
+    def test_only_blockquote_in_message(self):
+        text = (">Block quotation started\n"
+                ">Block quotation continued\n"
+                ">Block quotation continued\n"
+                ">Block quotation continued\n"
+                ">The last line of the block quotation")
+
+        resp = self.ep.parse_markdown_v2(text)
+        assert resp == ("Block quotation started\n"
+                        "Block quotation continued\n"
+                        "Block quotation continued\n"
+                        "Block quotation continued\n"
+                        "The last line of the block quotation",
+                            (MessageEntity(length=138,
+                                           offset=0,
+                                           type=MessageEntityType.BLOCKQUOTE),))
+
+    def test_multiple_blockquotes_split_by_newline(self):
+        text = (">Block quotation started\n"
+                ">Block quotation continued\n"
+                "\n"
+                ">Block quotation continued\n"
+                ">Block quotation continued\n"
+                ">The last line of the block quotation")
+
+        resp = self.ep.parse_markdown_v2(text)
+        assert resp == ("Block quotation started\n"
+                        "Block quotation continued\n"
+                        "\n"
+                        "Block quotation continued\n"
+                        "Block quotation continued\n"
+                        "The last line of the block quotation",
+                            (MessageEntity(length=50, offset=0,
+                                           type=MessageEntityType.BLOCKQUOTE),
+                             MessageEntity(length=88, offset=51,
+                                           type=MessageEntityType.BLOCKQUOTE)))
+
+    @pytest.mark.parametrize(["entity"], (("*",), ("```",), ("__",),
+                                                ("~",), ("||",), ("`",), ))
+    def test_multiple_blockquotes_split_by_another_entity(self, entity):
+        text = (">Block quotation started\n"
+                ">Block quotation continued\n"
+                f"{entity}{entity}"
+                ">Block quotation continued\n"
+                ">Block quotation continued\n"
+                ">The last line of the block quotation")
+
+        resp = self.ep.parse_markdown_v2(text)
+        assert resp == ("Block quotation started\n"
+                        "Block quotation continued\n"
+                        "Block quotation continued\n"
+                        "Block quotation continued\n"
+                        "The last line of the block quotation",
+                            (MessageEntity(length=50, offset=0,
+                                           type=MessageEntityType.BLOCKQUOTE),
+                             MessageEntity(length=88, offset=50,
+                                           type=MessageEntityType.BLOCKQUOTE)))
+
+    def test_expandable_blockquote(self):
+        text = (">Block quotation started\n"
+                ">Block quotation continued\n"
+                ">Block quotation continued\n"
+                ">Block quotation continued\n"
+                ">The last line of the block quotation||")
+
+        resp = self.ep.parse_markdown_v2(text)
+        assert resp == ('Block quotation started\n'
+                        'Block quotation continued\n'
+                        'Block quotation continued\n'
+                        'Block quotation continued\n'
+                        'The last line of the block quotation',
+                            (MessageEntity(length=138, offset=0,
+                                           type=MessageEntityType.EXPANDABLE_BLOCKQUOTE),))
+    def test_nested_entities(self):
+        text = ('>||Block|| *quotation* _started_\n'
+                '>__Block__ `quotation` ~ontinued~\n'
+                '>```block quotation continued```\n'
+                '>[Block](http://google.com) quotation continued\n'
+                '>The last line of the block quotation')
+
+        resp = self.ep.parse_markdown_v2(text)
+        assert resp == ("Block quotation started\n"
+                        "Block quotation ontinued\n"
+                        " quotation continued\n"
+                        "Block quotation continued\n"
+                        "The last line of the block quotation",
+                            (MessageEntity(length=132, offset=0, type=MessageEntityType.BLOCKQUOTE),
+                             MessageEntity(length=5, offset=0, type=MessageEntityType.SPOILER),
+                             MessageEntity(length=9, offset=6, type=MessageEntityType.BOLD),
+                             MessageEntity(length=7, offset=16, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=5, offset=24, type=MessageEntityType.UNDERLINE),
+                             MessageEntity(length=9, offset=30, type=MessageEntityType.CODE),
+                             MessageEntity(length=8, offset=40, type=MessageEntityType.STRIKETHROUGH),
+                             MessageEntity(language="block", length=20, offset=49, type=MessageEntityType.PRE),
+                             MessageEntity(length=5, offset=70,
+                                           type=MessageEntityType.TEXT_LINK, url="http://google.com/")))
+    @pytest.mark.parametrize("e_char, e_type", (
+            ("*", MessageEntityType.BOLD),
+            ("_", MessageEntityType.ITALIC),
+            ("__", MessageEntityType.UNDERLINE),
+            ("~", MessageEntityType.STRIKETHROUGH),
+            ("||", MessageEntityType.SPOILER),
+            ("`", MessageEntityType.CODE),
+    ))
+    def test_unescaped_entity_char(self, e_char, e_type):
+        text = (f">Block {e_char}quotation started\n"
+                ">Block quotation continued\n")
+        msg = ERR_MSG_CANT_PARSE_ENTITY.format(entity_type=e_type,
+                                               offset=7)
+        with pytest.raises(BadMarkupException, match=msg):
+            self.ep.parse_markdown_v2(text)
+
+    @pytest.mark.parametrize(["char"], RESERVED_REGULAR_CHARS)
+    def test_unescaped_regular_char(self, char):
+        text = (f">Block {char}quotation started\n"
+                ">Block quotation continued\n")
+        msg = ERR_MSG_CHAR_MUST_BE_ESCAPED.format(char)
+        with pytest.raises(BadMarkupException, match=re.escape(msg)):
+            self.ep.parse_markdown_v2(text)
