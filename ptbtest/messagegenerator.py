@@ -263,7 +263,7 @@ class MessageGenerator(PtbGenerator):
                 document, audio
             ] if x
         ]
-        print(attachments)
+
         if caption and not attachments:
             raise BadMessageException(
                 "Can't have a caption without attachment")
