@@ -1053,3 +1053,191 @@ class TestBlockquote:
         msg = ERR_MSG_CHAR_MUST_BE_ESCAPED.format(char)
         with pytest.raises(BadMarkupException, match=re.escape(msg)):
             self.ep.parse_markdown_v2(text)
+
+
+class TestEmptyEntities:
+    ep = EntityParser()
+
+    @pytest.mark.parametrize(["in_str"], (("*  *    ** **    ",),
+                                          ("_   _ _  _            _ _",),
+                                          ("` `  `` `          `     ``",),
+                                          ( "```    \n\n  ```",),
+                                          ("  ```python    \n\n  ``` ```    ```   ", ),
+                                          ("[]()", ),
+                                          ("__     __  __\n\n\n__",),
+                                          ("~   ~ ~~   ~\n\n\n~",),
+                                          (">             ",),
+                                          (">             \n>   \n\n\n",),
+                                          ("||||||    || ||\n\n\n||",),
+                                          ( ">      \n\n>    ||",),
+                                          ("** _ _ `` ```lua\n``` * * _   _    `     \n\n\n` __ __ ~~ ||   || []()",),
+                                          ("*\n* _\n_ `\n`",),
+                                          ))
+    def test_empty_entity_and_empty_message(self, in_str):
+        with pytest.raises(BadMarkupException, match=ERR_TEXT_MUST_BE_NON_EMPTY):
+            self.ep.parse_markdown_v2(in_str)
+
+
+    @pytest.mark.parametrize(["in_str", "result"], (
+            ("*  *    text **    ", ('      text', (MessageEntity(length=2, offset=0, type=MessageEntityType.BOLD),))),
+            ("    _   _ text _ _ ", ('    text', (MessageEntity(length=3, offset=0, type=MessageEntityType.ITALIC),))),
+            ("`    `  text `   ` text ``", ('      text     text', (MessageEntity(length=4, offset=0, type=MessageEntityType.CODE),
+                                                                    MessageEntity(length=3, offset=11, type=MessageEntityType.CODE)))),
+            ("```python\n\n\n``` text ``````", ('\n\n text', (MessageEntity(language='python', length=2, offset=0, type=MessageEntityType.PRE),))),
+            ("```\n\n\n``` text ``````", ("\n\n text", (MessageEntity(length=2, offset=0, type=MessageEntityType.PRE),))),
+            ("  hello  [](https://example.com)\n\n", ("hello", ())),
+            ("__ __ hello __ world__ __     __", ("  hello  world", (MessageEntity(length=1, offset=0, type=MessageEntityType.UNDERLINE),
+                                                                     MessageEntity(length=6, offset=8, type=MessageEntityType.UNDERLINE)))),
+            ("~  ~ ~~ hello ~~", ("    hello", (MessageEntity(length=2, offset=0, type=MessageEntityType.STRIKETHROUGH),))),
+            (">             \nhello\n>      ", ("             \nhello", (MessageEntity(length=14, offset=0, type=MessageEntityType.BLOCKQUOTE),))),
+            ("|| || hello ||\n\n\n||", ("  hello", (MessageEntity(length=1, offset=0, type=MessageEntityType.SPOILER),))),
+            ("hello     \n>           ||", ("hello", ())),
+    ))
+    def test_empty_entity_with_text(self, in_str, result):
+        resp = self.ep.parse_markdown_v2(in_str)
+        assert resp == result
+
+
+class TestMisc:
+    ep = EntityParser()
+
+    @pytest.mark.parametrize("in_str, result", (("[no parentheses]", "no parentheses"),
+                                                ("[ no parentheses ]", "no parentheses"),
+                                                ("[no parentheses ]", "no parentheses"),
+                                                ("[no parentheses ] some trailing text", "no parentheses  some trailing text"),
+                                                ("[ no parentheses ] some trailing text", "no parentheses  some trailing text"),
+                                                ("some leading text [ no parentheses ] some trailing text", "some leading text  no parentheses  some trailing text"),
+                                                ))
+    def test_square_brackets_without_parentheses(self, in_str, result):
+        resp = self.ep.parse_markdown_v2(in_str)
+
+        assert resp == (result, ())
+
+    @pytest.mark.parametrize("in_str, offset", (("A", 24), ("©", 25), ("😊", 27), ("👨‍👩‍👧‍👦", 48)))
+    def test_error_message_with_different_characters(self, in_str, offset):
+        text = f"Text with '{in_str}' and broken*entity"
+        with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(entity_type=MessageEntityType.BOLD,
+                                                                                      offset=offset)):
+            self.ep.parse_markdown_v2(text)
+
+
+class TestNestedEntities:
+    ep = EntityParser()
+    def test_nested_entities(self):
+        text = ("*bold _italic bold ~italic bold strikethrough "
+                "||italic bold strikethrough spoiler||~"
+                " __underline italic bold___ bold*")
+        resp = self.ep.parse_markdown_v2(text)
+
+        assert resp == ("bold italic bold italic bold strikethrough "
+                        "italic bold strikethrough spoiler "
+                        "underline italic bold bold",
+                            (MessageEntity(length=5, offset=0, type=MessageEntityType.BOLD),
+                             MessageEntity(length=12, offset=5, type=MessageEntityType.BOLD),
+                             MessageEntity(length=12, offset=5, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=26, offset=17, type=MessageEntityType.BOLD),
+                             MessageEntity(length=26, offset=17, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=26, offset=17, type=MessageEntityType.STRIKETHROUGH),
+                             MessageEntity(length=34, offset=43, type=MessageEntityType.BOLD),
+                             MessageEntity(length=34, offset=43, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=33, offset=43, type=MessageEntityType.STRIKETHROUGH),
+                             MessageEntity(length=33, offset=43, type=MessageEntityType.SPOILER),
+                             MessageEntity(length=26, offset=77, type=MessageEntityType.BOLD),
+                             MessageEntity(length=21, offset=77, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=21, offset=77, type=MessageEntityType.UNDERLINE)))
+
+    def test_nested_entities_example_from_docs(self):
+        text = ("*bold \\*text*\n"
+                "_italic \\*text_\n"
+                "__underline__\n"
+                "~strikethrough~\n"
+                "||spoiler||\n"
+                "*bold _italic bold ~italic bold strikethrough ||italic bold strikethrough spoiler||~ __underline italic bold___ bold*\n"
+                "[inline URL](http://www.example.com/)\n"
+                "`inline fixed-width code`\n"
+                "```\npre-formatted fixed-width code block\n```\n"
+                "```python\npre-formatted fixed-width code block written in the Python programming language\n```\n"
+                ">Block quotation started\n"
+                ">Block quotation continued\n"
+                ">Block quotation continued\n"
+                ">Block quotation continued\n"
+                ">The last line of the block quotation\n"
+                "**>The expandable block quotation started right after the previous block quotation\n"
+                ">It is separated from the previous block quotation by an empty bold entity\n"
+                ">Expandable block quotation continued\n"
+                ">Hidden by default part of the expandable block quotation started\n"
+                ">Expandable block quotation continued\n"
+                ">The last line of the expandable block quotation with the expandability mark||")
+
+        resp = self.ep.parse_markdown_v2(text)
+
+        assert resp == ("bold *text\n"
+                        "italic *text\n"
+                        "underline\n"
+                        "strikethrough\n"
+                        "spoiler\n"
+                        "bold italic bold italic bold strikethrough italic bold strikethrough spoiler underline italic bold bold\n"
+                        "inline URL\n"
+                        "inline fixed-width code\n"
+                        "pre-formatted fixed-width code block\n\n"
+                        "pre-formatted fixed-width code block written in the Python programming language\n\n"
+                        "Block quotation started\n"
+                        "Block quotation continued\n"
+                        "Block quotation continued\n"
+                        "Block quotation continued\n"
+                        "The last line of the block quotation\n"
+                        "The expandable block quotation started right after the previous block quotation\n"
+                        "It is separated from the previous block quotation by an empty bold entity\n"
+                        "Expandable block quotation continued\n"
+                        "Hidden by default part of the expandable block quotation started\n"
+                        "Expandable block quotation continued\n"
+                        "The last line of the expandable block quotation with the expandability mark",
+                            (MessageEntity(length=10, offset=0, type=MessageEntityType.BOLD),
+                             MessageEntity(length=12, offset=11, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=9, offset=24, type=MessageEntityType.UNDERLINE),
+                             MessageEntity(length=13, offset=34, type=MessageEntityType.STRIKETHROUGH),
+                             MessageEntity(length=7, offset=48, type=MessageEntityType.SPOILER),
+                             MessageEntity(length=5, offset=56, type=MessageEntityType.BOLD),
+                             MessageEntity(length=12, offset=61, type=MessageEntityType.BOLD),
+                             MessageEntity(length=12, offset=61, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=26, offset=73, type=MessageEntityType.BOLD),
+                             MessageEntity(length=26, offset=73, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=26, offset=73, type=MessageEntityType.STRIKETHROUGH),
+                             MessageEntity(length=34, offset=99, type=MessageEntityType.BOLD),
+                             MessageEntity(length=34, offset=99, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=33, offset=99, type=MessageEntityType.STRIKETHROUGH),
+                             MessageEntity(length=33, offset=99, type=MessageEntityType.SPOILER),
+                             MessageEntity(length=26, offset=133, type=MessageEntityType.BOLD),
+                             MessageEntity(length=21, offset=133, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=21, offset=133, type=MessageEntityType.UNDERLINE),
+                             MessageEntity(length=10, offset=160, type=MessageEntityType.TEXT_LINK,
+                                           url="http://www.example.com/"),
+                             MessageEntity(length=23, offset=171, type=MessageEntityType.CODE),
+                             MessageEntity(length=37, offset=195, type=MessageEntityType.PRE),
+                             MessageEntity(language="python", length=80, offset=233,
+                                           type=MessageEntityType.PRE),
+                             MessageEntity(length=139, offset=314, type=MessageEntityType.BLOCKQUOTE),
+                             MessageEntity(length=368, offset=453,
+                                           type=MessageEntityType.EXPANDABLE_BLOCKQUOTE)))
+
+    def test_entities_with_same_offset_and_length(self):
+        text = "*_~__||hello world||__~_*"
+        resp = self.ep.parse_markdown_v2(text)
+        assert resp == ("hello world",
+                            (MessageEntity(length=11, offset=0, type=MessageEntityType.BOLD),
+                             MessageEntity(length=11, offset=0, type=MessageEntityType.ITALIC),
+                             MessageEntity(length=11, offset=0, type=MessageEntityType.UNDERLINE),
+                             MessageEntity(length=11, offset=0, type=MessageEntityType.STRIKETHROUGH),
+                             MessageEntity(length=11, offset=0, type=MessageEntityType.SPOILER)))
+
+    def test_unclosed_nested_entity(self):
+        text = "*hello _italic ~world~ italic_ world"
+        err_msg = "Can't parse entities: can't find end of bold entity at byte offset 0"
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_markdown_v2(text)
+
+    def test_unclosed_inner_nested_entity(self):
+        text = "*hello _italic ~world~ italic world*"
+        err_msg = "Can't parse entities: can't find end of bold entity at byte offset 35"
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_markdown_v2(text)
