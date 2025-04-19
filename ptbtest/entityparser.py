@@ -78,7 +78,14 @@ def _get_utf16_length(text: str) -> int:
 def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
     """
     Safely gets item from the sequence by its index.
-    If the `index` is out of the range, then the default value is returned.
+    If the ``index`` is out of the range, then the ``default`` value is returned.
+
+    :param seq: (`type`: :obj:`~collections.abc.Sequence`) A sequence to get the item from.
+    :param index: (`type`: :obj:`int`) An item's index.
+    :param default: (`type`: :obj:`~typing.Any`) The value to be returned if the
+        ``index`` is out of the range, defaults to :obj:`None`.
+    :return: (`type`: :obj:`~typing.Any`) An item under the given ``index`` or
+        the ``default`` value.
     """
     # An empty sequence.
     if not seq:
