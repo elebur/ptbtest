@@ -38,7 +38,8 @@ extensions = [
 ]
 
 intersphinx_mapping = {
-        'telegram': ('https://docs.python-telegram-bot.org/en/stable/', None)
+    "python": ("https://docs.python.org/3", None),
+    'telegram': ('https://docs.python-telegram-bot.org/en/stable/', None)
 }
 
 add_module_names = False
