@@ -40,6 +40,9 @@ extensions = [
 intersphinx_mapping = {
         'telegram': ('https://docs.python-telegram-bot.org/en/stable/', None)
 }
+
+add_module_names = False
+
 intersphinx_disabled_domains = ["std"]
 
 autodoc_mock_imports = ['python-telegram-bot']
