@@ -281,7 +281,7 @@ class TestInlineUrl:
 
     def test_multiline_multiple_inline_urls_parts(self):
         resp = self.ep.parse_markdown_v2('Multiple [inline urls](example.com/?param1=val1)\n'
-                                         r'in [one message](http://example.com/)\.\n'
+                                         'in [one message](http://example.com/)\\.\n'
                                          'Each one on new line')
         entity1 = resp[1][0]
         entity2 = resp[1][1]
@@ -583,7 +583,7 @@ class TestInlineUrl:
                                            url='http://ex.com/'),))
 
     def test_non_latin_characters(self):
-        resp = self.ep.parse_markdown_v2("[你好世界!](ex.com)")
+        resp = self.ep.parse_markdown_v2("[你好世界\!](ex.com)")
         assert resp == ('你好世界!', (MessageEntity(length=5,
                                                     offset=0,
                                                     type=MessageEntityType.TEXT_LINK,
@@ -841,7 +841,7 @@ class TestPre:
 
     def test_multiple_inline_code_parts(self):
         resp = self.ep.parse_markdown_v2("Multiple code snippets ```python i = 0\ni += 1\n print(i)``` "
-                                      r"within one message ```lua\nprint('hello\nworld')```\.")
+                                         "within one message ```lua\nprint('hello\nworld')```\\.")
 
         entity1 = resp[1][0]
         assert entity1.language == "python"
@@ -870,7 +870,7 @@ class TestPre:
          MessageEntity(language="c", length=22, offset=69, type=MessageEntityType.PRE)))
 
     def test_escaped_backquote_symbol(self):
-        resp = self.ep.parse_markdown_v2(r"```lua i = 2\ni-2``` with an escaped \` symbol")
+        resp = self.ep.parse_markdown_v2("```lua i = 2\ni-2``` with an escaped \\` symbol")
         entity = resp[1][0]
         assert entity.language == "lua"
         assert resp == (" i = 2\ni-2 with an escaped ` symbol",
