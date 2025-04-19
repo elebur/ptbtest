@@ -17,8 +17,10 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """
 This module provides a helper class to transform
-marked-up messages to plain text with entities.
-Docs: https://core.telegram.org/bots/api#formatting-options
+marked-up messages to plain text and a :obj:`tuple` of
+:class:`entities <telegram.MessageEntity>`.
+
+`Telegram Docs <https://core.telegram.org/bots/api#formatting-options>`_
 """
 import re
 from collections.abc import Sequence
@@ -57,14 +59,18 @@ PRIORITIES = {
 
 def get_utf_16_length(text: str) -> int:
     """
-    Telegram uses UTF-16 for message entities:
-    https://core.telegram.org/api/entities#utf-16
+    Return the length of the ``text`` in UTF-16 code units.
 
-    A simple way of computing
-    the entity length is converting the text to UTF-16,
-    and then taking the byte length divided
-    by 2 (=number of UTF-16 code units).
-    Source: https://core.telegram.org/api/entities#computing-entity-length
+    Telegram `uses UTF-16 <https://core.telegram.org/api/entities#utf-16>`_
+    for message entities
+
+    A simple way of computing the entity length is converting the text to UTF-16,
+    and then taking the byte length divided by 2 (number of UTF-16 code units).
+    `Source <https://core.telegram.org/api/entities#computing-entity-length>`_
+
+    :param text: (`type`: :obj:`str`) A string to calculate the length for.
+
+    :return: (`type`: :obj:`int`) The length of the given string.
     """
     return len(text.encode("utf-16-le")) // 2
 
