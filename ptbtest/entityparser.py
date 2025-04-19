@@ -21,12 +21,38 @@ marked-up messages to plain text with entities.
 Docs: https://core.telegram.org/bots/api#formatting-options
 """
 import re
-from typing import Tuple, Any, Sequence
+from collections.abc import Sequence
+from typing import Tuple, Any
 from urllib.parse import urlparse
 
-from telegram import MessageEntity
+from telegram import MessageEntity, TelegramObject
+from telegram.constants import MessageEntityType
 
 from ptbtest.errors import BadMarkupException
+
+# These priorities are used for sorting purpose.
+# https://github.com/tdlib/td/blob/f1b7500310baa496c0b779e4273a3aff0f14f42f/td/telegram/MessageEntity.cpp#L38
+PRIORITIES = {
+    MessageEntityType.MENTION: 50,
+    MessageEntityType.HASHTAG: 50,
+    MessageEntityType.BOT_COMMAND: 50,
+    MessageEntityType.URL: 50,
+    MessageEntityType.EMAIL: 50,
+    MessageEntityType.BOLD: 90,
+    MessageEntityType.ITALIC: 91,
+    MessageEntityType.CODE: 20,
+    MessageEntityType.PRE: 10,
+    MessageEntityType.TEXT_LINK: 49,
+    MessageEntityType.TEXT_MENTION: 49,
+    MessageEntityType.CASHTAG: 50,
+    MessageEntityType.PHONE_NUMBER: 50,
+    MessageEntityType.UNDERLINE: 92,
+    MessageEntityType.STRIKETHROUGH: 93,
+    MessageEntityType.BLOCKQUOTE: 0,
+    MessageEntityType.SPOILER: 94,
+    MessageEntityType.CUSTOM_EMOJI: 99,
+    MessageEntityType.EXPANDABLE_BLOCKQUOTE: 0
+}
 
 
 def get_utf_16_length(text: str) -> int:
