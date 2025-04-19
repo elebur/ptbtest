@@ -589,6 +589,13 @@ class TestInlineUrl:
                                                     type=MessageEntityType.TEXT_LINK,
                                                     url='http://ex.com/'),))
 
+    def test_raw_url_in_square_brackets(self):
+        text = "[http://google\.com]"
+        resp = self.ep.parse_markdown_v2(text)
+        assert resp == ("http://google.com", (MessageEntity(length=17,
+                                                            offset=0,
+                                                            type=MessageEntityType.TEXT_LINK,
+                                                            url="http://google.com/"),))
 
 class TestInlineMention:
     """
