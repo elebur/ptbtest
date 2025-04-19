@@ -44,6 +44,10 @@ intersphinx_disabled_domains = ["std"]
 
 autodoc_mock_imports = ['python-telegram-bot']
 
+# Don't show type hints in the signature - that just makes it hardly readable
+# and we document the types anyway
+autodoc_typehints = "none"
+
 templates_path = ["_templates"]
 
 # -- Options for EPUB output
