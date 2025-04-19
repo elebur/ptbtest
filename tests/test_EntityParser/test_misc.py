@@ -1,16 +1,16 @@
-from ptbtest.entityparser import (get_utf_16_length,
+from ptbtest.entityparser import (_get_utf16_length,
                                   get_item,
                                   check_and_normalize_url)
 
 
 def test_get_utf_16_length():
-    assert get_utf_16_length("a") == 1  # ASCII
-    assert get_utf_16_length("hello") == 5  # Multiple ASCII symbols
-    assert get_utf_16_length("€") == 1  # Euro (part of the BPM)
-    assert get_utf_16_length("𐍈") == 2  # UTF-16 surrogate pair
-    assert get_utf_16_length("👨‍👩‍👧‍👦") == 11 # Emoji with ZWJ (Zero Width Joiner)
-    assert get_utf_16_length("") == 0  # Empty string
-    assert get_utf_16_length("👀🔥") == 4  # Two emojis (each has 2 UTF-16 units)
+    assert _get_utf16_length("a") == 1  # ASCII
+    assert _get_utf16_length("hello") == 5  # Multiple ASCII symbols
+    assert _get_utf16_length("€") == 1  # Euro (part of the BPM)
+    assert _get_utf16_length("𐍈") == 2  # UTF-16 surrogate pair
+    assert _get_utf16_length("👨‍👩‍👧‍👦") == 11 # Emoji with ZWJ (Zero Width Joiner)
+    assert _get_utf16_length("") == 0  # Empty string
+    assert _get_utf16_length("👀🔥") == 4  # Two emojis (each has 2 UTF-16 units)
 
 
 class TestGetItem:

@@ -57,7 +57,7 @@ PRIORITIES = {
 }
 
 
-def get_utf_16_length(text: str) -> int:
+def _get_utf16_length(text: str) -> int:
     """
     Return the length of the ``text`` in UTF-16 code units.
 
@@ -253,7 +253,7 @@ class EntityParser:
             if ch not in "_*`[":
                 # Here it might be any symbol, and it can have any length.
                 # E.g. 'A' has 1 code unit, '©' has 1 code unit, '😊' has 2 code units.
-                utf16_offset += get_utf_16_length(ch)
+                utf16_offset += _get_utf16_length(ch)
                 new_text.append(ch)
                 i += 1
                 continue
@@ -337,7 +337,7 @@ class EntityParser:
                             not re.match(r"^]\(.*?\)\s*\S.*", striped_text[i:])):
                         entity_content = entity_content.rstrip()
 
-                utf16_offset += get_utf_16_length(entity_content)
+                utf16_offset += _get_utf16_length(entity_content)
                 new_text.append(entity_content)
             # The code reached the end of the text, but the end
             # of the entity wasn't found.
@@ -446,7 +446,7 @@ class EntityParser:
 
             # Processing regular characters.
             if cur_ch not in reserved_characters:
-                utf16_offset += get_utf_16_length(cur_ch)
+                utf16_offset += _get_utf16_length(cur_ch)
                 if cur_ch != "\r":
                     can_start_blockquote = False
                 result_text += cur_ch
