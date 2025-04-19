@@ -22,7 +22,7 @@ Docs: https://core.telegram.org/bots/api#formatting-options
 """
 import re
 from collections.abc import Sequence
-from typing import Tuple, Any
+from typing import Tuple, Any, Literal
 from urllib.parse import urlparse
 
 from telegram import MessageEntity, TelegramObject
@@ -120,6 +120,44 @@ def check_and_normalize_url(url: str) -> str:
         result += "/"
 
     return result
+
+
+def _get_id_from_url(type_: Literal["user", "emoji"], url: str):
+    """
+    Extract id from the Telegram URL.
+
+    If the ``url`` is ``tg://user?id=123456789``,
+    then the return value is ``123456789``.
+    """
+    if type_ not in ("user", "emoji"):
+        raise ValueError(f"Wrong type - {type_}")
+
+    id_ = None
+    if match := re.match(rf"tg://{type_}\?id=(\d+)", url):
+        id_ = int(match.group(1))
+
+    return id_
+
+
+def get_user_id_from_url(url: str):
+    """
+    Extract a user id from the given URL.
+
+    If the ``url`` is ``tg://user?id=123456789``,
+    then the return value is ``123456789``.
+    """
+    return _get_id_from_url("user", url)
+
+
+def get_custom_emoji_id_from_url(url: str):
+    """
+    Extract an emoji id from the given URL.
+
+    If the ``url`` is ``tg://emoji?id=5368324170671202286``,
+    then the return value is ``5368324170671202286``.
+    """
+    return _get_id_from_url("emoji", url)
+
 
 
 class EntityParser:
