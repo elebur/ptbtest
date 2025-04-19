@@ -22,15 +22,40 @@ Docs: https://core.telegram.org/bots/api#formatting-options
 """
 import re
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlparse
 
-from telegram import MessageEntity
+from telegram import MessageEntity, TelegramObject
+from telegram.constants import MessageEntityType
 
 from ptbtest.errors import BadMarkupException
 
+# These priorities are used for sorting purpose.
+# https://github.com/tdlib/td/blob/f1b7500310baa496c0b779e4273a3aff0f14f42f/td/telegram/MessageEntity.cpp#L38
+PRIORITIES = {
+    MessageEntityType.MENTION: 50,
+    MessageEntityType.HASHTAG: 50,
+    MessageEntityType.BOT_COMMAND: 50,
+    MessageEntityType.URL: 50,
+    MessageEntityType.EMAIL: 50,
+    MessageEntityType.BOLD: 90,
+    MessageEntityType.ITALIC: 91,
+    MessageEntityType.CODE: 20,
+    MessageEntityType.PRE: 10,
+    MessageEntityType.TEXT_LINK: 49,
+    MessageEntityType.TEXT_MENTION: 49,
+    MessageEntityType.CASHTAG: 50,
+    MessageEntityType.PHONE_NUMBER: 50,
+    MessageEntityType.UNDERLINE: 92,
+    MessageEntityType.STRIKETHROUGH: 93,
+    MessageEntityType.BLOCKQUOTE: 0,
+    MessageEntityType.SPOILER: 94,
+    MessageEntityType.CUSTOM_EMOJI: 99,
+    MessageEntityType.EXPANDABLE_BLOCKQUOTE: 0
+}
 
-def get_utf_16_length(char: str) -> int:
+
+def get_utf_16_length(text: str) -> int:
     """
     Telegram uses UTF-16 for message entities:
     https://core.telegram.org/api/entities#utf-16
@@ -41,7 +66,7 @@ def get_utf_16_length(char: str) -> int:
     by 2 (=number of UTF-16 code units).
     Source: https://core.telegram.org/api/entities#computing-entity-length
     """
-    return len(char.encode("utf-16-le")) // 2
+    return len(text.encode("utf-16-le")) // 2
 
 
 def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
@@ -70,25 +95,138 @@ def check_and_normalize_url(url: str) -> str:
 
     result = url
 
-    # If the protocol is not specified, setting 'http' protocol
+    # If the protocol is not specified, sets 'http' protocol
     if "://" not in result:
         result = "http://" + result
 
     try:
-        parse_url = urlparse(result)
+        parsed_url = urlparse(result)
     except ValueError:
         return ""
 
-    if parse_url.scheme not in ("http", "https", "ton", "tg", "tonsite"):
+    if parsed_url.scheme not in ("http", "https", "ton", "tg", "tonsite"):
         return ""
 
-    # Adding trailing slash only for URLs without path. E.g.
-    # https://www.example.com - adds the slash.
+    # Validate domain name.
+    pattern_valid_domain = re.compile(r"^(?=.{1,255}$)(?!-)[A-Za-z0-9\-]{1,63}"
+                                      r"(\.[A-Za-z0-9\-]{1,63})*\.?(?<!-)$")
+    if not pattern_valid_domain.match(parsed_url.netloc):
+        return ""
+
+    # Adding trailing slash only for URLs without a path.
+    # E.g., https://www.example.com - adds the slash.
     # https://www.example.com/login - doesn't add the slash.
-    if not parse_url.path and not result.endswith("/"):
+    if not parsed_url.path and not result.endswith("/"):
         result += "/"
 
     return result
+
+
+def _get_id_from_url(type_: Literal["user", "emoji"], url: str):
+    """
+    Extract id from the Telegram URL.
+
+    If the ``url`` is ``tg://user?id=123456789``,
+    then the return value is ``123456789``.
+    """
+    if type_ not in ("user", "emoji"):
+        raise ValueError(f"Wrong type - {type_}")
+
+    id_ = None
+    if match := re.match(rf"tg://{type_}\?id=(\d+)", url):
+        id_ = int(match.group(1))
+
+    return id_
+
+
+def get_user_id_from_url(url: str):
+    """
+    Extract a user id from the given URL.
+
+    If the ``url`` is ``tg://user?id=123456789``,
+    then the return value is ``123456789``.
+    """
+    return _get_id_from_url("user", url)
+
+
+def get_custom_emoji_id_from_url(url: str):
+    """
+    Extract an emoji id from the given URL.
+
+    If the ``url`` is ``tg://emoji?id=5368324170671202286``,
+    then the return value is ``5368324170671202286``.
+    """
+    return _get_id_from_url("emoji", url)
+
+
+def get_hash(obj: TelegramObject):
+    """
+    The __hash__ method of the MessageEntity considers
+    only ``type``, ``offset`` and ``length`` attributes.
+    ``MessageEntity("url", 1, 2)`` and ``MessageEntity("url", 1, 2, url="https://ex.com)``
+    will get the same hash.
+    ``to_json()`` returns s string with all attributes, therefore, hashes will be unique.
+    """
+    return hash(obj.to_json())
+
+
+def _split_entities(nested_entities: Sequence[MessageEntity],
+                    incoming_entity: MessageEntity,
+                    raw_offset: dict[int, int]) -> (list[MessageEntity, ...], list[MessageEntity, ...]):
+    """
+    The function splits all unclosed entities if new entity is coming.
+
+    By default, for nested entities in the string ``"*hello _italic ~world~ italic_ world*"``
+    meth:`parse_markdown_v2` returns these entities
+
+    .. code:: python
+
+        MessageEntity(length=31, offset=0, type=MessageEntityType.BOLD),
+        MessageEntity(length=19, offset=6, type=MessageEntityType.ITALIC),
+        MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+
+    While the Telegram server returns these entities for the same string
+    .. code:: python
+
+        MessageEntity(length=6, offset=0, type=MessageEntityType.BOLD),
+        MessageEntity(length=7, offset=6, type=MessageEntityType.BOLD),
+        MessageEntity(length=7, offset=6, type=MessageEntityType.ITALIC),
+        MessageEntity(length=18, offset=13, type=MessageEntityType.BOLD),
+        MessageEntity(length=12, offset=13, type=MessageEntityType.ITALIC),
+        MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+    """
+    new_nested = []
+    closed_entities = []
+    for ent in nested_entities:
+        # Links and quotes mustn't be split.
+        if ent.type in (MessageEntityType.TEXT_LINK, MessageEntityType.BLOCKQUOTE ):
+            new_nested.append(ent)
+            continue
+        # MessageEntity can't be edited directly.
+        # First it is transformed into the dict object, then the dict is edited,
+        # and then new MessageEntity is created from this dict.
+        ent_dict = ent.to_dict()
+        original_length = ent.length
+        new_length = incoming_entity.offset - ent.offset
+        if new_length > 0:
+            ent_dict["length"] = new_length
+            closed_entities.append(MessageEntity(**ent_dict))
+
+        ent_dict["offset"] = incoming_entity.offset
+        ent_dict["length"] = original_length - new_length
+
+        new_ent = MessageEntity(**ent_dict)
+        # Updating the entity's byte offset in the original string
+        # (the position where the entity is started).
+        # The byte offset is linked to the original entity,
+        # but it will be removed after splitting.
+        # Here the offset is relinked from the original entity to the new one.
+        raw_offset[get_hash(new_ent)] = raw_offset[get_hash(ent)]
+        new_nested.append(new_ent)
+
+    new_nested.append(incoming_entity)
+
+    return new_nested, closed_entities
 
 
 class EntityParser:
@@ -151,7 +289,7 @@ class EntityParser:
             is_pre = False
             if ch == "`" and i + 2 < text_size and striped_text[i:i+2] == "``":
                 # The code entity has three chars (```).
-                # The first one was skipped few lines above
+                # The first one was skipped the few lines above
                 # (`i += 1` just above this `if`).
                 # Increasing the counter by 2 to skip the rest of the entity's
                 # symbols and jump to the text.
@@ -277,6 +415,342 @@ class EntityParser:
 
         return result_str, tuple(entities)
 
+    @staticmethod
+    def parse_markdown_v2(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
+
+        def _is_end_of_md_v2_entity() -> bool:
+            """
+            Check whether the current character is the one that closing the entity.
+            """
+            nonlocal text_size, offset, striped_text, cur_ch, have_blockquote, nested_entities
+
+            if not nested_entities:
+                return False
+            if (have_blockquote and cur_ch == "\n" and
+                    (offset + 1 == text_size or get_item(striped_text, offset + 1) != ">")):
+                return True
+
+            last_nested_entity_type = nested_entities[-1].type
+            if last_nested_entity_type == MessageEntityType.BOLD:
+                is_end_of_entity = (cur_ch == "*")
+            elif last_nested_entity_type == MessageEntityType.ITALIC:
+                is_end_of_entity = (cur_ch == "_" and get_item(striped_text, offset + 1) != "_")
+            elif last_nested_entity_type == MessageEntityType.CODE:
+                is_end_of_entity = (cur_ch == "`")
+            elif last_nested_entity_type == MessageEntityType.PRE:
+                is_end_of_entity = (cur_ch == "`"
+                                    and get_item(striped_text, offset + 1) == "`"
+                                    and get_item(striped_text, offset + 2) == "`")
+            elif last_nested_entity_type == MessageEntityType.TEXT_LINK:
+                is_end_of_entity = (cur_ch == "]")
+            elif last_nested_entity_type == MessageEntityType.UNDERLINE:
+                is_end_of_entity = (cur_ch == "_" and get_item(striped_text, offset + 1) == "_")
+            elif last_nested_entity_type == MessageEntityType.STRIKETHROUGH:
+                is_end_of_entity = (cur_ch == "~")
+            elif last_nested_entity_type == MessageEntityType.SPOILER:
+                is_end_of_entity = (cur_ch == "|" and get_item(striped_text, offset + 1) == "|")
+            elif last_nested_entity_type == MessageEntityType.CUSTOM_EMOJI:
+                is_end_of_entity = (cur_ch == "]")
+            elif last_nested_entity_type == MessageEntityType.BLOCKQUOTE:
+                is_end_of_entity = False
+            else:
+                is_end_of_entity = False
+
+            return is_end_of_entity
+
+        err_msg_entity = ("Can't parse entities: can't find end of "
+                          "{entity_type} entity at byte offset {offset}")
+        err_msg_reserved = ("Can't parse entities: character '{0}' is reserved "
+                            "and must be escaped with the preceding '\\'")
+        err_empty_text = "Message text is empty"
+
+        have_blockquote = False
+        can_start_blockquote = True
+
+        striped_text = text.strip()
+
+        offset = 0
+        utf16_offset = 0
+        text_size = len(striped_text)
+
+        entities: list[MessageEntity] = list()
+        nested_entities: list[MessageEntity] = list()
+        result_text = ""
+        # In this dict, the raw byte offset (the entity's start position
+        # in the original string) of the entity will be stored.
+        # The key is the entity's hash, and the value is the byte offset.
+        # This dict will be used for error messages.
+        raw_offset: dict[int, int] = dict()
+        while offset < text_size:
+            cur_ch = striped_text[offset]
+            next_ch = get_item(striped_text, offset+1)
+            # Processing escaped ASCII characters.
+            if cur_ch == "\\" and 0 < ord(next_ch) <= 126:
+                offset += 1
+                result_text += striped_text[offset]
+                utf16_offset += 1
+                if striped_text[offset] != "\r":
+                    can_start_blockquote = (striped_text[offset] == "\n")
+                offset += 1
+                continue
+
+            reserved_characters = "_*[]()~`>#+-=|{}.!\n"
+            if nested_entities:
+                if nested_entities[-1].type in (MessageEntityType.CODE, MessageEntityType.PRE):
+                    reserved_characters = "`"
+
+            # Processing regular characters.
+            if cur_ch not in reserved_characters:
+                utf16_offset += get_utf_16_length(cur_ch)
+                if cur_ch != "\r":
+                    can_start_blockquote = False
+                result_text += cur_ch
+                offset += 1
+                continue
+
+            is_end_of_entity = _is_end_of_md_v2_entity()
+
+            user_id = None
+            custom_emoji_id = None
+            language = None
+            url = None
+
+            if not is_end_of_entity:
+                entity_type: MessageEntityType = None
+                entity_raw_begin_pos = offset
+                if cur_ch == "_":
+                    if get_item(striped_text, offset+1) == "_":
+                        entity_type = MessageEntityType.UNDERLINE
+                        offset += 1
+                    else:
+                        entity_type = MessageEntityType.ITALIC
+                elif cur_ch == "*":
+                    entity_type = MessageEntityType.BOLD
+                elif cur_ch == "~":
+                    entity_type = MessageEntityType.STRIKETHROUGH
+                elif cur_ch == "|":
+                    if get_item(striped_text, offset+1) == "|":
+                        offset += 1
+                        entity_type = MessageEntityType.SPOILER
+                    else:
+                        raise BadMarkupException(err_msg_reserved.format("|"))
+                elif cur_ch == "[":
+                    entity_type = MessageEntityType.TEXT_LINK
+                elif cur_ch == "`":
+                    if get_item(striped_text, offset+1) == "`" and get_item(striped_text, offset+2) == "`":
+                        offset += 3
+                        entity_type = MessageEntityType.PRE
+                        # Trying to get language name.
+                        # E.g.:
+                        # ```python <- this name
+                        # print("Hello, world!")
+                        # ```
+                        if lang_match := re.match(r"^([^\s`]+)\s+", striped_text[offset:]):
+                            # .group(0) contains trailing space too.
+                            # .group(1) contains the language name only.
+                            language = lang_match.group(1)
+                            offset += len(language)
+
+                        # Without this condition, a whitespace right after the language
+                        # name will be eaten.
+                        if get_item(striped_text, offset, "") not in "\r\n":
+                            offset -= 1
+                    else:
+                        entity_type = MessageEntityType.CODE
+                elif cur_ch == "!":
+                    if get_item(striped_text, offset+1) == "[":
+                        offset += 1
+                        entity_type = MessageEntityType.CUSTOM_EMOJI
+                    else:
+                        raise BadMarkupException(err_msg_reserved.format("!"))
+                elif cur_ch == "\n":
+                    utf16_offset += 1
+                    result_text += cur_ch
+                    can_start_blockquote = True
+                elif cur_ch == ">":
+                    if can_start_blockquote:
+                        if not have_blockquote:
+                            entity_type = MessageEntityType.BLOCKQUOTE
+                            have_blockquote = True
+                    else:
+                        raise BadMarkupException(err_msg_reserved.format(">"))
+                else:
+                    raise BadMarkupException(err_msg_reserved.format(striped_text[offset]))
+
+                if entity_type is None:
+                    offset += 1
+                    continue
+
+                me = MessageEntity(type=entity_type, offset=utf16_offset,
+                                   length=len(result_text) - utf16_offset,
+                                   url=url, user=user_id, language=language,
+                                   custom_emoji_id=custom_emoji_id)
+
+                # By default, the error message for an empty string
+                # is "Message text is empty", but if there was at least
+                # one entity, the text changes to "text must be non-empty".
+                if err_empty_text == "Message text is empty":
+                    err_empty_text = "Text must be non-empty"
+
+                nested_entities, closed_entities = _split_entities(nested_entities, me, raw_offset)
+                entities.extend(closed_entities)
+
+                raw_offset[get_hash(me)] = len(striped_text[:entity_raw_begin_pos].encode())
+
+            else:
+                # lne stands for last_nested_entity
+                lne = nested_entities[-1]
+                e_type = lne.type
+
+                if cur_ch == "\n" and e_type != MessageEntityType.BLOCKQUOTE:
+                    if (e_type != MessageEntityType.SPOILER or
+                            not (lne.offset == offset - 2 or
+                                    (lne.offset == offset - 3 and len(result_text) != 0 and result_text[-1] == "\r"))):
+                        raise BadMarkupException(err_msg_entity.format(entity_type=e_type, offset=lne.offset))
+                    nested_entities.pop()
+
+                    lne = nested_entities[-1]
+                    if lne.type != MessageEntityType.BLOCKQUOTE:
+                        raise BadMarkupException(err_msg_entity.format(entity_type=lne.type,
+                                                                       offset=lne.offset))
+                    e_type = MessageEntityType.EXPANDABLE_BLOCKQUOTE
+
+                skip_entity = (utf16_offset == lne.offset)
+                if e_type in (MessageEntityType.BOLD, MessageEntityType.ITALIC,
+                              MessageEntityType.CODE, MessageEntityType.STRIKETHROUGH):
+                    pass
+                elif e_type in (MessageEntityType.UNDERLINE, MessageEntityType.SPOILER):
+                    offset += 1
+                elif e_type == MessageEntityType.PRE:
+                    offset += 2
+                elif e_type == MessageEntityType.TEXT_LINK:
+                    url = ""
+                    if get_item(striped_text, offset+1) != "(":
+                        url = result_text[lne.offset: len(result_text) - lne.offset]
+                    else:
+                        offset += 2
+                        url_begin_pos = len(striped_text[:offset].encode())
+                        while offset < text_size and striped_text[offset] != ")":
+                            if cur_ch == "\\" and 0 < ord(next_ch) <= 126:
+                                url += striped_text[offset + 1]
+                                offset += 2
+                                continue
+                            url += striped_text[offset]
+                            offset += 1
+                        if get_item(striped_text, offset) != ")":
+                            msg = "Can't parse entities: can't find end of a url at byte offset %s"
+                            raise BadMarkupException(msg % url_begin_pos)
+
+                    user_id = get_user_id_from_url(url)
+                    # As for April 2025, inline mentioning doesn't work (from the server side).
+                    # If mentioning was found, skip it.
+                    if user_id is not None:
+                        user_id = None
+                        skip_entity = True
+                    else:
+                        url = check_and_normalize_url(url)
+                        if not url:
+                            skip_entity = True
+                elif e_type == MessageEntityType.CUSTOM_EMOJI:
+                    if get_item(striped_text, offset+1) != "(":
+                        raise BadMarkupException("Custom emoji entity must contain a tg://emoji URL")
+                    offset += 2
+                    url = ""
+                    url_begin_pos = offset
+
+                    while offset < text_size and striped_text[offset] != ")":
+                        if cur_ch == "\\" and 0 < ord(next_ch) <= 126:
+                            url += striped_text[offset + 1]
+                            offset += 2
+                            continue
+                        url += striped_text[offset]
+                        offset += 1
+                    if striped_text[offset] != ")":
+                        raise BadMarkupException(f"Can't find end of a custom emoji URL at byte offset {url_begin_pos}")
+
+                    custom_emoji_id = get_custom_emoji_id_from_url(url)
+                elif e_type in (MessageEntityType.BLOCKQUOTE, MessageEntityType.EXPANDABLE_BLOCKQUOTE):
+                    have_blockquote = False
+                    result_text += striped_text[offset]
+                    can_start_blockquote = True
+                    utf16_offset += 1
+                    skip_entity = False
+                else:
+                    raise BadMarkupException(f"Unknown entity '{e_type}' type is received.")
+
+                if not skip_entity:
+                    entity_offset = nested_entities[-1].offset
+                    entity_length = utf16_offset - entity_offset
+                    if user_id:
+                        e_type = MessageEntityType.MENTION
+                    elif custom_emoji_id:
+                        e_type = MessageEntityType.CUSTOM_EMOJI
+
+                    entities.append(MessageEntity(e_type,
+                                                  entity_offset,
+                                                  entity_length,
+                                                  user=user_id,
+                                                  custom_emoji_id=custom_emoji_id,
+                                                  url=url,
+                                                  language=lne.language))
+
+                nested_entities.pop()
+
+            offset += 1
+
+        if have_blockquote:
+            e_type = MessageEntityType.BLOCKQUOTE
+            if nested_entities:
+                lne = nested_entities[-1]
+                if lne.type == MessageEntityType.SPOILER and lne.offset == len(result_text.encode()):
+                    nested_entities.pop()
+                    del lne
+                    e_type = MessageEntityType.EXPANDABLE_BLOCKQUOTE
+
+                lne = nested_entities[-1]
+                if lne.type == MessageEntityType.BLOCKQUOTE:
+                    entity_offset = lne.offset
+                    entity_length = utf16_offset - entity_offset
+                    if entity_length > 0:
+                        entities.append(MessageEntity(e_type,
+                                                      entity_offset,
+                                                      entity_length))
+                    nested_entities.pop(-1)
+
+        if nested_entities:
+            byte_offset = raw_offset[get_hash(nested_entities[-1])]
+            entity_type = nested_entities[-1].type
+            # Telegram has two different entities which are 'pre' and 'precode',
+            # while PTB has only 'pre'.
+            # 'pre' for code WITHOUT 'language' specified, and
+            # 'precode' for code WITH 'language'
+            if entity_type == MessageEntityType.PRE and nested_entities[-1].language:
+                entity_type = "precode"
+            raise BadMarkupException(err_msg_entity.format(entity_type=entity_type,
+                                                           offset=byte_offset))
+        len_before_strip = len(result_text)
+        result_text = result_text.rstrip()
+        # There were trailing new lines or whitespaces.
+        if entities and len_before_strip != len(result_text):
+            last_entity = entities[-1]
+            # Trailing whitespaces were inside an entity, we must subtract
+            # the length of striped whitespaces from the length of the entity.
+            if len_before_strip == last_entity.offset + last_entity.length:
+                d = last_entity.to_dict()
+                d["length"] -= (len_before_strip - len(result_text))
+                if d["length"] > 0:
+                    entities[-1] = MessageEntity(**d)
+                else:
+                    entities.pop()
+
+        if not result_text:
+            raise BadMarkupException(err_empty_text)
+
+        sorted_entities = sorted(entities, key=lambda m: (m.offset, -m.length, PRIORITIES[m.type]))
+        if not sorted_entities:
+            result_text = result_text.strip()
+
+        return result_text, tuple(sorted_entities)
 
     @staticmethod
     def parse_html(message):
