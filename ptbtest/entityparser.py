@@ -122,7 +122,7 @@ def check_and_normalize_url(url: str) -> str:
     return result
 
 
-def _get_id_from_url(type_: Literal["user", "emoji"], url: str):
+def _get_id_from_telegram_url(type_: Literal["user", "emoji"], url: str):
     """
     Extract id from the Telegram URL.
 
@@ -137,26 +137,6 @@ def _get_id_from_url(type_: Literal["user", "emoji"], url: str):
         id_ = int(match.group(1))
 
     return id_
-
-
-def get_user_id_from_url(url: str):
-    """
-    Extract a user id from the given URL.
-
-    If the ``url`` is ``tg://user?id=123456789``,
-    then the return value is ``123456789``.
-    """
-    return _get_id_from_url("user", url)
-
-
-def get_custom_emoji_id_from_url(url: str):
-    """
-    Extract an emoji id from the given URL.
-
-    If the ``url`` is ``tg://emoji?id=5368324170671202286``,
-    then the return value is ``5368324170671202286``.
-    """
-    return _get_id_from_url("emoji", url)
 
 
 def get_hash(obj: TelegramObject):
@@ -638,7 +618,7 @@ class EntityParser:
                             msg = "Can't parse entities: can't find end of a url at byte offset %s"
                             raise BadMarkupException(msg % url_begin_pos)
 
-                    user_id = get_user_id_from_url(url)
+                    user_id = _get_id_from_telegram_url("user", url)
                     # As for April 2025, inline mentioning doesn't work (from the server side).
                     # If mentioning was found, skip it.
                     if user_id is not None:
@@ -665,7 +645,7 @@ class EntityParser:
                     if striped_text[offset] != ")":
                         raise BadMarkupException(f"Can't find end of a custom emoji URL at byte offset {url_begin_pos}")
 
-                    custom_emoji_id = get_custom_emoji_id_from_url(url)
+                    custom_emoji_id = _get_id_from_telegram_url("emoji", url)
                 elif e_type in (MessageEntityType.BLOCKQUOTE, MessageEntityType.EXPANDABLE_BLOCKQUOTE):
                     have_blockquote = False
                     result_text += striped_text[offset]
