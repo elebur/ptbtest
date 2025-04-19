@@ -95,22 +95,28 @@ def check_and_normalize_url(url: str) -> str:
 
     result = url
 
-    # If the protocol is not specified, setting 'http' protocol
+    # If the protocol is not specified, sets 'http' protocol
     if "://" not in result:
         result = "http://" + result
 
     try:
-        parse_url = urlparse(result)
+        parsed_url = urlparse(result)
     except ValueError:
         return ""
 
-    if parse_url.scheme not in ("http", "https", "ton", "tg", "tonsite"):
+    if parsed_url.scheme not in ("http", "https", "ton", "tg", "tonsite"):
         return ""
 
-    # Adding trailing slash only for URLs without path. E.g.
-    # https://www.example.com - adds the slash.
+    # Validate domain name.
+    pattern_valid_domain = re.compile(r"^(?=.{1,255}$)(?!-)[A-Za-z0-9\-]{1,63}"
+                                      r"(\.[A-Za-z0-9\-]{1,63})*\.?(?<!-)$")
+    if not pattern_valid_domain.match(parsed_url.netloc):
+        return ""
+
+    # Adding trailing slash only for URLs without a path.
+    # E.g., https://www.example.com - adds the slash.
     # https://www.example.com/login - doesn't add the slash.
-    if not parse_url.path and not result.endswith("/"):
+    if not parsed_url.path and not result.endswith("/"):
         result += "/"
 
     return result
