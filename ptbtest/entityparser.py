@@ -417,47 +417,6 @@ class EntityParser:
 
     @staticmethod
     def parse_markdown_v2(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
-
-        def _is_end_of_md_v2_entity() -> bool:
-            """
-            Check whether the current character is the one that closing the entity.
-            """
-            nonlocal text_size, offset, striped_text, cur_ch, have_blockquote, nested_entities
-
-            if not nested_entities:
-                return False
-            if (have_blockquote and cur_ch == "\n" and
-                    (offset + 1 == text_size or get_item(striped_text, offset + 1) != ">")):
-                return True
-
-            last_nested_entity_type = nested_entities[-1].type
-            if last_nested_entity_type == MessageEntityType.BOLD:
-                is_end_of_entity = (cur_ch == "*")
-            elif last_nested_entity_type == MessageEntityType.ITALIC:
-                is_end_of_entity = (cur_ch == "_" and get_item(striped_text, offset + 1) != "_")
-            elif last_nested_entity_type == MessageEntityType.CODE:
-                is_end_of_entity = (cur_ch == "`")
-            elif last_nested_entity_type == MessageEntityType.PRE:
-                is_end_of_entity = (cur_ch == "`"
-                                    and get_item(striped_text, offset + 1) == "`"
-                                    and get_item(striped_text, offset + 2) == "`")
-            elif last_nested_entity_type == MessageEntityType.TEXT_LINK:
-                is_end_of_entity = (cur_ch == "]")
-            elif last_nested_entity_type == MessageEntityType.UNDERLINE:
-                is_end_of_entity = (cur_ch == "_" and get_item(striped_text, offset + 1) == "_")
-            elif last_nested_entity_type == MessageEntityType.STRIKETHROUGH:
-                is_end_of_entity = (cur_ch == "~")
-            elif last_nested_entity_type == MessageEntityType.SPOILER:
-                is_end_of_entity = (cur_ch == "|" and get_item(striped_text, offset + 1) == "|")
-            elif last_nested_entity_type == MessageEntityType.CUSTOM_EMOJI:
-                is_end_of_entity = (cur_ch == "]")
-            elif last_nested_entity_type == MessageEntityType.BLOCKQUOTE:
-                is_end_of_entity = False
-            else:
-                is_end_of_entity = False
-
-            return is_end_of_entity
-
         err_msg_entity = ("Can't parse entities: can't find end of "
                           "{entity_type} entity at byte offset {offset}")
         err_msg_reserved = ("Can't parse entities: character '{0}' is reserved "
@@ -508,14 +467,52 @@ class EntityParser:
                 offset += 1
                 continue
 
-            is_end_of_entity = _is_end_of_md_v2_entity()
+            def is_end_of_entity() -> bool:
+                """
+                Check whether the current character is the one that closing the entity.
+                """
+                nonlocal text_size, offset, striped_text, cur_ch, have_blockquote, nested_entities
+
+                if not nested_entities:
+                    return False
+                if (have_blockquote and cur_ch == "\n" and
+                        (offset + 1 == text_size or get_item(striped_text, offset + 1) != ">")):
+                    return True
+
+                last_nested_entity_type = nested_entities[-1].type
+                if last_nested_entity_type == MessageEntityType.BOLD:
+                    is_end = (cur_ch == "*")
+                elif last_nested_entity_type == MessageEntityType.ITALIC:
+                    is_end = (cur_ch == "_" and get_item(striped_text, offset + 1) != "_")
+                elif last_nested_entity_type == MessageEntityType.CODE:
+                    is_end = (cur_ch == "`")
+                elif last_nested_entity_type == MessageEntityType.PRE:
+                    is_end = (cur_ch == "`"
+                                        and get_item(striped_text, offset + 1) == "`"
+                                        and get_item(striped_text, offset + 2) == "`")
+                elif last_nested_entity_type == MessageEntityType.TEXT_LINK:
+                    is_end = (cur_ch == "]")
+                elif last_nested_entity_type == MessageEntityType.UNDERLINE:
+                    is_end = (cur_ch == "_" and get_item(striped_text, offset + 1) == "_")
+                elif last_nested_entity_type == MessageEntityType.STRIKETHROUGH:
+                    is_end = (cur_ch == "~")
+                elif last_nested_entity_type == MessageEntityType.SPOILER:
+                    is_end = (cur_ch == "|" and get_item(striped_text, offset + 1) == "|")
+                elif last_nested_entity_type == MessageEntityType.CUSTOM_EMOJI:
+                    is_end = (cur_ch == "]")
+                elif last_nested_entity_type == MessageEntityType.BLOCKQUOTE:
+                    is_end = False
+                else:
+                    is_end = False
+
+                return is_end
 
             user_id = None
             custom_emoji_id = None
             language = None
             url = None
 
-            if not is_end_of_entity:
+            if not is_end_of_entity():
                 entity_type: MessageEntityType = None
                 entity_raw_begin_pos = offset
                 if cur_ch == "_":
