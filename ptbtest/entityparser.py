@@ -540,7 +540,7 @@ class EntityParser:
                         # Trying to get language name.
                         # E.g.:
                         # ```python <- this name
-                        # print("Hello, world!")
+                        # code snippet here
                         # ```
                         if lang_match := re.match(r"^([^\s`]+)\s+", striped_text[offset:]):
                             # .group(0) contains trailing space too.

@@ -50,31 +50,31 @@ class TestEscaping:
 
     @pytest.mark.parametrize(["char"], RESERVED_REGULAR_CHARS)
     def test_escaped_reserved_regular_characters(self, char):
-        template = "A string with an escaped \{0} character"
+        template = r"A string with an escaped \{0} character"
         resp = self.ep.parse_markdown_v2(template.format(char))
         assert resp == (f"A string with an escaped {char} character", ())
 
     @pytest.mark.parametrize(["char"], RESERVED_ENTITY_CHARS + RESERVED_REGULAR_CHARS)
     def test_escaped_reserved_characters(self, char):
-        template = "A string with an escaped \{0} character"
+        template = r"A string with an escaped \{0} character"
         resp = self.ep.parse_markdown_v2(template.format(char))
         assert resp == (f"A string with an escaped {char} character", ())
 
     def test_pre_entity_escaped_only_first_char(self):
-        resp = self.ep.parse_markdown_v2(f"A string with an escaped \``` character")
+        resp = self.ep.parse_markdown_v2(r"A string with an escaped \``` character")
         assert resp == ('A string with an escaped ` character', ())
 
     def test_escaped_pre_entity(self):
-        resp = self.ep.parse_markdown_v2(f"A string with an escaped \`\`\` character")
+        resp = self.ep.parse_markdown_v2(r"A string with an escaped \`\`\` character")
         assert resp == ('A string with an escaped ``` character', ())
 
     def test_escaped_spoiler_entity(self):
-        resp = self.ep.parse_markdown_v2(f"A string with an escaped \|\| character")
+        resp = self.ep.parse_markdown_v2(r"A string with an escaped \|\| character")
         assert resp == ('A string with an escaped || character', ())
 
     def test_spoiler_entity_escaped_only_first_char(self):
         with pytest.raises(BadMarkupException, match=ERR_MSG_CHAR_MUST_BE_ESCAPED.format(r"|")):
-            self.ep.parse_markdown_v2("A string with an escaped \|| character")
+            self.ep.parse_markdown_v2(r"A string with an escaped \|| character")
 
     @pytest.mark.parametrize("e_char, e_type", (
             ("*", MessageEntityType.BOLD),
@@ -111,11 +111,11 @@ class TestEscaping:
 
     def test_spoiler_with_first_escaped_symbol(self):
         with pytest.raises(BadMarkupException, match=ERR_MSG_CHAR_MUST_BE_ESCAPED.format("|")):
-            self.ep.parse_markdown_v2("A string with \||")
+            self.ep.parse_markdown_v2(r"A string with \||")
 
     def test_spoiler_with_second_escaped_symbol(self):
         with pytest.raises(BadMarkupException, match=ERR_MSG_CHAR_MUST_BE_ESCAPED.format("|")):
-            self.ep.parse_markdown_v2("A string with |\|")
+            self.ep.parse_markdown_v2(r"A string with |\|")
 
 
 class TestSimpleEntities:
@@ -193,7 +193,7 @@ class TestSimpleEntities:
     ))
     @pytest.mark.parametrize(["whitespace"], " \n")
     def test_with_leading_and_trailing_whitespaces_outside_entities(self, e_char, e_type, whitespace):
-        text = f"{whitespace*4}New lines outside an {e_char} entity {e_char}\.{whitespace*4}"
+        text = fr"{whitespace*4}New lines outside an {e_char} entity {e_char}\.{whitespace*4}"
         resp = self.ep.parse_markdown_v2(text)
         assert resp == ('New lines outside an  entity .',
                         (MessageEntity(length=8, offset=21, type=e_type),))
@@ -281,7 +281,7 @@ class TestInlineUrl:
 
     def test_multiline_multiple_inline_urls_parts(self):
         resp = self.ep.parse_markdown_v2('Multiple [inline urls](example.com/?param1=val1)\n'
-                                         'in [one message](http://example.com/)\.\n'
+                                         r'in [one message](http://example.com/)\.\n'
                                          'Each one on new line')
         entity1 = resp[1][0]
         entity2 = resp[1][1]
@@ -301,7 +301,7 @@ class TestInlineUrl:
 
     def test_escaped_symbol(self):
         resp = self.ep.parse_markdown_v2("A message with an [inline url](example.com/)"
-                                         "and escaped symbols \[\]\.")
+                                         r"and escaped symbols \[\]\.")
         entity = resp[1][0]
 
         assert entity.url == "http://example.com/"
@@ -337,7 +337,7 @@ class TestInlineUrl:
             self.ep.parse_markdown_v2(text)
 
     def test_unescaped_code_symbol_inside_inline_url(self):
-        text = rf"A string with an [inline URL and unescaped '`'](http://www.example.com) in it\."
+        text = r"A string with an [inline URL and unescaped '`'](http://www.example.com) in it\."
         with pytest.raises(BadMarkupException, match=ERR_MSG_CANT_PARSE_ENTITY.format(entity_type="code",
                                                                                       offset=44)):
             self.ep.parse_markdown_v2(text)
@@ -386,30 +386,30 @@ class TestInlineUrl:
                                            url='http://www.example.com/'),))
 
     def test_trailing_whitespace_inside_square_brackets_with_text_after_entity(self):
-        text = "A string with trailing whitespace [inside square brackets ](http://www.example.com)in it\."
+        text = r"A string with trailing whitespace [inside square brackets ](http://www.example.com)in it\."
         resp = self.ep.parse_markdown_v2(text)
 
         entity = resp[1][0]
         assert entity.url == "http://www.example.com/"
 
-        assert resp == (f"A string with trailing whitespace inside square brackets in it.",
+        assert resp == ("A string with trailing whitespace inside square brackets in it.",
                         (MessageEntity(length=23,
                                        offset=34,
                                        type=MessageEntityType.TEXT_LINK,
                                        url='http://www.example.com/'),))
 
     @pytest.mark.parametrize(
-        "input, result", (("An  [inline URL](  http://www.example.com  )   ", ('An  inline URL', ())),
-                          ("An  [inline URL](  http://www.example.com  )   Some text", ('An  inline URL   Some text', ())),
-                          ("An  [inline URL](http://www.example.com  )   Some text", ('An  inline URL   Some text', ())),
-                          ("An  [inline URL](  http://www.example.com)   Some text", ('An  inline URL   Some text', ())),
-                          ("An  [inline URL](  http://www.example.com  )", ('An  inline URL', ())),
-                          ("An  [inline URL](  http://www.example.com)", ('An  inline URL', ())),
-                          ("An  [inline URL](http://www.example.com  )   ", ('An  inline URL', ())),
-                          ("An  [inline URL](http://www.example.com  )", ('An  inline URL', ())),
-                          ))
-    def test_with_whitespaces_inside_parentheses(self, input, result):
-        resp = self.ep.parse_markdown_v2(input)
+        "in_str, result", (("An  [inline URL](  http://www.example.com  )   ", ('An  inline URL', ())),
+                           ("An  [inline URL](  http://www.example.com  )   Some text", ('An  inline URL   Some text', ())),
+                           ("An  [inline URL](http://www.example.com  )   Some text", ('An  inline URL   Some text', ())),
+                           ("An  [inline URL](  http://www.example.com)   Some text", ('An  inline URL   Some text', ())),
+                           ("An  [inline URL](  http://www.example.com  )", ('An  inline URL', ())),
+                           ("An  [inline URL](  http://www.example.com)", ('An  inline URL', ())),
+                           ("An  [inline URL](http://www.example.com  )   ", ('An  inline URL', ())),
+                           ("An  [inline URL](http://www.example.com  )", ('An  inline URL', ())),
+                           ))
+    def test_with_whitespaces_inside_parentheses(self, in_str, result):
+        resp = self.ep.parse_markdown_v2(in_str)
         assert resp == result
 
     def test_with_space_between_square_brackets_and_parentheses(self):
@@ -583,14 +583,14 @@ class TestInlineUrl:
                                            url='http://ex.com/'),))
 
     def test_non_latin_characters(self):
-        resp = self.ep.parse_markdown_v2("[你好世界！](ex.com)")
-        assert resp == ('你好世界！', (MessageEntity(length=5,
+        resp = self.ep.parse_markdown_v2("[你好世界!](ex.com)")
+        assert resp == ('你好世界!', (MessageEntity(length=5,
                                                     offset=0,
                                                     type=MessageEntityType.TEXT_LINK,
                                                     url='http://ex.com/'),))
 
     def test_raw_url_in_square_brackets(self):
-        text = "[http://google\.com]"
+        text = r"[http://google\.com]"
         resp = self.ep.parse_markdown_v2(text)
         assert resp == ("http://google.com", (MessageEntity(length=17,
                                                             offset=0,
@@ -658,7 +658,7 @@ class TestPre:
 
     @pytest.mark.parametrize(["escaped_char"], (RESERVED_ENTITY_CHARS +
                                                 RESERVED_REGULAR_CHARS +
-                                                "|\|" + "_\_"))
+                                                r"|\|" + r"_\_"))
     def test_pre_with_escaped_char_in_it(self, escaped_char):
         template = (f"A multiline string with ```entity\n"
                     rf"and escaped char \{escaped_char} within``` the entity")
@@ -687,7 +687,7 @@ class TestPre:
         assert resp == (f" code {e_char}with unescaped entities{e_char} inside",
                         (MessageEntity(language="python", length=length, offset=0, type=MessageEntityType.PRE),))
 
-    @pytest.mark.parametrize(["e_char"], (("\*",),("\_",),("\_\_",),("\~",),("\|\|",),("\`",)))
+    @pytest.mark.parametrize(["e_char"], ((r"\*",),(r"\_",),(r"\_\_",),(r"\~",),(r"\|\|",),(r"\`",)))
     def test_with_escaped_entities(self, e_char):
         text = f"```python code {e_char}with unescaped entities{e_char} inside```"
         resp = self.ep.parse_markdown_v2(text)
@@ -726,7 +726,7 @@ class TestPre:
                                        type=MessageEntityType.PRE),))
 
     def test_with_escaped_whitespace(self):
-        text = rf"```lua code with an escaped ASCII character \ ```"
+        text = r"```lua code with an escaped ASCII character \ ```"
         resp = self.ep.parse_markdown_v2(text)
 
         entity = resp[1][0]
@@ -751,7 +751,7 @@ class TestPre:
                          (MessageEntity(length=29, offset=12, type=MessageEntityType.PRE),))
 
     def test_language_without_content(self):
-        with pytest.raises(BadMarkupException, match="Text must be non\-empty"):
+        with pytest.raises(BadMarkupException, match=r"Text must be non\-empty"):
             self.ep.parse_markdown_v2("```lua ```")
 
     def test_all_pre_code(self):
@@ -841,7 +841,7 @@ class TestPre:
 
     def test_multiple_inline_code_parts(self):
         resp = self.ep.parse_markdown_v2("Multiple code snippets ```python i = 0\ni += 1\n print(i)``` "
-                                      "within one message ```lua\nprint('hello\nworld')```\.")
+                                      r"within one message ```lua\nprint('hello\nworld')```\.")
 
         entity1 = resp[1][0]
         assert entity1.language == "python"
@@ -870,7 +870,7 @@ class TestPre:
          MessageEntity(language="c", length=22, offset=69, type=MessageEntityType.PRE)))
 
     def test_escaped_backquote_symbol(self):
-        resp = self.ep.parse_markdown_v2("```lua i = 2\ni-2``` with an escaped \` symbol")
+        resp = self.ep.parse_markdown_v2(r"```lua i = 2\ni-2``` with an escaped \` symbol")
         entity = resp[1][0]
         assert entity.language == "lua"
         assert resp == (" i = 2\ni-2 with an escaped ` symbol",
