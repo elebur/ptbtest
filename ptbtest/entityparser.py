@@ -159,6 +159,16 @@ def get_custom_emoji_id_from_url(url: str):
     return _get_id_from_url("emoji", url)
 
 
+def get_hash(obj: TelegramObject):
+    """
+    The __hash__ method of the MessageEntity considers
+    only ``type``, ``offset`` and ``length`` attributes.
+    ``MessageEntity("url", 1, 2)`` and ``MessageEntity("url", 1, 2, url="https://ex.com)``
+    will get the same hash.
+    ``to_json()`` returns s string with all attributes, therefore, hashes will be unique.
+    """
+    return hash(obj.to_json())
+
 
 class EntityParser:
     @staticmethod
