@@ -102,7 +102,14 @@ def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
     return seq[index]
 
 
-def check_and_normalize_url(url: str) -> str:
+def _check_and_normalize_url(url: str) -> str:
+    """
+    Check whether the ``url`` is valid, according to Telegram rules.
+
+    :param url: (`type`: :obj:`str`) The ``url`` to be checked.
+    :return: (`type`: :obj:`str`) Empty string if the ``url`` is invalid,
+        normalized URL otherwise.
+    """
     if not url or url.startswith(" ") or url.endswith(" "):
         return ""
 
@@ -378,7 +385,7 @@ class EntityParser:
                         if len(new_text) == 1:
                             new_text[-1] = new_text[-1].lstrip()
 
-                    if checked_url := check_and_normalize_url(url):
+                    if checked_url := _check_and_normalize_url(url):
                         # By some reason Markdown V1 ignores inline mentions.
                         # E.g.: [inline mention of a user](tg://user?id=123456789)
                         if not checked_url.startswith("tg://"):
@@ -638,7 +645,7 @@ class EntityParser:
                         user_id = None
                         skip_entity = True
                     else:
-                        url = check_and_normalize_url(url)
+                        url = _check_and_normalize_url(url)
                         if not url:
                             skip_entity = True
                 elif e_type == MessageEntityType.CUSTOM_EMOJI:
