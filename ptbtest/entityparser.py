@@ -164,13 +164,24 @@ def _get_id_from_telegram_url(type_: Literal["user", "emoji"], url: str) -> Opti
     return id_
 
 
-def get_hash(obj: TelegramObject):
+def get_hash(obj: TelegramObject) -> int:
     """
-    The __hash__ method of the MessageEntity considers
-    only ``type``, ``offset`` and ``length`` attributes.
-    ``MessageEntity("url", 1, 2)`` and ``MessageEntity("url", 1, 2, url="https://ex.com)``
-    will get the same hash.
-    ``to_json()`` returns s string with all attributes, therefore, hashes will be unique.
+    Generate the unique hash value for objects that are inherited
+    from :obj:`~telegram.TelegramObject`.
+
+    The :meth:`telegram.TelegramObject.__hash__` method considers only certain
+    attributes described in ``_id_attrs``.
+
+    E.g., the ``_id_attrs`` of :obj:`~telegram.MessageEntity` is
+    ``(self.type, self.offset, self.length)``.
+    It means that ``MessageEntity("url", 1, 2)``
+    and ``MessageEntity("url", 1, 2, url="https://ex.com)`` are equal and get the same hash.
+
+    The ``get_hash`` function transforms ``obj`` into a JSON string
+    and then gets hash of that string.
+
+    :param obj: (`type`: :obj:`~telegram.TelegramObject`) An object to generate hash for.
+    :return: (`type`: :obj:`int`) A hash value for the given object.
     """
     return hash(obj.to_json())
 
