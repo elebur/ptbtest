@@ -24,7 +24,7 @@ marked-up messages to plain text and a :obj:`tuple` of
 """
 import re
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 from urllib.parse import urlparse
 
 from telegram import MessageEntity, TelegramObject
@@ -142,12 +142,17 @@ def _check_and_normalize_url(url: str) -> str:
     return result
 
 
-def _get_id_from_telegram_url(type_: Literal["user", "emoji"], url: str):
+def _get_id_from_telegram_url(type_: Literal["user", "emoji"], url: str) -> Optional[int]:
     """
-    Extract id from the Telegram URL.
+    Extract a user or emoji ID from the Telegram URL.
 
-    If the ``url`` is ``tg://user?id=123456789``,
-    then the return value is ``123456789``.
+    Examples of URLs: ``tg://user?id=123456789``, ``tg://emoji?id=5368324170671202286``
+
+    :param type_: (`type`: :obj:`str`) One of `user` or `emoji`. Depends on
+        the ID that must be extracted.
+    :param url: (`type`: :obj:`str`) A URL to extract the ID from.
+    :return: (`type`: :obj:`~typing.Optional` [:obj:`int`]) Extracted ID or :obj:`None` if no
+        ID was found.
     """
     if type_ not in ("user", "emoji"):
         raise ValueError(f"Wrong type - {type_}")
