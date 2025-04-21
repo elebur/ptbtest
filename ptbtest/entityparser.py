@@ -190,26 +190,45 @@ def _split_entities(nested_entities: Sequence[MessageEntity],
                     incoming_entity: MessageEntity,
                     raw_offset: dict[int, int]) -> (list[MessageEntity, ...], list[MessageEntity, ...]):
     """
-    The function splits all unclosed entities if new entity is coming.
+    The function splits all unclosed entities if a new entity is coming.
+    Therefore, the ``parse_markdown_v2`` function will return the same result as
+    the Telegram server does.
 
-    By default, for nested entities in the string ``"*hello _italic ~world~ italic_ world*"``
-    meth:`parse_markdown_v2` returns these entities
+    Example:
+        An input string is ``*hello _italic ~world~ italic_ world*``.
 
-    .. code:: python
+        By default, :meth:`~ptbtest.entityparser.EntityParser.parse_markdown_v2` returns:
 
-        MessageEntity(length=31, offset=0, type=MessageEntityType.BOLD),
-        MessageEntity(length=19, offset=6, type=MessageEntityType.ITALIC),
-        MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+        .. code:: python
 
-    While the Telegram server returns these entities for the same string
-    .. code:: python
+            MessageEntity(length=31, offset=0, type=MessageEntityType.BOLD)
+            MessageEntity(length=19, offset=6, type=MessageEntityType.ITALIC)
+            MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
 
-        MessageEntity(length=6, offset=0, type=MessageEntityType.BOLD),
-        MessageEntity(length=7, offset=6, type=MessageEntityType.BOLD),
-        MessageEntity(length=7, offset=6, type=MessageEntityType.ITALIC),
-        MessageEntity(length=18, offset=13, type=MessageEntityType.BOLD),
-        MessageEntity(length=12, offset=13, type=MessageEntityType.ITALIC),
-        MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+        For the same string, the Telegram server returns:
+
+        .. code:: python
+
+            MessageEntity(length=6, offset=0, type=MessageEntityType.BOLD)
+            MessageEntity(length=7, offset=6, type=MessageEntityType.BOLD)
+            MessageEntity(length=7, offset=6, type=MessageEntityType.ITALIC)
+            MessageEntity(length=18, offset=13, type=MessageEntityType.BOLD)
+            MessageEntity(length=12, offset=13, type=MessageEntityType.ITALIC)
+            MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+
+    Args:
+        nested_entities (Sequence[~telegram.MessageEntity]): A list of all unclosed entities.
+        incoming_entity (~telegram.MessageEntity): New entity that must be added to the
+            ``nested_entity``.
+        raw_offset (dict[int, int]): A dictionary, that stores a byte offset (the beginning
+            position) of entities. The key is the entity's hash and the value is
+            the byte offset.
+
+    Returns:
+        (list[~telegram.MessageEntity], list[~telegram.MessageEntity]):
+            Two lists. The first one is the updated ``nested_entities`` list and the second
+            on is the list of closed entities that must be added to the final list
+            of entities.
     """
     new_nested = []
     closed_entities = []
