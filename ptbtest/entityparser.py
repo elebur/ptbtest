@@ -68,9 +68,11 @@ def _get_utf16_length(text: str) -> int:
     and then taking the byte length divided by 2 (number of UTF-16 code units).
     `Source <https://core.telegram.org/api/entities#computing-entity-length>`_
 
-    :param text: (`type`: :obj:`str`) A string to calculate the length for.
+    Args:
+       text (str): A string to calculate the length for.
 
-    :return: (`type`: :obj:`int`) The length of the given string.
+    Returns:
+        int: The length of the given string.
     """
     return len(text.encode("utf-16-le")) // 2
 
@@ -80,12 +82,14 @@ def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
     Safely gets item from the sequence by its index.
     If the ``index`` is out of the range, then the ``default`` value is returned.
 
-    :param seq: (`type`: :obj:`~collections.abc.Sequence`) A sequence to get the item from.
-    :param index: (`type`: :obj:`int`) An item's index.
-    :param default: (`type`: :obj:`~typing.Any`) The value to be returned if the
-        ``index`` is out of the range, defaults to :obj:`None`.
-    :return: (`type`: :obj:`~typing.Any`) An item under the given ``index`` or
-        the ``default`` value.
+    Args:
+        seq(~collections.abc.Sequence) : A sequence to get the item from.
+        index (int): An item's index.
+        default (~typing.Any, optional):  The value to be returned if the ``index``
+            is out of the range, defaults to :obj:`None`.
+
+    Returns:
+        ~typing.Any: An item under the given ``index`` or the ``default`` value.
     """
     # An empty sequence.
     if not seq:
@@ -106,9 +110,10 @@ def _check_and_normalize_url(url: str) -> str:
     """
     Check whether the ``url`` is valid, according to Telegram rules.
 
-    :param url: (`type`: :obj:`str`) The ``url`` to be checked.
-    :return: (`type`: :obj:`str`) Empty string if the ``url`` is invalid,
-        normalized URL otherwise.
+    Args:
+        url (str): The ``url`` to be checked.
+    Returns:
+        str: Empty string if the ``url`` is invalid, normalized URL otherwise.
     """
     if not url or url.startswith(" ") or url.endswith(" "):
         return ""
@@ -148,11 +153,11 @@ def _get_id_from_telegram_url(type_: Literal["user", "emoji"], url: str) -> Opti
 
     Examples of URLs: ``tg://user?id=123456789``, ``tg://emoji?id=5368324170671202286``
 
-    :param type_: (`type`: :obj:`str`) One of `user` or `emoji`. Depends on
-        the ID that must be extracted.
-    :param url: (`type`: :obj:`str`) A URL to extract the ID from.
-    :return: (`type`: :obj:`~typing.Optional` [:obj:`int`]) Extracted ID or :obj:`None` if no
-        ID was found.
+    Args:
+        type_ (str): One of `'user'` or `'emoji'`. Depends on the ID that must be extracted.
+        url (str): A URL to extract the ID from.
+    Returns:
+        int, optional: Extracted ID or :obj:`None` if no ID was found.
     """
     if type_ not in ("user", "emoji"):
         raise ValueError(f"Wrong type - {type_}")
@@ -180,8 +185,11 @@ def get_hash(obj: TelegramObject) -> int:
     The ``get_hash`` function transforms ``obj`` into a JSON string
     and then gets hash of that string.
 
-    :param obj: (`type`: :obj:`~telegram.TelegramObject`) An object to generate hash for.
-    :return: (`type`: :obj:`int`) A hash value for the given object.
+    Args:
+        obj (:obj:`~telegram.TelegramObject`): An object to generate hash for.
+
+    Returns:
+        int: A hash value for the given object.
     """
     return hash(obj.to_json())
 
