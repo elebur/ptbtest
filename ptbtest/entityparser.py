@@ -289,7 +289,6 @@ class EntityParser:
         Returns:
             (str, tuple(~telegram.MessageEntity)): The clean string without entity
             symbols, and tuple with :obj:`~telegram.MessageEntity`.
-
         """
         entities = list()
         striped_text = text.strip()
@@ -467,6 +466,32 @@ class EntityParser:
 
     @staticmethod
     def parse_markdown_v2(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
+        """
+        Extract :obj:`~telegram.MessageEntity` from ``text`` with the
+        `Markdown V2 <https://core.telegram.org/bots/api#markdownv2-style>`_ markup.
+
+        Examples:
+            An input string: ``*hello _nested __entities__ beautiful_ world*``
+
+            Result:
+
+            .. code:: python
+
+                ('hello nested entities beautiful world',
+                 (MessageEntity(length=6, offset=0, type=<MessageEntityType.BOLD>),
+                  MessageEntity(length=7, offset=6, type=<MessageEntityType.BOLD>),
+                  MessageEntity(length=7, offset=6, type=<MessageEntityType.ITALIC>),
+                  MessageEntity(length=24, offset=13, type=<MessageEntityType.BOLD>),
+                  MessageEntity(length=18, offset=13, type=<MessageEntityType.ITALIC>),
+                  MessageEntity(length=8, offset=13, type=<MessageEntityType.UNDERLINE>)))
+
+        Args:
+            text (str): A string with Markdown V2 markup.
+
+        Returns:
+            (str, tuple(~telegram.MessageEntity)): The clean string without entity
+            symbols, and tuple with :obj:`~telegram.MessageEntity`.
+        """
         err_msg_entity = ("Can't parse entities: can't find end of "
                           "{entity_type} entity at byte offset {offset}")
         err_msg_reserved = ("Can't parse entities: character '{0}' is reserved "
@@ -519,7 +544,7 @@ class EntityParser:
 
             def is_end_of_entity() -> bool:
                 """
-                Check whether the current character is the one that closing the entity.
+                Check whether the current character is the one that closes the entity.
                 """
                 nonlocal text_size, offset, striped_text, cur_ch, have_blockquote, nested_entities
 
