@@ -268,13 +268,28 @@ class EntityParser:
     @staticmethod
     def parse_markdown(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
         """
-        The method looks for Markdown V1 entities in the given text.
-        Telegram documentation: https://core.telegram.org/bots/api#markdown-style
-        Parameters:
-            text (str): Message with a Markdown V1 text to be transformed
+        Extract :obj:`~telegram.MessageEntity` from ``text`` with the
+        `Markdown V1 <https://core.telegram.org/bots/api#markdown-style>`_ markup.
+
+        Examples:
+            An input string: ``*hello* _world_ `!```
+
+            Result:
+
+            .. code:: python
+
+                ('hello world !',
+                 (MessageEntity(length=5, offset=0, type=<MessageEntityType.BOLD>),
+                  MessageEntity(length=5, offset=6, type=<MessageEntityType.ITALIC>),
+                  MessageEntity(length=1, offset=12, type=<MessageEntityType.CODE>)))
+
+        Args:
+            text (str): A string with Markdown V1 markup.
 
         Returns:
-            (message, entities): The message as a plain text and entities found in the text.
+            (str, tuple(~telegram.MessageEntity)): The clean string without entity
+            symbols, and tuple with :obj:`~telegram.MessageEntity`.
+
         """
         entities = list()
         striped_text = text.strip()
