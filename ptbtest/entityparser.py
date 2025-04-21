@@ -295,8 +295,13 @@ class EntityParser:
             text (str): A string with Markdown V1 markup.
 
         Returns:
-            (str, tuple(~telegram.MessageEntity)): The clean string without entity
+            (str, tuple[~telegram.MessageEntity]): The clean string without entity
             symbols, and tuple with :obj:`~telegram.MessageEntity`.
+            The tuple might be empty if no entities were found.
+
+        Raises:
+            ~ptbtest.errors.BadMarkupException: If find unclosed entity or empty string
+                is sent.
         """
         entities = list()
         striped_text = text.strip()
@@ -497,8 +502,13 @@ class EntityParser:
             text (str): A string with Markdown V2 markup.
 
         Returns:
-            (str, tuple(~telegram.MessageEntity)): The clean string without entity
+            (str, tuple[~telegram.MessageEntity]): The clean string without entity
             symbols, and tuple with :obj:`~telegram.MessageEntity`.
+            The tuple might be empty if no entities were found.
+
+        Raises:
+            ~ptbtest.errors.BadMarkupException: If find unclosed entity, unescaped
+             reserved character or empty string is sent.
         """
         err_msg_entity = ("Can't parse entities: can't find end of "
                           "{entity_type} entity at byte offset {offset}")
