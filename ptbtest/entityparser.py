@@ -22,7 +22,9 @@ marked-up messages to plain text and a :obj:`tuple` of
 
 `Telegram Docs <https://core.telegram.org/bots/api#formatting-options>`_
 """
+import html
 import re
+import string
 from collections.abc import Sequence
 from typing import Any, Literal, Optional
 from urllib.parse import urlparse
@@ -270,6 +272,113 @@ def _split_entities(nested_entities: Sequence[MessageEntity],
     new_nested.append(incoming_entity)
 
     return new_nested, closed_entities
+
+
+def _decode_html_entity(in_text: str, position: int) -> tuple[Optional[str], int]:
+    """
+    Decode HTML entity that starts at ``position`` in ``in_text``.
+
+    .. note::
+        As for April 2025, the API supports only the following named
+        HTML entities: ``&lt;``, ``&gt;``, ``&amp;`` and ``&quot;``.
+
+    Examples:
+
+    Args:
+        in_text (str): A string with an HTML entity.
+        position (int): The position where the entity starts from.
+
+    Returns:
+        str (optional), int: The entity and new position in text
+        (right after the entity).
+
+    Raises:
+        ValueError: if the character at the ``position`` is not the '&'.
+    """
+    if not in_text:
+        return None, position
+
+    if position >= len(in_text) or position < 0:
+        return None, position
+
+    if in_text[position] != "&":
+        raise ValueError(f"The character ('{in_text[position]}') at the "
+                         f"position {position} is not '&'")
+
+    end_pos = position + 1
+    result = None
+
+    # Numeric character reference.
+    if get_item(in_text, position + 1) == "#":
+        end_pos += 1
+        entity_code = None
+        # Hexadecimal numeric character reference
+        if get_item(in_text, position + 2, "") in "xX":
+            end_pos += 1
+            hex_num = ""
+
+            while ch := get_item(in_text, end_pos):
+                if ch not in string.hexdigits:
+                    break
+                hex_num += ch
+                end_pos += 1
+
+            # Check whether the 'hex_str' is a valid hex number.
+            try:
+                entity_code = int(hex_num, 16)
+            except ValueError:
+                entity_code = None
+        # decimal numeric character reference
+        else:
+            decimal_num = ""
+            while ch := get_item(in_text, end_pos):
+                if ch not in string.digits:
+                    break
+                decimal_num += ch
+                end_pos += 1
+
+            # Check whether the 'decimal_num' is a valid decimal number.
+            try:
+                entity_code = int(decimal_num)
+            except ValueError:
+                entity_code = None
+
+        if entity_code:
+            if entity_code >= 0x10FFFF:
+                return None, position
+
+            hex_str = str(hex(entity_code)).removeprefix("0x")
+            result = html.unescape(f"&#x{hex_str}")
+            # 'html.unescape' returns empty string for hex
+            # codes that don't have HTML entities.
+            # In such cases, Telegram returns hex code with the
+            # '\U00' prefix.
+            # IN: "&#x10FFFE;", OUT: "\U0010fffe"
+            if not result:
+                result = r"\U00" + hex_str.lower()
+
+        # If received an invalid entity,
+        # or numeric entity was out of Unicode range (>= 0x10ffff),
+        # or entity is enormously large.
+        if result is None or result == "�" or end_pos - position >= 10:
+            return None, position
+
+        result = str(result)
+    else:
+        while ch := get_item(in_text, end_pos):
+            if not ch in string.ascii_letters:
+                break
+            end_pos += 1
+        mapping = {"lt": "<", "gt": ">", "amp": "&", "quot": "\""}
+        entity = in_text[position + 1:end_pos]
+        if entity not in mapping:
+            return None, position
+
+        result = mapping[entity]
+
+    position = end_pos + 1 if get_item(in_text, end_pos) == ";" else end_pos
+
+    return result, position
 
 
 class EntityParser:
