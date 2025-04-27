@@ -159,3 +159,17 @@ class TestDecodeHtmlEntity:
         assert _decode_html_entity("&ltxyz", 0) == (None, 0)
         assert _decode_html_entity("&ampersand", 0) == (None, 0)
 
+    def test_numeric_entities_with_non_ascii_digits(self):
+        """
+        This test is here to make sure that string.isdigit()/isnumeric()/isdecimal()
+        weren't used in _decode_html_entity.
+        """
+        # https://stackoverflow.com/a/54912545/19813684
+
+        # ARABIC-INDIC DIGIT ZERO~NINE
+        assert _decode_html_entity("&#٢٣;", 0) == (None, 0)
+        # SUPERSCRIPT ZERO~NINE
+        assert _decode_html_entity("&#³⁴;", 0) == (None, 0)
+        # ROMAN NUMERAL
+        assert _decode_html_entity("&#ⅤⅥ;", 0) == (None, 0)
+
