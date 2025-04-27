@@ -283,6 +283,11 @@ def _decode_html_entity(in_text: str, position: int) -> tuple[Optional[str], int
         HTML entities: ``&lt;``, ``&gt;``, ``&amp;`` and ``&quot;``.
 
     Examples:
+        .. code:: python
+
+            _decode_html_entity("&lt;", 0) == ('<', 4)
+            _decode_html_entity("&#69;", 0) == ('E', 5)
+            _decode_html_entity("In the middle &amp; of the sentence", 14) == ('&', 19)
 
     Args:
         in_text (str): A string with an HTML entity.
@@ -332,6 +337,10 @@ def _decode_html_entity(in_text: str, position: int) -> tuple[Optional[str], int
         else:
             decimal_num = ""
             while ch := get_item(in_text, end_pos):
+                # Do not use string.isdigit()/isnumeric()/isdecimal()
+                # because those functions considers as digits much wider
+                # range of characters than just 0...9 as Telegram does.
+                # See this SO answer https://stackoverflow.com/a/54912545/19813684
                 if ch not in string.digits:
                     break
                 decimal_num += ch
