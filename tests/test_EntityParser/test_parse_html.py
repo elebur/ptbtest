@@ -114,7 +114,7 @@ class TestDecodeHtmlEntity:
 
     @pytest.mark.parametrize("entity, code, end_pos", (("&#x41;", "A", 6),
                                                        ("&#x7A;", "z", 6),
-                                                       ("&#174;", "®", 6),
+                                                       ("&#x174;", "Ŵ", 7),
                                                        # No semicolon
                                                        ("&#x20AC", "€", 7),
                                                        ("&#xbc", "¼", 5),
