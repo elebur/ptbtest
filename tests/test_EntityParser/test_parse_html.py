@@ -287,3 +287,23 @@ class TestSimpleEntities:
         assert resp ==  (f'{whitespace*3}Whitespaces{whitespace*5} inside {whitespace*2}entities',
                          (MessageEntity(length=19, offset=0, type=e_type),
                           MessageEntity(length=10, offset=27, type=e_type)))
+
+    @pytest.mark.parametrize("tag_name, e_type", (("i", MessageEntityType.ITALIC),
+                                                  ("em", MessageEntityType.ITALIC),
+                                                  ("b", MessageEntityType.BOLD),
+                                                  ("strong", MessageEntityType.BOLD),
+                                                  ("s", MessageEntityType.STRIKETHROUGH),
+                                                  ("strike", MessageEntityType.STRIKETHROUGH),
+                                                  ("del", MessageEntityType.STRIKETHROUGH),
+                                                  ("u", MessageEntityType.UNDERLINE),
+                                                  ("ins", MessageEntityType.UNDERLINE),))
+    def test_embedded_unclosed_entity_failing(self, tag_name, e_type):
+        template = "A single line string <{0}>with <a> an entity</{0}>"
+
+        offset = 41 + len(tag_name)
+        err_msg = (f"Can't parse entities: unmatched end tag at byte offset {offset}, "
+                   f"expected \"</a>\", found \"</{tag_name}>\"")
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html(template.format(tag_name))
+
