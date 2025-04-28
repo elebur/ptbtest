@@ -307,3 +307,270 @@ class TestSimpleEntities:
         with pytest.raises(BadMarkupException, match=err_msg):
             self.ep.parse_html(template.format(tag_name))
 
+
+class TestTagA:
+    ep = EntityParser()
+
+    def test_without_href(self):
+        resp = self.ep.parse_html("<a>http://www.example.com/</a>")
+
+        entity = resp[1][0]
+        assert resp == ("http://www.example.com/", (MessageEntity(length=23,
+                                                                  offset=0,
+                                                                  type=MessageEntityType.TEXT_LINK,
+                                                                  url='http://www.example.com/'),))
+        assert entity.url == "http://www.example.com/"
+
+    def test_href_attr_double_quotes(self):
+        resp = self.ep.parse_html("<a href=\"http://www.example.com/\">inline URL</a>")
+
+        entity = resp[1][0]
+        assert resp == ('inline URL', (MessageEntity(length=10,
+                                                     offset=0,
+                                                     type=MessageEntityType.TEXT_LINK,
+                                                     url='http://www.example.com/'),))
+        assert entity.url == "http://www.example.com/"
+
+    def test_href_attr_single_quotes(self):
+        resp = self.ep.parse_html("<a href='http://www.example.com/'>inline URL</a>")
+
+        entity = resp[1][0]
+        assert resp == ('inline URL', (MessageEntity(length=10,
+                                                     offset=0,
+                                                     type=MessageEntityType.TEXT_LINK,
+                                                     url='http://www.example.com/'),))
+        assert entity.url == "http://www.example.com/"
+
+    def test_empty_href(self):
+        text = "<a href=''>hello</a>"
+
+        resp = self.ep.parse_html(text)
+
+        assert resp == ("hello", ())
+
+    def test_empty_href_without_quotes_but_with_equal_sign(self):
+        text = "<a href=>hello</a>"
+
+        resp = self.ep.parse_html(text)
+
+        assert resp == ("hello", ())
+
+    def test_at_the_beginning(self):
+        resp = self.ep.parse_html("<a href='example.com/'>hello</a> world")
+        entity = resp[1][0]
+
+        assert resp ==  ('hello world', (MessageEntity(length=5,
+                                                       offset=0,
+                                                       type=MessageEntityType.TEXT_LINK,
+                                                       url='http://example.com/'),))
+        assert entity.url == "http://example.com/"
+
+    def test_at_the_end(self):
+        resp = self.ep.parse_html("Say <a href='example.com/'>'hello'</a>")
+        entity = resp[1][0]
+
+        assert entity.url == "http://example.com/"
+        assert resp ==  ("Say 'hello'", (MessageEntity(length=7,
+                                                     offset=4,
+                                                     type=MessageEntityType.TEXT_LINK,
+                                                     url='http://example.com/'),))
+
+    def test_in_the_middle(self):
+        resp = self.ep.parse_html("URL <a href=\"https://example.com/login\">in the middle</a> of the message")
+
+        entity = resp[1][0]
+
+        assert entity.url == "https://example.com/login"
+        assert resp == ('URL in the middle of the message', (MessageEntity(length=13,
+                                                                           offset=4,
+                                                                           type=MessageEntityType.TEXT_LINK,
+                                                                           url='https://example.com/login'),))
+
+    def test_multiple_inline_urls(self):
+        resp = self.ep.parse_html("Multiple <a href='example.com/?param1=val1'>inline urls</a> "
+                                         "within <a href='https://example.com'>one message</a>")
+
+        entity1 = resp[1][0]
+        entity2 = resp[1][1]
+
+        assert entity1.url == "http://example.com/?param1=val1"
+        assert entity2.url == "https://example.com/"
+
+        assert resp == ('Multiple inline urls within one message',
+                            (MessageEntity(length=11,
+                                           offset=9,
+                                           type=MessageEntityType.TEXT_LINK,
+                                           url='http://example.com/?param1=val1'),
+                             MessageEntity(length=11,
+                                           offset=28,
+                                           type=MessageEntityType.TEXT_LINK,
+                                           url='http://example.com/')))
+
+    def test_multiline_multiple_inline_urls_parts(self):
+        resp = self.ep.parse_html('Multiple <a href="example.com/?param1=val1">inline urls</a>\n'
+                                         'in <a href="http://example.com/">one message</a>.\n'
+                                         'Each one on new line')
+        entity1 = resp[1][0]
+        entity2 = resp[1][1]
+
+        assert entity1.url == "http://example.com/?param1=val1"
+        assert entity2.url == "http://example.com/"
+
+        assert resp == ('Multiple inline urls\nin one message.\nEach one on new line',
+                            (MessageEntity(length=11,
+                                           offset=9,
+                                           type=MessageEntityType.TEXT_LINK,
+                                           url='http://example.com/?param1=val1'),
+                             MessageEntity(length=11,
+                                           offset=24,
+                                           type=MessageEntityType.TEXT_LINK,
+                                           url='http://example.com/')))
+
+    def test_named_html_entities_within_entity(self):
+        resp = self.ep.parse_html("<a href='http://example.com/'>1 &lt; 2; 5 &gt; 3; "
+                                  "1 == 1 &amp;&amp; &quot;a&quot; == &quot;a&quot; </a>")
+
+        entity = resp[1][0]
+        assert resp == ('1 < 2; 5 > 3; 1 == 1 && "a" == "a"',
+                        (MessageEntity(length=34, offset=0,
+                                       type=MessageEntityType.TEXT_LINK,
+                                       url='http://example.com/'),))
+        assert entity.url == "http://example.com/"
+
+    @pytest.mark.parametrize(["symbol"], ((" ",), ("\n",)))
+    def test_with_leading_and_trailing_whitespace_outside_of_entity(self, symbol):
+        resp = self.ep.parse_html(f"{symbol*8}<a href='http://www.example.com'>inline URL</a>{symbol*33}")
+
+        entity = resp[1][0]
+        assert entity.url == "http://www.example.com/"
+        assert resp ==  ('inline URL', (MessageEntity(length=10,
+                                                      offset=0,
+                                                      type=MessageEntityType.TEXT_LINK,
+                                                      url='http://www.example.com/'),))
+
+    @pytest.mark.parametrize(["symbol"], ((" ",), ("\n",)))
+    def test_with_leading_and_trailing_whitespace_inside_entity(self, symbol):
+        resp = self.ep.parse_html(f"<a href='http://www.example.com'>{symbol*2}inline URL{symbol*14}</a>")
+        entity = resp[1][0]
+        assert entity.url == "http://www.example.com/"
+
+        assert resp == (f'{symbol*2}inline URL', (MessageEntity(length=12,
+                                                                offset=0,
+                                                                type=MessageEntityType.TEXT_LINK,
+                                                                url='http://www.example.com/'),))
+
+    @pytest.mark.parametrize(["symbol"], ((" ",), ("\n",)))
+    def test_with_leading_and_trailing_whitespace_inside_entity_with_text_afterwards(self, symbol):
+        resp = self.ep.parse_html(f"<a href='http://www.example.com'>{symbol * 2}"
+                                  f"inline URL{symbol * 14}</a> some text")
+        entity = resp[1][0]
+        assert entity.url == "http://www.example.com/"
+
+        assert resp == (f'{symbol*2}inline URL{symbol*14} some text',
+                            (MessageEntity(length=26,
+                                           offset=0,
+                                           type=MessageEntityType.TEXT_LINK,
+                                           url='http://www.example.com/'),))
+
+    def test_trailing_whitespace_inside_entity_with_text_after_entity(self):
+        text = (r"A string with trailing whitespace "
+                r"<a href='http://www.example.com'>inside brackets </a>"
+                r"and some text after.")
+        resp = self.ep.parse_html(text)
+
+        entity = resp[1][0]
+        assert entity.url == "http://www.example.com/"
+        assert resp == ('A string with trailing whitespace inside brackets and some text after.',
+                        (MessageEntity(length=16, offset=34,
+                                       type=MessageEntityType.TEXT_LINK,
+                                       url='http://www.example.com/'),))
+
+    @pytest.mark.parametrize(
+        "in_str, result", (("An  <a href='  http://www.example.com  '>inline URL</a>   ", ('An  inline URL', ())),
+                           ("An  <a href='  http://www.example.com  '>inline URL</a>   Some text", ('An  inline URL   Some text', ())),
+                           ("An  <a href='http://www.example.com  '>inline URL</a>   Some text", ('An  inline URL   Some text', ())),
+                           ("An  <a href='  http://www.example.com'>inline URL</a>   Some text", ('An  inline URL   Some text', ())),
+                           ("An  <a href='  http://www.example.com  '>inline URL</a>", ('An  inline URL', ())),
+                           ("An  <a href='  http://www.example.com'>inline URL</a>", ('An  inline URL', ())),
+                           ("An  <a href='http://www.example.com  '>inline URL</a>   ", ('An  inline URL', ())),
+                           ("An  <a href='http://www.example.com  '>inline URL</a>", ('An  inline URL', ())),))
+    def test_with_whitespaces_inside_attribute(self, in_str, result):
+        resp = self.ep.parse_html(in_str)
+        assert resp == result
+
+    def test_with_newline_inside_href(self):
+        resp = self.ep.parse_html("An  <a href='http://www.\nexample.com'>inline URL</a>")
+
+        assert resp == ("An  inline URL", ())
+
+    def test_newline_inside_entity(self):
+        resp = self.ep.parse_html("Test new line <a href=\"http://www.example.com/\">inside \n inline URL</a> text")
+        assert resp == ('Test new line inside \n inline URL text',
+                            (MessageEntity(length=19,
+                                           offset=14,
+                                           type=MessageEntityType.TEXT_LINK,
+                                           url='http://www.example.com/'),))
+
+    def test_empty_entity_failing(self):
+        with pytest.raises(BadMarkupException, match=re.escape(ERR_TEXT_MUST_BE_NON_EMPTY)):
+            self.ep.parse_html("<a></a>")
+
+    def test_empty_text_part_failing(self):
+        with pytest.raises(BadMarkupException, match=re.escape(ERR_TEXT_MUST_BE_NON_EMPTY)):
+            self.ep.parse_html("<a href='example.com'></a>")
+
+    def test_empty_url_part(self):
+        resp = self.ep.parse_html("<a>empty url</a>")
+        assert resp == ('empty url', ())
+
+    def test_nested_simple_entities(self):
+        text = ("A string with <a href='https://example.com'>"
+                "<b>a</b> <i>nested</i> <s>enn</s><u>ti</u>"
+                "<tg-spoiler>ty</tg-spoiler>"
+                "</a>")
+
+        resp = self.ep.parse_html(text)
+
+        assert resp == ('A string with a nested enntity',(MessageEntity(length=16,
+                                                                        offset=14,
+                                                                        type=MessageEntityType.TEXT_LINK,
+                                                                        url='http://outer.com/'),
+                                                          MessageEntity(length=1,
+                                                                        offset=14,
+                                                                        type=MessageEntityType.BOLD),
+                                                          MessageEntity(length=6,
+                                                                        offset=16,
+                                                                        type=MessageEntityType.ITALIC),
+                                                          MessageEntity(length=3,
+                                                                        offset=23,
+                                                                        type=MessageEntityType.STRIKETHROUGH),
+                                                          MessageEntity(length=2,
+                                                                        offset=26,
+                                                                        type=MessageEntityType.UNDERLINE),
+                                                          MessageEntity(length=2,
+                                                                        offset=28,
+                                                                        type=MessageEntityType.SPOILER)))
+
+    def test_with_emoji(self):
+        text = "👨‍👩‍👧‍👦 😊😊 <a href='ex.com'>A string with emojis 😊</a> 😊😊"
+        resp = self.ep.parse_html(text)
+        assert resp == ("👨‍👩‍👧‍👦 😊😊 A string with emojis 😊 😊😊",
+                            (MessageEntity(length=23,
+                                           offset=17,
+                                           type=MessageEntityType.TEXT_LINK,
+                                           url='http://ex.com/'),))
+
+    def test_non_latin_characters(self):
+        resp = self.ep.parse_html("<a href='ex.com'>你好世界!</a>")
+        assert resp == ('你好世界!', (MessageEntity(length=5,
+                                                    offset=0,
+                                                    type=MessageEntityType.TEXT_LINK,
+                                                    url='http://ex.com/'),))
+
+
+
+
+
+
+
+
