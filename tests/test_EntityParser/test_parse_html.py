@@ -615,6 +615,25 @@ class TestMention:
         assert resp == ("inline mention of a user", ())
 
 
+class TestTagSpan:
+    ep = EntityParser()
 
+    def test_with_attribute(self):
+        text = '<span class="tg-spoiler">spoiler</span>'
 
+        resp = self.ep.parse_html(text)
 
+        assert resp == ('spoiler', (MessageEntity(length=7, offset=0,
+                                                  type=MessageEntityType.SPOILER),))
+
+    def test_with_wrong_attribute_failing(self):
+        text = '<span class="spoiler">spoiler</span>'
+        err_msg = 'Can\'t parse entities: tag "span" must have class "tg-spoiler" at byte offset 0'
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html(text)
+
+    def test_without_attribute_failing(self):
+        text = '<span>spoiler</span>'
+        err_msg = 'Can\'t parse entities: tag "span" must have class "tg-spoiler" at byte offset 0'
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html(text)
