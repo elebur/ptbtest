@@ -204,6 +204,13 @@ class TestNoEntities:
 
 
 class TestSimpleEntities:
+    """
+    Simple entities are the entities that consist of the tag name only,
+    and they don't need attributes.
+    Some of the tags can be used both with and without attributes
+    (e.g., `code`, `blockquote`), in this class only cases without
+    attributes are tested.
+    """
     ep = EntityParser()
 
     @pytest.mark.parametrize("tag_name, e_type", (("i", MessageEntityType.ITALIC),
@@ -214,7 +221,11 @@ class TestSimpleEntities:
                                                   ("strike", MessageEntityType.STRIKETHROUGH),
                                                   ("del", MessageEntityType.STRIKETHROUGH),
                                                   ("u", MessageEntityType.UNDERLINE),
-                                                  ("ins", MessageEntityType.UNDERLINE),))
+                                                  ("ins", MessageEntityType.UNDERLINE),
+                                                  ("tg-spoiler", MessageEntityType.SPOILER),
+                                                  ("pre", MessageEntityType.PRE),
+                                                  ("code", MessageEntityType.CODE),
+                                                  ("blockquote", MessageEntityType.BLOCKQUOTE),))
     def test_one_line_text_with_entity(self, tag_name, e_type):
         template = "A single line string <{0}>with an entity</{0}>"
         resp = self.ep.parse_html(template.format(tag_name))
@@ -229,7 +240,12 @@ class TestSimpleEntities:
                                                   ("strike", MessageEntityType.STRIKETHROUGH),
                                                   ("del", MessageEntityType.STRIKETHROUGH),
                                                   ("u", MessageEntityType.UNDERLINE),
-                                                  ("ins", MessageEntityType.UNDERLINE),))
+                                                  ("ins", MessageEntityType.UNDERLINE),
+                                                  ("tg-spoiler", MessageEntityType.SPOILER),
+                                                  ("pre", MessageEntityType.PRE),
+                                                  ("code", MessageEntityType.CODE),
+                                                  ("blockquote", MessageEntityType.BLOCKQUOTE),
+                                                  ))
     def test_multi_line_text_with_entity(self, tag_name, e_type):
         template = "A multi line string <{0}>with\n an entity</{0}>"
         resp = self.ep.parse_html(template.format(tag_name))
@@ -244,7 +260,12 @@ class TestSimpleEntities:
                                                   ("strike", MessageEntityType.STRIKETHROUGH),
                                                   ("del", MessageEntityType.STRIKETHROUGH),
                                                   ("u", MessageEntityType.UNDERLINE),
-                                                  ("ins", MessageEntityType.UNDERLINE),))
+                                                  ("ins", MessageEntityType.UNDERLINE),
+                                                  ("tg-spoiler", MessageEntityType.SPOILER),
+                                                  ("pre", MessageEntityType.PRE),
+                                                  ("code", MessageEntityType.CODE),
+                                                  ("blockquote", MessageEntityType.BLOCKQUOTE),
+                                                  ))
     def test_with_leading_and_trailing_whitespace_inside_entity_in_different_parts_of_the_message(self, tag_name, e_type):
         text = (f"<{tag_name}>hello\n\n\n\nworld\n\n\n\n\n</{tag_name}>    "
                 f"<{tag_name}>and one\nmore   \n\n\nline\n\n   </{tag_name}>")
@@ -262,7 +283,12 @@ class TestSimpleEntities:
                                                   ("strike", MessageEntityType.STRIKETHROUGH),
                                                   ("del", MessageEntityType.STRIKETHROUGH),
                                                   ("u", MessageEntityType.UNDERLINE),
-                                                  ("ins", MessageEntityType.UNDERLINE),))
+                                                  ("ins", MessageEntityType.UNDERLINE),
+                                                  ("tg-spoiler", MessageEntityType.SPOILER),
+                                                  ("pre", MessageEntityType.PRE),
+                                                  ("code", MessageEntityType.CODE),
+                                                  ("blockquote", MessageEntityType.BLOCKQUOTE),
+                                                  ))
     @pytest.mark.parametrize(["whitespace"], " \n")
     def test_with_leading_and_trailing_whitespaces_outside_entities(self, tag_name, e_type, whitespace):
         text = fr"{whitespace*4}New lines outside an <{tag_name}> entity </{tag_name}>\.{whitespace * 4}"
@@ -278,7 +304,12 @@ class TestSimpleEntities:
                                                   ("strike", MessageEntityType.STRIKETHROUGH),
                                                   ("del", MessageEntityType.STRIKETHROUGH),
                                                   ("u", MessageEntityType.UNDERLINE),
-                                                  ("ins", MessageEntityType.UNDERLINE),))
+                                                  ("ins", MessageEntityType.UNDERLINE),
+                                                  ("tg-spoiler", MessageEntityType.SPOILER),
+                                                  ("pre", MessageEntityType.PRE),
+                                                  ("code", MessageEntityType.CODE),
+                                                  ("blockquote", MessageEntityType.BLOCKQUOTE),
+                                                  ))
     @pytest.mark.parametrize(["whitespace"], " \n")
     def test_with_leading_and_trailing_whitespaces_inside_entities(self, tag_name, e_type, whitespace):
         text = (f"<{tag_name}>{whitespace * 3}Whitespaces{whitespace * 5}</{tag_name}> "
@@ -296,7 +327,12 @@ class TestSimpleEntities:
                                                   ("strike", MessageEntityType.STRIKETHROUGH),
                                                   ("del", MessageEntityType.STRIKETHROUGH),
                                                   ("u", MessageEntityType.UNDERLINE),
-                                                  ("ins", MessageEntityType.UNDERLINE),))
+                                                  ("ins", MessageEntityType.UNDERLINE),
+                                                  ("tg-spoiler", MessageEntityType.SPOILER),
+                                                  ("pre", MessageEntityType.PRE),
+                                                  ("code", MessageEntityType.CODE),
+                                                  ("blockquote", MessageEntityType.BLOCKQUOTE),
+                                                  ))
     def test_embedded_unclosed_entity_failing(self, tag_name, e_type):
         template = "A single line string <{0}>with <a> an entity</{0}>"
 
