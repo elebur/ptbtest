@@ -568,7 +568,15 @@ class TestTagA:
                                                     url='http://ex.com/'),))
 
 
+class TestMention:
+    """
+    As for April 2025, inline mentioning doesn't work (from the server side).
+    """
+    def test_mention(self):
+        text = '<a href="tg://user?id=123456789">inline mention of a user</a>'
+        resp = EntityParser.parse_html(text)
 
+        assert resp == ("inline mention of a user", ())
 
 
 
