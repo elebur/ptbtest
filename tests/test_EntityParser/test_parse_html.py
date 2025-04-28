@@ -637,3 +637,92 @@ class TestTagSpan:
         err_msg = 'Can\'t parse entities: tag "span" must have class "tg-spoiler" at byte offset 0'
         with pytest.raises(BadMarkupException, match=err_msg):
             self.ep.parse_html(text)
+
+
+class TestPreAndCode:
+    ep = EntityParser()
+
+    def test_code_nested_into_pre_with_language(self):
+        text = ('<pre><code class="language-python">pre-formatted '
+                'fixed-width code block written </code></pre>')
+
+        resp = self.ep.parse_html(text)
+        entity = resp[1][0]
+        assert entity.language == 'python'
+        assert resp == ('pre-formatted fixed-width code block written',
+                        (MessageEntity(length=44, offset=0, language='python',
+                                       type=MessageEntityType.PRE),))
+
+    def test_code_nested_into_pre_without_language(self):
+        text = ('<pre><code>pre-formatted '
+                'fixed-width code block written </code></pre>')
+
+        resp = self.ep.parse_html(text)
+
+        entity = resp[1][0]
+        # There is only one entity.
+        assert len(resp[1]) == 1
+        assert entity.language is None
+        assert resp == ('pre-formatted fixed-width code block written',
+                        (MessageEntity(length=44, offset=0, type=MessageEntityType.PRE),))
+
+    def test_code_nested_into_pre_with_wrong_attribute(self):
+        text = ('<pre><code class="spoiler">pre-formatted '
+                'fixed-width code block written </code></pre>')
+
+        resp = self.ep.parse_html(text)
+
+        entity = resp[1][0]
+        # There is only one entity.
+        assert len(resp[1]) == 1
+        assert entity.language is None
+        assert resp == ('pre-formatted fixed-width code block written',
+                        (MessageEntity(length=44, offset=0, type=MessageEntityType.PRE),))
+
+    def test_pre_nested_into_code_with_language(self):
+        text = ('<code><pre class="language-python">pre-formatted '
+                'fixed-width code block written </pre></code>')
+
+        resp = self.ep.parse_html(text)
+
+        entity = resp[1][0]
+        # There is only one entity.
+        assert len(resp[1]) == 1
+        assert entity.language is None
+        assert resp == ('pre-formatted fixed-width code block written',
+                        (MessageEntity(length=44, offset=0, type=MessageEntityType.PRE),))
+
+    def test_pre_nested_into_code_without_language(self):
+        text = ('<code><pre>pre-formatted '
+                'fixed-width code block written </pre></code>')
+
+        resp = self.ep.parse_html(text)
+
+        entity = resp[1][0]
+        # There is only one entity.
+        assert len(resp[1]) == 1
+        assert entity.language is None
+        assert resp == ('pre-formatted fixed-width code block written',
+                        (MessageEntity(length=44, offset=0, type=MessageEntityType.PRE),))
+
+    def test_standalone_pre_with_language(self):
+        text = ('<pre class="language-python">pre-formatted '
+                'fixed-width code block written </pre>')
+
+        resp = self.ep.parse_html(text)
+
+        entity = resp[1][0]
+        assert entity.language is None
+        assert resp == ('pre-formatted fixed-width code block written',
+                        (MessageEntity(length=44, offset=0, type=MessageEntityType.PRE),))
+
+    def test_standalone_code_with_language(self):
+        text = ('<code class="language-python">pre-formatted '
+                'fixed-width code block written </code>')
+
+        resp = self.ep.parse_html(text)
+
+        entity = resp[1][0]
+        assert entity.language is None
+        assert resp == ('pre-formatted fixed-width code block written',
+                        (MessageEntity(length=44, offset=0, type=MessageEntityType.CODE),))
