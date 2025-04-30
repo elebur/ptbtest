@@ -822,6 +822,18 @@ class TestNamedEntities:
                              MessageEntity(length=6, offset=6, type=MessageEntityType.BOLD),
                              MessageEntity(length=20, offset=13, type=MessageEntityType.UNDERLINE)))
 
+    def test_inside_attribute_values(self):
+        text = ('<pre><code class="language-py&amp;t&gt;h&lt;on">pre-formatted '
+                'fixed-width code block written </code></pre>')
+
+        resp = self.ep.parse_html(text)
+
+        entity = resp[1][0]
+        assert entity.language == 'py&t>h<on'
+        assert resp == ('pre-formatted fixed-width code block written',
+                            (MessageEntity(language='py&t>h<on', length=44, offset=0,
+                                           type=MessageEntityType.PRE),))
+
     def test_invalid_names_ignored(self):
         text = '&copy; &trade; &euro;'
 
