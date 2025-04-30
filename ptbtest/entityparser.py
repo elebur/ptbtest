@@ -117,7 +117,9 @@ def _check_and_normalize_url(url: str) -> str:
     Returns:
         str: Empty string if the ``url`` is invalid, normalized URL otherwise.
     """
-    if not url or url.startswith(" ") or url.endswith(" "):
+    # The URL must not start or end with whitespace,
+    # and it must not contain the new line character.
+    if not url or url.startswith(" ") or url.endswith(" ") or "\n" in url:
         return ""
 
     result = url
