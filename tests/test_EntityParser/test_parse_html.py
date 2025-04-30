@@ -626,6 +626,14 @@ class TestTagSpan:
         assert resp == ('spoiler', (MessageEntity(length=7, offset=0,
                                                   type=MessageEntityType.SPOILER),))
 
+    def test_attribute_without_quotes(self):
+        text = '<span class=tg-spoiler>spoiler</span>'
+
+        resp = self.ep.parse_html(text)
+
+        assert resp == ('spoiler', (MessageEntity(length=7, offset=0,
+                                                  type=MessageEntityType.SPOILER),))
+
     def test_with_wrong_attribute_failing(self):
         text = '<span class="spoiler">spoiler</span>'
         err_msg = 'Can\'t parse entities: tag "span" must have class "tg-spoiler" at byte offset 0'
@@ -644,6 +652,17 @@ class TestPreAndCode:
 
     def test_code_nested_into_pre_with_language(self):
         text = ('<pre><code class="language-python">pre-formatted '
+                'fixed-width code block written </code></pre>')
+
+        resp = self.ep.parse_html(text)
+        entity = resp[1][0]
+        assert entity.language == 'python'
+        assert resp == ('pre-formatted fixed-width code block written',
+                        (MessageEntity(length=44, offset=0, language='python',
+                                       type=MessageEntityType.PRE),))
+
+    def test_code_nested_into_pre_with_language_without_quotes(self):
+        text = ('<pre><code class=language-python>pre-formatted '
                 'fixed-width code block written </code></pre>')
 
         resp = self.ep.parse_html(text)
