@@ -823,3 +823,15 @@ class TestTgEmojis:
         assert False, "Need purchased @username to test against the Telegram server"
 
 
+class TestMisc:
+    ep = EntityParser()
+
+    @pytest.mark.parametrize(["tag"], (("h1",), ("ul",),
+                                        ("table",), ("p",), ("div", )))
+    def test_unsupported_tags_failing(self, tag):
+        text = f"The invalid tag <{tag}>name</{tag}> in text"
+        err_msg = (f"Can't parse entities: unsupported "
+                   f"start tag \"{tag}\" at byte offset 16")
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html(text)
