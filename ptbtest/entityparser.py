@@ -276,6 +276,78 @@ def _split_entities(nested_entities: Sequence[MessageEntity],
     return new_nested, closed_entities
 
 
+def _split_and_sort_intersected_entities(entities):
+    """
+    The function splits nested intersected entities.
+    Therefore, ``parse_markdown_v2`` and ``parse_html`` functions will
+    return the same result as the Telegram server does.
+
+    Example:
+        An input string is ``*hello _italic ~world~ italic_ world*``.
+
+        By default, :meth:`~ptbtest.entityparser.EntityParser.parse_markdown_v2` returns:
+
+        .. code:: python
+
+            MessageEntity(length=31, offset=0, type=MessageEntityType.BOLD)
+            MessageEntity(length=19, offset=6, type=MessageEntityType.ITALIC)
+            MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+
+        For the same string, the Telegram server returns:
+
+        .. code:: python
+
+            MessageEntity(length=6, offset=0, type=MessageEntityType.BOLD)
+            MessageEntity(length=7, offset=6, type=MessageEntityType.BOLD)
+            MessageEntity(length=7, offset=6, type=MessageEntityType.ITALIC)
+            MessageEntity(length=18, offset=13, type=MessageEntityType.BOLD)
+            MessageEntity(length=12, offset=13, type=MessageEntityType.ITALIC)
+            MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+
+    Args:
+        entities (Sequence[~telegram.MessageEntity]): A list of all entities that were found in
+            the text.
+
+    Returns:
+        (list[~telegram.MessageEntity]):
+            A list of sorted and split entities.
+    """
+    def sort_entities(e):
+        return sorted(e, key=lambda m: (m.offset, -m.length, PRIORITIES[m.type]))
+
+    new_entities = list()
+    # Sorting the entities in the order in which they appear in the sentence
+    entities = sort_entities(entities)
+    while entities:
+        # Taking the leftmost entities and check all other entities against it.
+        base_ent = entities.pop(0)
+        # [Expandable]Blockquotes and text links must not be split.
+        if base_ent.type in (MessageEntityType.BLOCKQUOTE,
+                             MessageEntityType.EXPANDABLE_BLOCKQUOTE,
+                             MessageEntityType.TEXT_LINK):
+            new_entities.append(base_ent)
+            continue
+
+        for e in entities:
+            # If the next entity is inside the current one,
+            # then the base entity should be split.
+            if e.offset < base_ent.offset + base_ent.length:
+                d_base = base_ent.to_dict()
+                d_new = d_base.copy()
+
+                d_new["length"] = e.offset - d_new["offset"]
+                if d_new["length"] > 0:
+                    new_entities.append(MessageEntity(**d_new))
+
+                d_base["length"] -=  d_new["length"]
+                d_base["offset"] = e.offset
+                base_ent = MessageEntity(**d_base)
+
+        new_entities.append(base_ent)
+
+    return sort_entities(new_entities)
+
+
 def _decode_html_entity(in_text: str, position: int) -> tuple[Optional[str], int]:
     """
     Decode HTML entity that starts at ``position`` in ``in_text``.
