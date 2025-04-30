@@ -779,3 +779,47 @@ class TestExpandableBlockquote:
                                            type=MessageEntityType.TEXT_LINK, url='http://example.com/')))
 
 
+class TestNamedEntities:
+    ep = EntityParser
+
+    def test_outside_tags(self):
+        text = "1 &gt; 2; 2 &lt; 3; &quot;3&quot; == &quot;3&quot;"
+
+        resp = self.ep.parse_html(text)
+
+        assert resp == ('1 > 2; 2 < 3; "3" == "3"', ())
+
+    def test_inside_tags(self):
+        text = ('<a href="example.com">1 &gt; 0</a>\n'
+                '<strong>2 &lt; 10</strong>\n'
+                '<u>&quot;3&quot; == &quot;3&quot; '
+                '&amp;&amp; 1 == 1</u>')
+
+        resp = self.ep.parse_html(text)
+
+        assert resp == ('1 > 0\n2 < 10\n"3" == "3" && 1 == 1',
+                            (MessageEntity(length=5, offset=0, type=MessageEntityType.TEXT_LINK,
+                                           url='http://example.com/'),
+                             MessageEntity(length=6, offset=6, type=MessageEntityType.BOLD),
+                             MessageEntity(length=20, offset=13, type=MessageEntityType.UNDERLINE)))
+
+    def test_invalid_names_ignored(self):
+        text = '&copy; &trade; &euro;'
+
+        resp = self.ep.parse_html(text)
+
+        assert resp == ('&copy; &trade; &euro;', ())
+
+
+class TestTgEmojis:
+    ep = EntityParser()
+
+    @pytest.mark.xfail(reason="Need purchased @username")
+    def test_tg_emoji(self):
+        text = '<tg-emoji emoji-id="5368324170671202286">👍</tg-emoji>'
+
+        resp = self.ep.parse_html(text)
+
+        assert False, "Need purchased @username to test against the Telegram server"
+
+
