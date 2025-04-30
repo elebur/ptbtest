@@ -726,3 +726,56 @@ class TestPreAndCode:
         assert entity.language is None
         assert resp == ('pre-formatted fixed-width code block written',
                         (MessageEntity(length=44, offset=0, type=MessageEntityType.CODE),))
+
+
+class TestExpandableBlockquote:
+    ep = EntityParser
+
+    def test_expandable_blockquote(self):
+        text = ("<blockquote expandable>"
+                "Expandable block quotation started\n"
+                "Expandable block quotation continued\n"
+                "Expandable block quotation continued\n"
+                "Hidden by default part of the block quotation started\n"
+                "Expandable block quotation continued\n"
+                "The last line of the block quotation"
+                "</blockquote>")
+
+        resp = self.ep.parse_html(text)
+
+        assert resp == ('Expandable block quotation started\n'
+                        'Expandable block quotation continued\n'
+                        'Expandable block quotation continued\n'
+                        'Hidden by default part of the block quotation started\n'
+                        'Expandable block quotation continued\n'
+                        'The last line of the block quotation',
+                            (MessageEntity(length=236, offset=0,
+                                           type=MessageEntityType.EXPANDABLE_BLOCKQUOTE),))
+
+    def test_expandable_blockquote_with_nested_entities(self):
+        text = ("<blockquote expandable>"
+                "Expandable <b>block quotation</b> <s>started</s>\n"
+                "<span class='tg-spoiler'>Expandable block quotation</span> continued\n"
+                "Expandable block quotation continued\n"
+                "<a href='example.com'>Hidden by</a> default part of the block quotation started\n"
+                "Expandable block quotation continued\n"
+                "The last line of the block quotation"
+                "</blockquote>")
+
+        resp = self.ep.parse_html(text)
+
+        assert resp == ('Expandable block quotation started\n'
+                        'Expandable block quotation continued\n'
+                        'Expandable block quotation continued\n'
+                        'Hidden by default part of the block quotation started\n'
+                        'Expandable block quotation continued\n'
+                        'The last line of the block quotation',
+                            (MessageEntity(length=236, offset=0,
+                                           type=MessageEntityType.EXPANDABLE_BLOCKQUOTE),
+                             MessageEntity(length=15, offset=11, type=MessageEntityType.BOLD),
+                             MessageEntity(length=7, offset=27, type=MessageEntityType.STRIKETHROUGH),
+                             MessageEntity(length=26, offset=35, type=MessageEntityType.SPOILER),
+                             MessageEntity(length=9, offset=109,
+                                           type=MessageEntityType.TEXT_LINK, url='http://example.com/')))
+
+
