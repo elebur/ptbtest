@@ -854,15 +854,105 @@ class TestTgEmojis:
         assert False, "Need purchased @username to test against the Telegram server"
 
 
-class TestMisc:
+class TestExceptions:
     ep = EntityParser()
+
+    def test_unclosed_tag(self):
+        err_msg = "Can't parse entities: unclosed start tag at byte offset 6"
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("Hello <b")
 
     @pytest.mark.parametrize(["tag"], (("h1",), ("ul",),
                                         ("table",), ("p",), ("div", )))
-    def test_unsupported_tags_failing(self, tag):
+    def test_unsupported_tags(self, tag):
         text = f"The invalid tag <{tag}>name</{tag}> in text"
         err_msg = (f"Can't parse entities: unsupported "
                    f"start tag \"{tag}\" at byte offset 16")
 
         with pytest.raises(BadMarkupException, match=err_msg):
             self.ep.parse_html(text)
+
+    def test_no_attr_name(self):
+        err_msg = "Can't parse entities: empty attribute name in the tag \"span\" at byte offset 6"
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("Hello <span = 'tg-spoiler'>world</span>")
+
+    def test_unclosed_tag_with_attr_name_only_and_no_value_and_no_equal_sign(self):
+        err_msg = "Can't parse entities: unclosed start tag \"span\" at byte offset 6"
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("Hello <span class")
+
+    def test_unclosed_tag_with_attr_name_and_with_equal_sign_but_no_value(self):
+        err_msg = "Can't parse entities: unclosed start tag \"span\" at byte offset 6"
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("Hello <span class=")
+
+    def test_unclosed_tag_with_attr_name_and_with_attr_value(self):
+        err_msg = "Can't parse entities: unclosed start tag at byte offset 6"
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("Hello <span class='tg-spoiler'")
+
+    def test_attr_value_without_quotes_with_non_alnum_dot_hyphen_char_in_value_text(self):
+        err_msg = "Can't parse entities: unexpected end of name token at byte offset 18"
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("Hello <span class=tg-spoiler#>world</span>")
+
+    def test_span_with_invalid_class(self):
+        """
+        All classes except 'tg-spoiler' are invalid.
+        """
+        err_msg = """Can't parse entities: tag "span" must have class "tg-spoiler" at byte offset 0"""
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("<span class='invalid'>spoiler</span>")
+        err_msg = ('Can\'t parse entities: unmatched end tag at '
+                   'byte offset 16, expected "</b>", found "</i>"')
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("<b>👀🔥hello</i>")
+
+    def test_end_tag_without_open_one(self):
+        err_msg = "Can't parse entities: unexpected end tag at byte offset 5"
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("Hello</i>")
+
+    def test_unclosed_end_tag(self):
+        err_msg = "Can't parse entities: unclosed end tag at byte offset 7"
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("<b>bold</b")
+
+    def test_different_open_and_end_tags(self):
+        err_msg = ("Can't parse entities: can't find end tag"
+                   " corresponding to start tag \"b\"")
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("<b>Hello")
+
+    def test_invalid_emoji_id(self):
+        err_msg = "Can't parse entities: invalid custom emoji identifier specified"
+
+        in_str = '<tg-emoji emoji-id="hello-5368324170671202286">👍</tg-emoji>'
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html(in_str)
+
+    def test_open_tag_without_end_one(self):
+        err_msg = ('Can\'t parse entities: can\'t find '
+                   'end tag corresponding to start tag "b"')
+
+        with pytest.raises(BadMarkupException, match=err_msg):
+            self.ep.parse_html("<b>Hello")
+
+    def test_empty_string_without_entities_at_all(self):
+        with pytest.raises(BadMarkupException, match=ERR_MSG_EMPTY_STR):
+            self.ep.parse_html("")
+
+    def test_empty_string_with_empty_entities(self):
+        with pytest.raises(BadMarkupException, match=ERR_TEXT_MUST_BE_NON_EMPTY):
+            self.ep.parse_html("<b></b>")
