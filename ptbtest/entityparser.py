@@ -203,84 +203,6 @@ def get_hash(obj: TelegramObject) -> int:
     return hash(obj.to_json())
 
 
-def _split_entities(nested_entities: Sequence[MessageEntity],
-                    incoming_entity: MessageEntity,
-                    raw_offset: dict[int, int]) -> (list[MessageEntity, ...], list[MessageEntity, ...]):
-    """
-    The function splits all unclosed entities if a new entity is coming.
-    Therefore, the ``parse_markdown_v2`` function will return the same result as
-    the Telegram server does.
-
-    Example:
-        An input string is ``*hello _italic ~world~ italic_ world*``.
-
-        By default, :meth:`~ptbtest.entityparser.EntityParser.parse_markdown_v2` returns:
-
-        .. code:: python
-
-            MessageEntity(length=31, offset=0, type=MessageEntityType.BOLD)
-            MessageEntity(length=19, offset=6, type=MessageEntityType.ITALIC)
-            MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
-
-        For the same string, the Telegram server returns:
-
-        .. code:: python
-
-            MessageEntity(length=6, offset=0, type=MessageEntityType.BOLD)
-            MessageEntity(length=7, offset=6, type=MessageEntityType.BOLD)
-            MessageEntity(length=7, offset=6, type=MessageEntityType.ITALIC)
-            MessageEntity(length=18, offset=13, type=MessageEntityType.BOLD)
-            MessageEntity(length=12, offset=13, type=MessageEntityType.ITALIC)
-            MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
-
-    Args:
-        nested_entities (Sequence[~telegram.MessageEntity]): A list of all unclosed entities.
-        incoming_entity (~telegram.MessageEntity): New entity that must be added to the
-            ``nested_entity``.
-        raw_offset (dict[int, int]): A dictionary, that stores a byte offset (the beginning
-            position) of entities. The key is the entity's hash and the value is
-            the byte offset.
-
-    Returns:
-        (list[~telegram.MessageEntity], list[~telegram.MessageEntity]):
-            Two lists. The first one is the updated ``nested_entities`` list and the second
-            on is the list of closed entities that must be added to the final list
-            of entities.
-    """
-    new_nested = []
-    closed_entities = []
-    for ent in nested_entities:
-        # Links and quotes mustn't be split.
-        if ent.type in (MessageEntityType.TEXT_LINK, MessageEntityType.BLOCKQUOTE ):
-            new_nested.append(ent)
-            continue
-        # MessageEntity can't be edited directly.
-        # First it is transformed into the dict object, then the dict is edited,
-        # and then new MessageEntity is created from this dict.
-        ent_dict = ent.to_dict()
-        original_length = ent.length
-        new_length = incoming_entity.offset - ent.offset
-        if new_length > 0:
-            ent_dict["length"] = new_length
-            closed_entities.append(MessageEntity(**ent_dict))
-
-        ent_dict["offset"] = incoming_entity.offset
-        ent_dict["length"] = original_length - new_length
-
-        new_ent = MessageEntity(**ent_dict)
-        # Updating the entity's byte offset in the original string
-        # (the position where the entity is started).
-        # The byte offset is linked to the original entity,
-        # but it will be removed after splitting.
-        # Here the offset is relinked from the original entity to the new one.
-        raw_offset[get_hash(new_ent)] = raw_offset[get_hash(ent)]
-        new_nested.append(new_ent)
-
-    new_nested.append(incoming_entity)
-
-    return new_nested, closed_entities
-
-
 def _split_and_sort_intersected_entities(entities):
     """
     The function splits nested intersected entities.
@@ -880,8 +802,7 @@ class EntityParser:
                 if err_empty_text == "Message text is empty":
                     err_empty_text = "Text must be non-empty"
 
-                nested_entities, closed_entities = _split_entities(nested_entities, me, raw_offset)
-                entities.extend(closed_entities)
+                nested_entities.append(me)
 
                 raw_offset[get_hash(me)] = len(striped_text[:entity_raw_begin_pos].encode())
 
