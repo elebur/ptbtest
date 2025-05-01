@@ -293,7 +293,7 @@ class TestSimpleEntities:
     def test_with_leading_and_trailing_whitespaces_outside_entities(self, tag_name, e_type, whitespace):
         text = fr"{whitespace*4}New lines outside an <{tag_name}> entity </{tag_name}>\.{whitespace * 4}"
         resp = self.ep.parse_html(text)
-        assert resp == ("New lines outside an  entity \.",
+        assert resp == (r"New lines outside an  entity \.",
                         (MessageEntity(length=8, offset=21, type=e_type),))
 
     @pytest.mark.parametrize("tag_name, e_type", (("i", MessageEntityType.ITALIC),
@@ -847,9 +847,9 @@ class TestTgEmojis:
 
     @pytest.mark.xfail(reason="Need purchased @username")
     def test_tg_emoji(self):
+        """
         text = '<tg-emoji emoji-id="5368324170671202286">👍</tg-emoji>'
-
-        resp = self.ep.parse_html(text)
+        """
 
         assert False, "Need purchased @username to test against the Telegram server"
 
