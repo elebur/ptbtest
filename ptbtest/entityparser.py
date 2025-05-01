@@ -26,6 +26,7 @@ import html
 import re
 import string
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Any, Literal, Optional
 from urllib.parse import urlparse
 
@@ -57,6 +58,10 @@ PRIORITIES = {
     MessageEntityType.CUSTOM_EMOJI: 99,
     MessageEntityType.EXPANDABLE_BLOCKQUOTE: 0
 }
+
+ALLOWED_HTML_TAG_NAMES = ("a", "b", "strong", "i", "em", "s", "strike", "del",
+                          "u", "ins", "tg-spoiler", "tg-emoji", "span", "pre",
+                          "code", "blockquote")
 
 
 def _get_utf16_length(text: str) -> int:
@@ -1028,35 +1033,350 @@ class EntityParser:
         if not result_text:
             raise BadMarkupException(err_empty_text)
 
-        sorted_entities = sorted(entities, key=lambda m: (m.offset, -m.length, PRIORITIES[m.type]))
+        sorted_entities = _split_and_sort_intersected_entities(entities)
         if not sorted_entities:
             result_text = result_text.strip()
 
         return result_text, tuple(sorted_entities)
 
     @staticmethod
-    def parse_html(message):
+    def parse_html(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
         """
+        Extract :obj:`~telegram.MessageEntity` from ``text`` with the
+        `HTML <https://core.telegram.org/bots/api#html-style>`_ markup.
+
+        Examples:
+            An input string: ``<b>hello <i>italic <u>underlined <s>nested</s> entities</u> wo</i>rld</b>``
+
+            Result:
+
+            .. code:: python
+
+                ('hello italic underlined nested entities world',
+                     (MessageEntity(length=6, offset=0, type=<MessageEntityType.BOLD>),
+                      MessageEntity(length=7, offset=6, type=<MessageEntityType.BOLD>),
+                      MessageEntity(length=7, offset=6, type=<MessageEntityType.ITALIC>),
+                      MessageEntity(length=11, offset=13, type=<MessageEntityType.BOLD>),
+                      MessageEntity(length=11, offset=13, type=<MessageEntityType.ITALIC>),
+                      MessageEntity(length=11, offset=13, type=<MessageEntityType.UNDERLINE>),
+                      MessageEntity(length=21, offset=24, type=<MessageEntityType.BOLD>),
+                      MessageEntity(length=18, offset=24, type=<MessageEntityType.ITALIC>),
+                      MessageEntity(length=15, offset=24, type=<MessageEntityType.UNDERLINE>),
+                      MessageEntity(length=6, offset=24, type=<MessageEntityType.STRIKETHROUGH>)))
 
         Args:
-            message (str): Message with HTML text to be transformed
+            text (str): A string with HTML markup.
 
         Returns:
-            (message(str), entities(list(telegram.MessageEntity))): The entities found in the message and
-            the message after parsing.
-        """
-        invalids = re.compile(r'''(<b><i>|<b><pre>|<b><code>|<b>(<a.*?>)|
-                                   <i><b>|<i><pre>|<i><code>|<i>(<a.*?>)|
-                                   <pre><b>|<pre><i>|<pre><code>|<pre>(<a.*?>)|
-                                   <code><b>|<code><i>|<code><pre>|<code>(<a.*?>)|
-                                   (<a.*>)?<b>|(<a.*?>)<i>|(<a.*?>)<pre>|(<a.*?>)<code>)'''
-                              )
-        tags = re.compile(r'(<(b|i|pre|code)>(.*?)<\/\2>)')
-        text_links = re.compile(
-            r'<a href=[\'\"](?P<url>.*?)[\'\"]>(?P<text>.*?)<\/a>')
+            (str, tuple[~telegram.MessageEntity]): The clean string without tags
+            and tuple with :obj:`~telegram.MessageEntity`.
+            The tuple might be empty if no entities were found.
 
-        return EntityParser.__parse_text("HTML", message, invalids, tags,
-                                         text_links)
+        Raises:
+            ~ptbtest.errors.BadMarkupException
+        """
+        err_msg_prefix = "Can't parse entities:"
+        err_msg_empty_string = "Message text is empty"
+
+        @dataclass
+        class EntityInfo:
+            tag_name: str
+            argument: str
+            entity_offset: int
+            entity_begin_pos: int
+
+        striped_text = text.strip()
+        text_size = len(striped_text)
+        offset = 0
+        utf16_offset = 0
+
+        entities: list[MessageEntity] = list()
+        nested_entities: list[EntityInfo] = list()
+        result_text = ""
+
+        def get_byte_offset(begin_pos):
+            """
+            Return the length of the string in bytes starting from
+            the beginning ann up to ``begin_pos``.
+            """
+            nonlocal striped_text
+            return len(striped_text[:begin_pos].encode())
+
+        while offset < text_size:
+            cur_ch = striped_text[offset]
+            # Processing HTML entities, like '&gt;', '&#65;'.
+            if cur_ch == "&":
+                decoded_entity, offset = _decode_html_entity(striped_text, offset)
+                if decoded_entity:
+                    utf16_offset += _get_utf16_length(decoded_entity)
+                    result_text += decoded_entity
+                    continue
+
+            # Save regular characters as-is.
+            if cur_ch != "<":
+                result_text += cur_ch
+                utf16_offset += _get_utf16_length(cur_ch)
+                offset += 1
+                continue
+
+            offset += 1
+            begin_pos = offset
+            # The beginning of an entity.
+            if (next_ch := get_item(striped_text, offset)) != "/":
+                # Collecting the name of the tag.
+                while next_ch is not None and not next_ch.isspace() and next_ch != ">":
+                    offset += 1
+                    next_ch = get_item(striped_text, offset)
+
+                if offset >= text_size:
+                    raise BadMarkupException(f"{err_msg_prefix} unclosed start tag at "
+                                             f"byte offset {get_byte_offset(begin_pos - 1)}")
+
+                tag_name = striped_text[begin_pos:offset].lower()
+
+                if tag_name not in ALLOWED_HTML_TAG_NAMES:
+                    raise BadMarkupException(f"{err_msg_prefix} unsupported start tag \"{tag_name}\" "
+                                             f"at byte offset {get_byte_offset(begin_pos - 1)}")
+
+                argument = None
+                while striped_text[offset] != ">":
+                    # Skip whitespaces between the tag name and the attribute name.
+                    while offset < text_size and striped_text[offset].isspace():
+                        offset += 1
+                    if striped_text[offset] == ">":
+                        break
+                    attr_begin_pos = offset
+                    while (get_item(striped_text, offset) and
+                           not striped_text[offset].isspace() and
+                           striped_text[offset] not in "=>/\"'"):
+                        offset += 1
+
+                    attr_name = striped_text[attr_begin_pos:offset]
+                    if not attr_name:
+                        raise BadMarkupException(f"{err_msg_prefix} empty attribute name in the tag \"{tag_name}\" "
+                                                 f"at byte offset {get_byte_offset(begin_pos - 1)}")
+
+                    while offset < text_size and striped_text[offset].isspace():
+                        offset += 1
+
+                    if get_item(striped_text, offset) != "=":
+                        if offset >= text_size:
+                            raise BadMarkupException(f"{err_msg_prefix} unclosed start tag \"{tag_name}\" "
+                                                     f"at byte offset {get_byte_offset(begin_pos - 1)}")
+                        if tag_name == "blockquote" and attr_name == "expandable":
+                            argument = 1
+                        continue
+                    offset += 1
+
+                    while offset < text_size and striped_text[offset].isspace():
+                        offset += 1
+
+                    if offset >= text_size:
+                        raise BadMarkupException(f"{err_msg_prefix} unclosed start tag \"{tag_name}\" "
+                                                 f"at byte offset {get_byte_offset(begin_pos - 1)}")
+
+                    attr_value = ""
+                    # Processing attr values without quotes.
+                    # E.g., '<span class=tg-spoiler>spoiler</span>'
+                    if striped_text[offset] not in "\"'":
+                        token_begin_pos = offset
+                        while striped_text[offset] in string.ascii_letters + string.digits + ".-":
+                            offset += 1
+                        attr_value = striped_text[token_begin_pos:offset].lower()
+
+                        if not striped_text[offset].isspace() and striped_text[offset] != ">":
+                            raise BadMarkupException(f"{err_msg_prefix} unexpected end of name token "
+                                                     f"at byte offset {get_byte_offset(token_begin_pos)}")
+                    # Attr values inside quotes.
+                    else:
+                        end_char = striped_text[offset]
+                        offset += 1
+
+                        while offset < text_size and striped_text[offset] != end_char:
+                            if striped_text[offset] == "&":
+                                html_entity, offset = _decode_html_entity(striped_text, offset)
+                                if html_entity:
+                                    attr_value += html_entity
+                                    continue
+
+                            attr_value += striped_text[offset]
+                            offset += 1
+
+                        if get_item(striped_text, offset) == end_char:
+                            offset += 1
+
+                    if offset >= text_size:
+                        raise BadMarkupException(f"{err_msg_prefix} unclosed start tag at "
+                                                 f"byte offset {get_byte_offset(begin_pos - 1)}")
+
+                    if tag_name == "a" and attr_name == "href":
+                        argument = attr_value
+                    elif tag_name == "code" and attr_name == "class" and attr_value.startswith("language-"):
+                        argument = attr_value.removeprefix("language-")
+                    elif tag_name == "span" and attr_name == "class" and attr_value.startswith("tg-"):
+                        argument = attr_value.removeprefix("tg-")
+                    elif tag_name == "tg-emoji" and attr_name == "emoji-id":
+                        argument = attr_value
+                    elif tag_name == "blockquote" and attr_name == "expandable":
+                        argument = "1"
+
+                if tag_name == "span" and argument != "spoiler":
+                    raise BadMarkupException(f"{err_msg_prefix} tag \"span\" must have class"
+                                             f" \"tg-spoiler\" at byte offset "
+                                             f"{get_byte_offset(begin_pos - 1)}")
+
+                nested_entities.append(EntityInfo(
+                    tag_name=tag_name,
+                    argument=argument,
+                    entity_offset=utf16_offset,
+                    entity_begin_pos=begin_pos
+                ))
+                if err_msg_empty_string == "Message text is empty":
+                    err_msg_empty_string = "Text must be non-empty"
+            # The end of an entity
+            else:
+                if not nested_entities:
+                    raise BadMarkupException(f"{err_msg_prefix} unexpected end tag at "
+                                             f"byte offset {get_byte_offset(begin_pos - 1)}")
+                while (get_item(striped_text, offset) and
+                       not striped_text[offset].isspace()
+                       and striped_text[offset] != ">"):
+                    offset += 1
+                end_tag_name = striped_text[begin_pos+1:offset]
+                while offset < text_size and striped_text[offset].isspace():
+                    offset += 1
+
+                if get_item(striped_text, offset) != ">":
+                    raise BadMarkupException(f"{err_msg_prefix} unclosed end tag at "
+                                             f"byte offset {get_byte_offset(begin_pos - 1)}")
+
+                tag_name = nested_entities[-1].tag_name
+                if end_tag_name and end_tag_name != tag_name:
+                    raise BadMarkupException(f"{err_msg_prefix} unmatched end tag at byte offset "
+                                             f"{get_byte_offset(begin_pos - 1)}, expected \"</"
+                                             f"{tag_name}>\", found \"</{end_tag_name}>\"")
+
+                if utf16_offset > nested_entities[-1].entity_offset:
+                    e_offset = nested_entities[-1].entity_offset
+                    e_length = utf16_offset - e_offset
+
+                    if tag_name in ("i", "em"):
+                        entities.append(MessageEntity(MessageEntityType.ITALIC,
+                                                      e_offset, e_length))
+                    elif tag_name in ("b", "strong"):
+                        entities.append(MessageEntity(MessageEntityType.BOLD,
+                                                      e_offset, e_length))
+                    elif tag_name in ("s", "strike", "del"):
+                        entities.append(MessageEntity(MessageEntityType.STRIKETHROUGH,
+                                                      e_offset, e_length))
+                    elif tag_name in ("u", "ins"):
+                        entities.append(MessageEntity(MessageEntityType.UNDERLINE,
+                                                      e_offset, e_length))
+                    elif tag_name == "tg-spoiler" or (tag_name == "span" and
+                                                      nested_entities[-1].argument == "spoiler"):
+                        entities.append(MessageEntity(MessageEntityType.SPOILER,
+                                                      e_offset, e_length))
+                    elif tag_name == "tg-emoji":
+                        try:
+                            emoji_id = int(nested_entities[-1].argument)
+                        except ValueError:
+                            raise BadMarkupException(f"{err_msg_prefix} invalid custom "
+                                                     f"emoji identifier specified")
+
+                        entities.append(MessageEntity(MessageEntityType.CUSTOM_EMOJI,
+                                                      e_offset, e_length,
+                                                      custom_emoji_id=str(emoji_id)))
+                    elif tag_name == "a":
+                        url = nested_entities[-1].argument
+                        if not url:
+                            begin = nested_entities[-1].entity_begin_pos
+                            url = striped_text[begin+2:offset-3]
+
+                        user_id = _get_id_from_telegram_url("user", url)
+                        if user_id:
+                            # As for April 2025, inline mentioning doesn't work (from the server side).
+                            # If mentioning was found, then ignoring it.
+                            # entities.append(MessageEntity(MessageEntityType.MENTION,
+                            #                               e_offset, e_length,
+                            #                               user=user_id))
+                            pass
+                        else:
+                            url = _check_and_normalize_url(url)
+                            if url:
+                                entities.append(MessageEntity(MessageEntityType.TEXT_LINK,
+                                                              e_offset, e_length, url=url))
+                    elif tag_name == "pre":
+                        if (entities and entities[-1].type == MessageEntityType.CODE
+                                and entities[-1].offset == e_offset
+                                and entities[-1].length == e_length):
+                                # and entities[-1].language):
+                            dict_e = entities[-1].to_dict()
+                            dict_e["type"] = MessageEntityType.PRE
+                            entities[-1] = MessageEntity(**dict_e)
+                        else:
+                            entities.append(MessageEntity(MessageEntityType.PRE,
+                                                          e_offset, e_length))
+                    elif tag_name == "code":
+                        if (entities and entities[-1].type == MessageEntityType.PRE
+                                and entities[-1].offset == e_offset
+                                and entities[-1].length == e_length):
+                            dict_e = entities[-1].to_dict()
+                            dict_e["type"] = MessageEntityType.PRE
+                            if nested_entities[-1].argument:
+                                dict_e["language"] = nested_entities[-1].argument
+                            entities[-1] = MessageEntity(**dict_e)
+                        else:
+                            entities.append(MessageEntity(MessageEntityType.CODE,
+                                                          e_offset, e_length,
+                                                          language=nested_entities[-1].argument))
+                    elif tag_name == "blockquote":
+                        if nested_entities[-1].argument:
+                            entities.append(MessageEntity(MessageEntityType.EXPANDABLE_BLOCKQUOTE,
+                                                          e_offset, e_length))
+                        else:
+                            entities.append(MessageEntity(MessageEntityType.BLOCKQUOTE,
+                                                          e_offset, e_length))
+                    else:
+                        raise BadMarkupException(f"Unexpected tag name '{tag_name}'")
+                nested_entities.pop()
+
+            # End of the outermost while loop.
+            offset += 1
+
+        if nested_entities:
+            raise BadMarkupException(f"{err_msg_prefix} can't find end tag corresponding to "
+                                     f"start tag \"{nested_entities[-1].tag_name}\"")
+
+        len_before_strip = len(result_text)
+        result_text = result_text.rstrip()
+        # There were trailing new lines or whitespaces.
+        if entities and len_before_strip != len(result_text):
+            last_entity = entities[-1]
+            # Trailing whitespaces were inside an entity, we must subtract
+            # the length of striped whitespaces from the length of the entity.
+            if len_before_strip == last_entity.offset + last_entity.length:
+                d = last_entity.to_dict()
+                d["length"] -= (len_before_strip - len(result_text))
+                if d["length"] > 0:
+                    entities[-1] = MessageEntity(**d)
+                else:
+                    entities.pop()
+
+        sorted_entities = _split_and_sort_intersected_entities(entities)
+
+        if not sorted_entities:
+            result_text = result_text.strip()
+
+        for i, en in enumerate(sorted_entities):
+            if en.type == MessageEntityType.CODE and en.language:
+                d = en.to_dict()
+                d["language"] = None
+                sorted_entities[i] = MessageEntity(**d)
+
+        if not result_text:
+            raise BadMarkupException(err_msg_empty_string)
+
+        return result_text, tuple(sorted_entities)
 
     @staticmethod
     def __parse_text(ptype, message, invalids, tags, text_links):
