@@ -1,6 +1,8 @@
 # PTBtest
 > A test suite for [Python Telegram Bot](https://github.com/python-telegram-bot/python-telegram-bot/).
 
+> **This application is NOT in an usable state yet!**
+
 This library is meant for people wanting to write unit tests for their python-telegram-bot driven bots.
 
 ![](header.png)
