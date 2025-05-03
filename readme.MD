@@ -1,6 +1,8 @@
 # PTBtest
 ## A testsuite for [Python telegram bot](https://github.com/python-telegram-bot/python-telegram-bot/).
 
+> This application in NOT in an usable state yet!
+
 # Under new management
 Work's being doing to bring this testsuite up to date with PTB. More new about the package soon.
 
