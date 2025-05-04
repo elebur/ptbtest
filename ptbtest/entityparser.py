@@ -17,12 +17,14 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 """
 This module provides a helper class to transform
-marked-up messages to plain text with entities.
-Docs: https://core.telegram.org/bots/api#formatting-options
+marked-up messages to plain text and a :obj:`tuple` of
+:class:`entities <telegram.MessageEntity>`.
+
+`Telegram Docs <https://core.telegram.org/bots/api#formatting-options>`_
 """
 import re
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 from urllib.parse import urlparse
 
 from telegram import MessageEntity, TelegramObject
@@ -55,16 +57,22 @@ PRIORITIES = {
 }
 
 
-def get_utf_16_length(text: str) -> int:
+def _get_utf16_length(text: str) -> int:
     """
-    Telegram uses UTF-16 for message entities:
-    https://core.telegram.org/api/entities#utf-16
+    Return the length of the ``text`` in UTF-16 code units.
 
-    A simple way of computing
-    the entity length is converting the text to UTF-16,
-    and then taking the byte length divided
-    by 2 (=number of UTF-16 code units).
-    Source: https://core.telegram.org/api/entities#computing-entity-length
+    Telegram `uses UTF-16 <https://core.telegram.org/api/entities#utf-16>`_
+    for message entities
+
+    A simple way of computing the entity length is converting the text to UTF-16,
+    and then taking the byte length divided by 2 (number of UTF-16 code units).
+    `Source <https://core.telegram.org/api/entities#computing-entity-length>`_
+
+    Args:
+       text (str): A string to calculate the length for.
+
+    Returns:
+        int: The length of the given string.
     """
     return len(text.encode("utf-16-le")) // 2
 
@@ -72,7 +80,16 @@ def get_utf_16_length(text: str) -> int:
 def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
     """
     Safely gets item from the sequence by its index.
-    If the `index` is out of the range, then the default value is returned.
+    If the ``index`` is out of the range, then the ``default`` value is returned.
+
+    Args:
+        seq(~collections.abc.Sequence) : A sequence to get the item from.
+        index (int): An item's index.
+        default (~typing.Any, optional):  The value to be returned if the ``index``
+            is out of the range, defaults to :obj:`None`.
+
+    Returns:
+        ~typing.Any: An item under the given ``index`` or the ``default`` value.
     """
     # An empty sequence.
     if not seq:
@@ -89,7 +106,15 @@ def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
     return seq[index]
 
 
-def check_and_normalize_url(url: str) -> str:
+def _check_and_normalize_url(url: str) -> str:
+    """
+    Check whether the ``url`` is valid, according to Telegram rules.
+
+    Args:
+        url (str): The ``url`` to be checked.
+    Returns:
+        str: Empty string if the ``url`` is invalid, normalized URL otherwise.
+    """
     if not url or url.startswith(" ") or url.endswith(" "):
         return ""
 
@@ -122,12 +147,17 @@ def check_and_normalize_url(url: str) -> str:
     return result
 
 
-def _get_id_from_telegram_url(type_: Literal["user", "emoji"], url: str):
+def _get_id_from_telegram_url(type_: Literal["user", "emoji"], url: str) -> Optional[int]:
     """
-    Extract id from the Telegram URL.
+    Extract a user or emoji ID from the Telegram URL.
 
-    If the ``url`` is ``tg://user?id=123456789``,
-    then the return value is ``123456789``.
+    Examples of URLs: ``tg://user?id=123456789``, ``tg://emoji?id=5368324170671202286``
+
+    Args:
+        type_ (str): One of `'user'` or `'emoji'`. Depends on the ID that must be extracted.
+        url (str): A URL to extract the ID from.
+    Returns:
+        int, optional: Extracted ID or :obj:`None` if no ID was found.
     """
     if type_ not in ("user", "emoji"):
         raise ValueError(f"Wrong type - {type_}")
@@ -139,13 +169,27 @@ def _get_id_from_telegram_url(type_: Literal["user", "emoji"], url: str):
     return id_
 
 
-def get_hash(obj: TelegramObject):
+def get_hash(obj: TelegramObject) -> int:
     """
-    The __hash__ method of the MessageEntity considers
-    only ``type``, ``offset`` and ``length`` attributes.
-    ``MessageEntity("url", 1, 2)`` and ``MessageEntity("url", 1, 2, url="https://ex.com)``
-    will get the same hash.
-    ``to_json()`` returns s string with all attributes, therefore, hashes will be unique.
+    Generate the unique hash value for objects that are inherited
+    from :obj:`~telegram.TelegramObject`.
+
+    The :meth:`telegram.TelegramObject.__hash__` method considers only certain
+    attributes described in ``_id_attrs``.
+
+    E.g., the ``_id_attrs`` of :obj:`~telegram.MessageEntity` is
+    ``(self.type, self.offset, self.length)``.
+    It means that ``MessageEntity("url", 1, 2)``
+    and ``MessageEntity("url", 1, 2, url="https://ex.com)`` are equal and get the same hash.
+
+    The ``get_hash`` function transforms ``obj`` into a JSON string
+    and then gets hash of that string.
+
+    Args:
+        obj (:obj:`~telegram.TelegramObject`): An object to generate hash for.
+
+    Returns:
+        int: A hash value for the given object.
     """
     return hash(obj.to_json())
 
@@ -154,26 +198,45 @@ def _split_entities(nested_entities: Sequence[MessageEntity],
                     incoming_entity: MessageEntity,
                     raw_offset: dict[int, int]) -> (list[MessageEntity, ...], list[MessageEntity, ...]):
     """
-    The function splits all unclosed entities if new entity is coming.
+    The function splits all unclosed entities if a new entity is coming.
+    Therefore, the ``parse_markdown_v2`` function will return the same result as
+    the Telegram server does.
 
-    By default, for nested entities in the string ``"*hello _italic ~world~ italic_ world*"``
-    meth:`parse_markdown_v2` returns these entities
+    Example:
+        An input string is ``*hello _italic ~world~ italic_ world*``.
 
-    .. code:: python
+        By default, :meth:`~ptbtest.entityparser.EntityParser.parse_markdown_v2` returns:
 
-        MessageEntity(length=31, offset=0, type=MessageEntityType.BOLD),
-        MessageEntity(length=19, offset=6, type=MessageEntityType.ITALIC),
-        MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+        .. code:: python
 
-    While the Telegram server returns these entities for the same string
-    .. code:: python
+            MessageEntity(length=31, offset=0, type=MessageEntityType.BOLD)
+            MessageEntity(length=19, offset=6, type=MessageEntityType.ITALIC)
+            MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
 
-        MessageEntity(length=6, offset=0, type=MessageEntityType.BOLD),
-        MessageEntity(length=7, offset=6, type=MessageEntityType.BOLD),
-        MessageEntity(length=7, offset=6, type=MessageEntityType.ITALIC),
-        MessageEntity(length=18, offset=13, type=MessageEntityType.BOLD),
-        MessageEntity(length=12, offset=13, type=MessageEntityType.ITALIC),
-        MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+        For the same string, the Telegram server returns:
+
+        .. code:: python
+
+            MessageEntity(length=6, offset=0, type=MessageEntityType.BOLD)
+            MessageEntity(length=7, offset=6, type=MessageEntityType.BOLD)
+            MessageEntity(length=7, offset=6, type=MessageEntityType.ITALIC)
+            MessageEntity(length=18, offset=13, type=MessageEntityType.BOLD)
+            MessageEntity(length=12, offset=13, type=MessageEntityType.ITALIC)
+            MessageEntity(length=5, offset=13, type=MessageEntityType.STRIKETHROUGH)
+
+    Args:
+        nested_entities (Sequence[~telegram.MessageEntity]): A list of all unclosed entities.
+        incoming_entity (~telegram.MessageEntity): New entity that must be added to the
+            ``nested_entity``.
+        raw_offset (dict[int, int]): A dictionary, that stores a byte offset (the beginning
+            position) of entities. The key is the entity's hash and the value is
+            the byte offset.
+
+    Returns:
+        (list[~telegram.MessageEntity], list[~telegram.MessageEntity]):
+            Two lists. The first one is the updated ``nested_entities`` list and the second
+            on is the list of closed entities that must be added to the final list
+            of entities.
     """
     new_nested = []
     closed_entities = []
@@ -213,13 +276,32 @@ class EntityParser:
     @staticmethod
     def parse_markdown(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
         """
-        The method looks for Markdown V1 entities in the given text.
-        Telegram documentation: https://core.telegram.org/bots/api#markdown-style
-        Parameters:
-            text (str): Message with a Markdown V1 text to be transformed
+        Extract :obj:`~telegram.MessageEntity` from ``text`` with the
+        `Markdown V1 <https://core.telegram.org/bots/api#markdown-style>`_ markup.
+
+        Examples:
+            An input string: ``*hello* _world_ `!```
+
+            Result:
+
+            .. code:: python
+
+                ('hello world !',
+                 (MessageEntity(length=5, offset=0, type=<MessageEntityType.BOLD>),
+                  MessageEntity(length=5, offset=6, type=<MessageEntityType.ITALIC>),
+                  MessageEntity(length=1, offset=12, type=<MessageEntityType.CODE>)))
+
+        Args:
+            text (str): A string with Markdown V1 markup.
 
         Returns:
-            (message, entities): The message as a plain text and entities found in the text.
+            (str, tuple[~telegram.MessageEntity]): The clean string without entity
+            symbols, and tuple with :obj:`~telegram.MessageEntity`.
+            The tuple might be empty if no entities were found.
+
+        Raises:
+            ~ptbtest.errors.BadMarkupException: If find unclosed entity or empty string
+                is sent.
         """
         entities = list()
         striped_text = text.strip()
@@ -247,7 +329,7 @@ class EntityParser:
             if ch not in "_*`[":
                 # Here it might be any symbol, and it can have any length.
                 # E.g. 'A' has 1 code unit, '©' has 1 code unit, '😊' has 2 code units.
-                utf16_offset += get_utf_16_length(ch)
+                utf16_offset += _get_utf16_length(ch)
                 new_text.append(ch)
                 i += 1
                 continue
@@ -331,7 +413,7 @@ class EntityParser:
                             not re.match(r"^]\(.*?\)\s*\S.*", striped_text[i:])):
                         entity_content = entity_content.rstrip()
 
-                utf16_offset += get_utf_16_length(entity_content)
+                utf16_offset += _get_utf16_length(entity_content)
                 new_text.append(entity_content)
             # The code reached the end of the text, but the end
             # of the entity wasn't found.
@@ -365,7 +447,7 @@ class EntityParser:
                         if len(new_text) == 1:
                             new_text[-1] = new_text[-1].lstrip()
 
-                    if checked_url := check_and_normalize_url(url):
+                    if checked_url := _check_and_normalize_url(url):
                         # By some reason Markdown V1 ignores inline mentions.
                         # E.g.: [inline mention of a user](tg://user?id=123456789)
                         if not checked_url.startswith("tg://"):
@@ -397,6 +479,37 @@ class EntityParser:
 
     @staticmethod
     def parse_markdown_v2(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
+        """
+        Extract :obj:`~telegram.MessageEntity` from ``text`` with the
+        `Markdown V2 <https://core.telegram.org/bots/api#markdownv2-style>`_ markup.
+
+        Examples:
+            An input string: ``*hello _nested __entities__ beautiful_ world*``
+
+            Result:
+
+            .. code:: python
+
+                ('hello nested entities beautiful world',
+                 (MessageEntity(length=6, offset=0, type=<MessageEntityType.BOLD>),
+                  MessageEntity(length=7, offset=6, type=<MessageEntityType.BOLD>),
+                  MessageEntity(length=7, offset=6, type=<MessageEntityType.ITALIC>),
+                  MessageEntity(length=24, offset=13, type=<MessageEntityType.BOLD>),
+                  MessageEntity(length=18, offset=13, type=<MessageEntityType.ITALIC>),
+                  MessageEntity(length=8, offset=13, type=<MessageEntityType.UNDERLINE>)))
+
+        Args:
+            text (str): A string with Markdown V2 markup.
+
+        Returns:
+            (str, tuple[~telegram.MessageEntity]): The clean string without entity
+            symbols, and tuple with :obj:`~telegram.MessageEntity`.
+            The tuple might be empty if no entities were found.
+
+        Raises:
+            ~ptbtest.errors.BadMarkupException: If find unclosed entity, unescaped
+             reserved character or empty string is sent.
+        """
         err_msg_entity = ("Can't parse entities: can't find end of "
                           "{entity_type} entity at byte offset {offset}")
         err_msg_reserved = ("Can't parse entities: character '{0}' is reserved "
@@ -440,7 +553,7 @@ class EntityParser:
 
             # Processing regular characters.
             if cur_ch not in reserved_characters:
-                utf16_offset += get_utf_16_length(cur_ch)
+                utf16_offset += _get_utf16_length(cur_ch)
                 if cur_ch != "\r":
                     can_start_blockquote = False
                 result_text += cur_ch
@@ -449,7 +562,7 @@ class EntityParser:
 
             def is_end_of_entity() -> bool:
                 """
-                Check whether the current character is the one that closing the entity.
+                Check whether the current character is the one that closes the entity.
                 """
                 nonlocal text_size, offset, striped_text, cur_ch, have_blockquote, nested_entities
 
@@ -625,7 +738,7 @@ class EntityParser:
                         user_id = None
                         skip_entity = True
                     else:
-                        url = check_and_normalize_url(url)
+                        url = _check_and_normalize_url(url)
                         if not url:
                             skip_entity = True
                 elif e_type == MessageEntityType.CUSTOM_EMOJI:

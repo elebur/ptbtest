@@ -38,11 +38,19 @@ extensions = [
 ]
 
 intersphinx_mapping = {
-        'telegram': ('https://docs.python-telegram-bot.org/en/stable/', None)
+    "python": ("https://docs.python.org/3", None),
+    'telegram': ('https://docs.python-telegram-bot.org/en/stable/', None)
 }
+
+add_module_names = False
+
 intersphinx_disabled_domains = ["std"]
 
 autodoc_mock_imports = ['python-telegram-bot']
+
+# Don't show type hints in the signature - that just makes it hardly readable
+# and we document the types anyway
+autodoc_typehints = "none"
 
 templates_path = ["_templates"]
 

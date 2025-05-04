@@ -1,16 +1,16 @@
-from ptbtest.entityparser import (get_utf_16_length,
+from ptbtest.entityparser import (_get_utf16_length,
                                   get_item,
-                                  check_and_normalize_url)
+                                  _check_and_normalize_url)
 
 
 def test_get_utf_16_length():
-    assert get_utf_16_length("a") == 1  # ASCII
-    assert get_utf_16_length("hello") == 5  # Multiple ASCII symbols
-    assert get_utf_16_length("€") == 1  # Euro (part of the BPM)
-    assert get_utf_16_length("𐍈") == 2  # UTF-16 surrogate pair
-    assert get_utf_16_length("👨‍👩‍👧‍👦") == 11 # Emoji with ZWJ (Zero Width Joiner)
-    assert get_utf_16_length("") == 0  # Empty string
-    assert get_utf_16_length("👀🔥") == 4  # Two emojis (each has 2 UTF-16 units)
+    assert _get_utf16_length("a") == 1  # ASCII
+    assert _get_utf16_length("hello") == 5  # Multiple ASCII symbols
+    assert _get_utf16_length("€") == 1  # Euro (part of the BPM)
+    assert _get_utf16_length("𐍈") == 2  # UTF-16 surrogate pair
+    assert _get_utf16_length("👨‍👩‍👧‍👦") == 11 # Emoji with ZWJ (Zero Width Joiner)
+    assert _get_utf16_length("") == 0  # Empty string
+    assert _get_utf16_length("👀🔥") == 4  # Two emojis (each has 2 UTF-16 units)
 
 
 class TestGetItem:
@@ -44,30 +44,30 @@ class TestGetItem:
 class TestCheckAndNormalizeUrl:
 
     def test_empty_string(self):
-        assert not check_and_normalize_url("")
+        assert not _check_and_normalize_url("")
 
     def test_leading_and_trailing_whitespaces(self):
-        assert not check_and_normalize_url(" http://example.com")
-        assert not check_and_normalize_url("http://example.com ")
-        assert not check_and_normalize_url(" http://example.com ")
+        assert not _check_and_normalize_url(" http://example.com")
+        assert not _check_and_normalize_url("http://example.com ")
+        assert not _check_and_normalize_url(" http://example.com ")
 
     def test_valid_protocols(self):
-        assert check_and_normalize_url("http://example.com") == "http://example.com/"
-        assert check_and_normalize_url("https://example.com/") == "https://example.com/"
-        assert check_and_normalize_url("ton://example.com") == "ton://example.com/"
-        assert check_and_normalize_url("tg://example.com") == "tg://example.com/"
-        assert check_and_normalize_url("tonsite://example.com") == "tonsite://example.com/"
+        assert _check_and_normalize_url("http://example.com") == "http://example.com/"
+        assert _check_and_normalize_url("https://example.com/") == "https://example.com/"
+        assert _check_and_normalize_url("ton://example.com") == "ton://example.com/"
+        assert _check_and_normalize_url("tg://example.com") == "tg://example.com/"
+        assert _check_and_normalize_url("tonsite://example.com") == "tonsite://example.com/"
 
     def test_no_protocol(self):    # No protocol
-        assert check_and_normalize_url("example.com") == "http://example.com/"
+        assert _check_and_normalize_url("example.com") == "http://example.com/"
 
     def test_wrong_protocol(self):
-        assert not check_and_normalize_url("ftp://example.com")
-        assert not check_and_normalize_url("htts://example.com")
-        assert not check_and_normalize_url("ws://example.com")
+        assert not _check_and_normalize_url("ftp://example.com")
+        assert not _check_and_normalize_url("htts://example.com")
+        assert not _check_and_normalize_url("ws://example.com")
 
     def test_trailing_slash(self):
-        assert check_and_normalize_url("http://example.com") == "http://example.com/"
-        assert check_and_normalize_url("http://example.com/") == "http://example.com/"
-        assert check_and_normalize_url("http://example.com/path") == "http://example.com/path"
-        assert check_and_normalize_url("http://example.com/path/") == "http://example.com/path/"
+        assert _check_and_normalize_url("http://example.com") == "http://example.com/"
+        assert _check_and_normalize_url("http://example.com/") == "http://example.com/"
+        assert _check_and_normalize_url("http://example.com/path") == "http://example.com/path"
+        assert _check_and_normalize_url("http://example.com/path/") == "http://example.com/path/"
