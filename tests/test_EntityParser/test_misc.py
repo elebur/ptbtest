@@ -127,6 +127,56 @@ class TestGetIdFromTelegramUrl:
         assert result is None
 
 
+class TestGetHash:
+    def test_urls(self):
+        example_com = MessageEntity(MessageEntityType.URL, offset=2,
+                                    length=5, url="https://example.com")
+
+        wikipedia_org = MessageEntity(MessageEntityType.URL, offset=2,
+                                      length=5, url="https://wikipedia.org")
+
+        assert get_hash(example_com) != get_hash(wikipedia_org)
+
+        # Builtin hashes are the same.
+        assert hash(example_com) == hash(wikipedia_org)
+
+    def test_user(self):
+        user_a = MessageEntity(MessageEntityType.MENTION, offset=11, length=12,
+                               user=User(123, "UserA", False))
+        user_b = MessageEntity(MessageEntityType.MENTION, offset=11, length=12,
+                               user=User(789, "UserBot", True))
+
+        assert get_hash(user_a) != get_hash(user_b)
+
+        # Builtin hashes are the same.
+        assert hash(user_a) == hash(user_b)
+
+    def test_code_languages(self):
+        java = MessageEntity(MessageEntityType.PRE, offset=2,
+                             length=50, language="java")
+
+        python = MessageEntity(MessageEntityType.PRE, offset=2,
+                               length=50, language="python")
+
+
+        assert get_hash(java) != get_hash(python)
+
+        # Builtin hashes are the same.
+        assert hash(java) == hash(python)
+
+    def test_custom_emoji_id(self):
+        emoji_a = MessageEntity(MessageEntityType.CUSTOM_EMOJI, offset=2,
+                                length=5, custom_emoji_id="1234125")
+
+        emoji_b = MessageEntity(MessageEntityType.CUSTOM_EMOJI, offset=2,
+                                length=5, custom_emoji_id="789789789")
+
+        assert get_hash(emoji_a) != get_hash(emoji_b)
+
+        # Builtin hashes are the same.
+        assert hash(emoji_a) == hash(emoji_b)
+
+
 class TestSplitAndSortIntersectedEntities:
     def test_empty_entities(self):
         assert _split_and_sort_intersected_entities(()) == list()
