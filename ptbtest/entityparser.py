@@ -1342,6 +1342,50 @@ class EntityParser:
         return tuple(result)
 
     @staticmethod
+    def parse_mentions(text: str) -> tuple[MessageEntity, ...]:
+        """
+        Extract :obj:`~telegram.MessageEntity` representing
+        ``@mentions`` from ``text``.
+
+        Examples:
+            An input string: ``text with @multiple @mentions``
+
+            Result:
+
+            .. code:: python
+
+                (MessageEntity(length=9, offset=10, type=MessageEntityType.MENTION),
+                 MessageEntity(length=9, offset=20, type=MessageEntityType.MENTION))
+
+        Args:
+            text (str): A message that must be parsed.
+
+        Returns:
+            tuple[~telegram.MessageEntity]: Tuple of :obj:`~telegram.MessageEntity` with
+            type :obj:`~telegram.constants.MessageEntityType.MENTION`.
+            The tuple might be empty if no entities were found.
+        """
+
+        pattern = r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)"
+
+        points = EntityParser._extract_entities(text, pattern)
+
+        allowed_3_char_mentions = ("@gif", "@vid", "@pic")
+        entities: list[MessageEntity] = list()
+        for entity_position in points:
+            if entity_position.length < 4 or entity_position.length > 33:
+                continue
+            elif (entity_position.length == 4 and
+                  text[entity_position.start:entity_position.end] not in allowed_3_char_mentions):
+                continue
+
+            entities.append(MessageEntity(MessageEntityType.MENTION,
+                                          offset=entity_position.offset,
+                                          length=entity_position.length))
+
+        return tuple(entities)
+
+    @staticmethod
     def __parse_text(ptype, message, invalids, tags, text_links):
         entities = []
         mentions = re.compile(r'@[a-zA-Z0-9]{1,}\b')
