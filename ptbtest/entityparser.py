@@ -27,7 +27,7 @@ import re
 import string
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Pattern, Union
 from urllib.parse import urlparse
 
 from telegram import MessageEntity, TelegramObject
@@ -62,6 +62,20 @@ PRIORITIES = {
 ALLOWED_HTML_TAG_NAMES = ("a", "b", "strong", "i", "em", "s", "strike", "del",
                           "u", "ins", "tg-spoiler", "tg-emoji", "span", "pre",
                           "code", "blockquote")
+
+
+@dataclass
+class _EntityPosition:
+    start: int
+    end: int
+
+    @property
+    def offset(self):
+        return self.start
+
+    @property
+    def length(self):
+        return self.end - self.start
 
 
 def _get_utf16_length(text: str) -> int:
@@ -1299,6 +1313,33 @@ class EntityParser:
             raise BadMarkupException(err_msg_empty_string)
 
         return result_text, tuple(sorted_entities)
+
+    @staticmethod
+    def _extract_entities(text: str, pattern: Union[str, Pattern]) -> tuple[_EntityPosition, ...]:
+        """
+        Parse entities from text with the given regular expression.
+
+        .. TODO: add all methods where this method is used.
+
+            Used by:
+                :meth:`parse_mentions`
+
+        Args:
+            text (str): Text that must be parsed.
+            pattern (str | ~typing.Pattern): A regular expression.
+
+        Returns:
+            tuple[_EntityPosition]: A tuple of ``_EntityPosition`` with the offset and
+            the length of the found entities.
+            """
+        if isinstance(pattern, str):
+            pattern = re.compile(pattern)
+
+        result = list()
+        for match in pattern.finditer(text):
+            result.append(_EntityPosition(match.start(), match.end()))
+
+        return tuple(result)
 
     @staticmethod
     def __parse_text(ptype, message, invalids, tags, text_links):
