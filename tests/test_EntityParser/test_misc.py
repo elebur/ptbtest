@@ -212,3 +212,25 @@ class TestSplitAndSortIntersectedEntities:
                           MessageEntity(length=18, offset=24, type=MessageEntityType.ITALIC),
                           MessageEntity(length=15, offset=24, type=MessageEntityType.UNDERLINE),
                           MessageEntity(length=6, offset=24, type=MessageEntityType.STRIKETHROUGH)]
+
+
+class TestEntityParserExtractEntities:
+    ep = EntityParser()
+
+    def test_str_pattern(self):
+        pattern = r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)"
+        result = self.ep._extract_entities("@mention", pattern)
+
+        assert result == (_EntityPosition(0, 8), )
+
+    def test_compiled_pattern(self):
+        pattern = re.compile(r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)")
+        result = self.ep._extract_entities("@mention", pattern)
+
+        assert result == (_EntityPosition(0, 8), )
+
+    def test_empty_string(self):
+        pattern = re.compile(r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)")
+        result = self.ep._extract_entities("", pattern)
+
+        assert result == ()
