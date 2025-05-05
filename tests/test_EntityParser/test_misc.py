@@ -1,10 +1,17 @@
-from telegram import MessageEntity
+import re
+
+import pytest
+from telegram import MessageEntity, User
 from telegram.constants import MessageEntityType
 
 from ptbtest.entityparser import (_get_utf16_length,
                                   get_item,
                                   _check_and_normalize_url,
-                                  _split_and_sort_intersected_entities)
+                                  _split_and_sort_intersected_entities,
+                                  _get_id_from_telegram_url,
+                                  EntityParser,
+                                  get_hash,
+                                  _EntityPosition)
 
 
 def test_get_utf16_length():
@@ -94,6 +101,30 @@ class TestCheckAndNormalizeUrl:
     def test_no_slash_at_the_end_of_the_url_with_params(self):
         assert _check_and_normalize_url("www.example.com/login") == "http://www.example.com/login"
         assert _check_and_normalize_url("https://example.com/login/") == "https://example.com/login/"
+
+
+class TestGetIdFromTelegramUrl:
+    def test_user_id(self):
+        result = _get_id_from_telegram_url("user",
+                                           "tg://user?id=12345")
+
+        assert result == 12345
+
+    def test_emoji_id(self):
+        result = _get_id_from_telegram_url("emoji",
+                                           "tg://emoji?id=67890")
+
+        assert result == 67890
+
+    def test_invalid_type_failing(self):
+        with pytest.raises(ValueError, match="Wrong type - mention"):
+            _get_id_from_telegram_url("mention", "tg://mention?id=123")
+
+    def test_mismatched_type_and_url(self):
+        result = _get_id_from_telegram_url("emoji",
+                                           "tg://user?id=222222")
+
+        assert result is None
 
 
 class TestSplitAndSortIntersectedEntities:
