@@ -1397,6 +1397,40 @@ class EntityParser:
         return tuple(entities)
 
     @staticmethod
+    def parse_bot_commands(text: str) -> tuple[MessageEntity, ...]:
+        """
+        Extract :obj:`~telegram.MessageEntity` representing
+        bot ``/commands`` from the given ``text``.
+
+        Examples:
+            An input string: ``/start``
+
+            Result:
+
+            .. code:: python
+
+                (MessageEntity(length=6, offset=0, type=<MessageEntityType.BOT_COMMAND>),)
+
+        Args:
+            text (str): A message that must be parsed.
+
+        Returns:
+            tuple[~telegram.MessageEntity]: Tuple of :obj:`~telegram.MessageEntity` with
+            type :obj:`~telegram.constants.MessageEntityType.BOT_COMMAND`.
+            The tuple might be empty if no entities were found.
+        """
+        pattern = re.compile("(?<!\b|[/<>])/([a-zA-Z0-9_]{1,64})"
+                             "(?:@([a-zA-Z0-9_]{3,32}))?(?!\B|[/<>])")
+
+        entities = list()
+        for entity_position in EntityParser._extract_entities(text, pattern):
+            entities.append(MessageEntity(MessageEntityType.BOT_COMMAND,
+                                          offset=entity_position.offset,
+                                          length=entity_position.length))
+
+        return tuple(entities)
+
+    @staticmethod
     def __parse_text(ptype, message, invalids, tags, text_links):
         entities = []
         mentions = re.compile(r'@[a-zA-Z0-9]{1,}\b')
