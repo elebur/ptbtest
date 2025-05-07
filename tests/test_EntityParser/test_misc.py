@@ -51,6 +51,13 @@ class TestGetItem:
         assert get_item([], 0) is None
         assert get_item([], 3, "empty") == "empty"
 
+    def test_allow_negative_indexing_argument(self):
+        text = "Hello world!"
+
+        assert get_item(text, 0, allow_negative_indexing=False) == "H"
+        assert get_item(text, -1, allow_negative_indexing=False) is None
+        assert get_item(text, 1, allow_negative_indexing=False) == "e"
+
 
 class TestCheckAndNormalizeUrl:
 
