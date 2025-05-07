@@ -109,7 +109,8 @@ def _get_utf16_length(text: str) -> int:
     return len(text.encode("utf-16-le")) // 2
 
 
-def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
+def get_item(seq: Sequence, index: int, default: Any = None, *,
+             allow_negative_indexing: bool = True) -> Any:
     """
     Safely gets item from the sequence by its index.
     If the ``index`` is out of the range, then the ``default`` value is returned.
@@ -119,6 +120,8 @@ def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
         index (int): An item's index.
         default (~typing.Any, optional):  The value to be returned if the ``index``
             is out of the range, defaults to :obj:`None`.
+        allow_negative_indexing (bool): if ``False`` then negative ``index``es (-1, -22, -113, etc.)
+            will be considered as invalid, and the ``default`` value will be returned.
 
     Returns:
         ~typing.Any: An item under the given ``index`` or the ``default`` value.
@@ -132,7 +135,7 @@ def get_item(seq: Sequence, index: int, default: Any = None) -> Any:
         return default
 
     # The negative index, but it is out of the range.
-    if index < 0 and abs(index) > len(seq):
+    if index < 0 and (not allow_negative_indexing or abs(index) > len(seq)):
         return default
 
     return seq[index]
