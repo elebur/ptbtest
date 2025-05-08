@@ -221,13 +221,19 @@ class TestEntityParserExtractEntities:
         pattern = r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)"
         result = self.ep._extract_entities("@mention", pattern)
 
-        assert result == (_EntityPosition(0, 8), )
+        assert result[0].start == 0
+        assert result[0].end == 8
+        assert result[0].length == 8
+        assert result[0].offset == 0
 
     def test_compiled_pattern(self):
         pattern = re.compile(r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)")
         result = self.ep._extract_entities("@mention", pattern)
 
-        assert result == (_EntityPosition(0, 8), )
+        assert result[0].start == 0
+        assert result[0].end == 8
+        assert result[0].length == 8
+        assert result[0].offset == 0
 
     def test_empty_string(self):
         pattern = re.compile(r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)")

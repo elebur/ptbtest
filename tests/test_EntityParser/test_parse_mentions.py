@@ -61,3 +61,11 @@ class TestParseMentions:
 
         assert resp == (MessageEntity(length=6, offset=9, type=MessageEntityType.MENTION),
                         MessageEntity(length=6, offset=29, type=MessageEntityType.MENTION))
+
+    def test_utf16_offset(self):
+        # The UTF16 length of the one `😄` symbol is 2
+        text = "😄😄😄@ment"
+
+        result = self.ep.parse_mentions(text)
+
+        assert result == (MessageEntity(length=5, offset=6, type=MessageEntityType.MENTION),)
