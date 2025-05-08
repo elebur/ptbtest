@@ -419,6 +419,29 @@ def _decode_html_entity(in_text: str, position: int) -> tuple[Optional[str], int
     return result, position
 
 
+def _is_hashtag_letter(letter: str) -> bool:
+    """
+    Check if the ``letter`` can be a part of the hashtag entity.
+
+    The character is considered valid if it fits one of the requirements:
+     - underscore
+     - middle dot
+     - Zero Width Non-Joiner (ZWNJ)
+     - alphabetic (the Unicode category is one of the “Lm”, “Lt”, “Lu”, “Ll”, or “Lo”
+     - decimal (the Unicode category is "Nd")
+
+    Args:
+        letter: A letter that must be validated.
+
+    Returns:
+        bool: True if the ``letter`` is the valid hashtag character, False otherwise.
+    """
+    if letter and (letter in "_·" or letter == "\u200c" or letter.isalpha() or letter.isdecimal()):
+        return True
+    else:
+        return False
+
+
 class EntityParser:
     @staticmethod
     def parse_markdown(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
