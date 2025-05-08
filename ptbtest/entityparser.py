@@ -64,18 +64,29 @@ ALLOWED_HTML_TAG_NAMES = ("a", "b", "strong", "i", "em", "s", "strike", "del",
                           "code", "blockquote")
 
 
-@dataclass
 class _EntityPosition:
-    start: int
-    end: int
+    """
+    Args
+        start_pos (int): The start position of the entity.
+        end_pos (int): The end position of the entity.
+        text (str): The text entities are parsed from. It is used for calculating
+            utf16 offset.
+    """
+    def __init__(self, start_pos:int, end_pos:int, text:str):
+        self.start = start_pos
+        self.end = end_pos
+        self._utf16_offset = _get_utf16_length(text[:start_pos])
+        self._length = _get_utf16_length(text[self.start:self.end])
 
     @property
     def offset(self):
-        return self.start
+        """Return the UTF-16 offset of the entity in the text."""
+        return self._utf16_offset
 
     @property
     def length(self):
-        return self.end - self.start
+        """Return the UTF-16 length of the entity."""
+        return self._length
 
 
 def _get_utf16_length(text: str) -> int:
@@ -1337,7 +1348,7 @@ class EntityParser:
 
         result = list()
         for match in pattern.finditer(text):
-            result.append(_EntityPosition(match.start(), match.end()))
+            result.append(_EntityPosition(match.start(), match.end(), text))
 
         return tuple(result)
 
