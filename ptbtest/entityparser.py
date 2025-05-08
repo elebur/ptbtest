@@ -1457,6 +1457,86 @@ class EntityParser:
         return tuple(entities)
 
     @staticmethod
+    def parse_hashtags(text: str) -> tuple[MessageEntity, ...]:
+        """
+        Extract :obj:`~telegram.MessageEntity` representing
+        bot ``#hashtags`` from the given ``text``.
+
+        Examples:
+            An input string: ``#hashtag``
+
+            Result:
+
+            .. code:: python
+
+                (MessageEntity(length=8, offset=0, type=<MessageEntityType.HASHTAG>),)
+
+        Args:
+            text (str): A message that must be parsed.
+
+        Returns:
+            tuple[~telegram.MessageEntity]: Tuple of :obj:`~telegram.MessageEntity` with
+            type :obj:`~telegram.constants.MessageEntityType.HASHTAG`.
+            The tuple might be empty if no entities were found.
+        """
+        cur_pos = 0
+
+        entities = list()
+
+        while (start_position := text.find("#", cur_pos)) >= 0:
+            # Shift from the '#' character to the next one in the hashtag.
+            cur_pos = start_position + 1
+            has_letter = False
+
+            if not (ch:=get_item(text, cur_pos, "")) or not _is_hashtag_letter(ch):
+                continue
+            # The hash sign ('#') is in the middle of the string.
+            elif _is_hashtag_letter(get_item(text, start_position-1, "", allow_negative_indexing=False)):
+                continue
+
+            while _is_hashtag_letter(get_item(text, cur_pos, "")):
+                # The length of a #hashtag must be less than or equal to 256
+                # (excluding the '#' character).
+                if (cur_pos + 1 - start_position) > 257:
+                    break
+
+                if not has_letter and text[cur_pos].isalpha():
+                    has_letter = True
+
+                cur_pos += 1
+
+            # If the hashtag consists of digits only.
+            if not has_letter:
+                continue
+            # If there is the '#' character right after the hashtag
+            # (e.g., '#hashtag#'), then the hashtag must be ignored.
+            if get_item(text, cur_pos) == "#":
+                continue
+
+            length = cur_pos - start_position
+
+            if length < 257:
+                # There is a '@mention' right after the hashtag.
+                if get_item(text, cur_pos) == "@":
+                    match = re.match(r"@[a-zA-Z0-9_]{3,32}", text[cur_pos:])
+                    if match:
+                        next_ch = get_item(text, length + match.end())
+                        # If there is the '#' character right after the mention,
+                        # then the mention must be ignored, otherwise the mention
+                        # must be included in the entity.
+                        if next_ch != "#":
+                            length += match.end()
+
+            if length > 1:
+                utf16_offset = _get_utf16_length(text[:start_position])
+                utf16_length = _get_utf16_length(text[start_position:start_position+length])
+                entities.append(MessageEntity(MessageEntityType.HASHTAG,
+                                              offset=utf16_offset,
+                                              length=utf16_length))
+
+        return tuple(entities)
+
+    @staticmethod
     def __parse_text(ptype, message, invalids, tags, text_links):
         entities = []
         mentions = re.compile(r'@[a-zA-Z0-9]{1,}\b')
