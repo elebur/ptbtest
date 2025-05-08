@@ -144,3 +144,10 @@ class TestParseBotCommands:
 
         assert result == (MessageEntity(length=8, offset=0,
                                         type=MessageEntityType.BOT_COMMAND),)
+
+    def test_utf16_offset(self):
+        text = "😄😄😄/command"
+
+        result = self.ep.parse_bot_commands(text)
+
+        assert result == (MessageEntity(length=8, offset=6, type=MessageEntityType.BOT_COMMAND),)
