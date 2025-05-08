@@ -11,7 +11,8 @@ from ptbtest.entityparser import (_get_utf16_length,
                                   _get_id_from_telegram_url,
                                   EntityParser,
                                   get_hash,
-                                  _EntityPosition)
+                                  _EntityPosition,
+                                  _is_hashtag_letter)
 
 
 def test_get_utf16_length():
@@ -219,6 +220,23 @@ class TestSplitAndSortIntersectedEntities:
                           MessageEntity(length=18, offset=24, type=MessageEntityType.ITALIC),
                           MessageEntity(length=15, offset=24, type=MessageEntityType.UNDERLINE),
                           MessageEntity(length=6, offset=24, type=MessageEntityType.STRIKETHROUGH)]
+
+
+def test_is_hashtag_letter():
+    # Valid.
+    assert _is_hashtag_letter("_")
+    assert _is_hashtag_letter("·")
+    assert _is_hashtag_letter("\u200c")
+    assert _is_hashtag_letter("W")
+    assert _is_hashtag_letter("Ж")
+    assert _is_hashtag_letter("1")
+
+    # Invalid.
+    assert not _is_hashtag_letter("")
+    assert not _is_hashtag_letter("-")
+    assert not _is_hashtag_letter(".")
+    assert not _is_hashtag_letter(" ")
+    assert not _is_hashtag_letter("\t")
 
 
 class TestEntityParserExtractEntities:
