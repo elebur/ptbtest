@@ -583,7 +583,7 @@ class TestInlineUrl:
                                            url='http://ex.com/'),))
 
     def test_non_latin_characters(self):
-        resp = self.ep.parse_markdown_v2("[你好世界\!](ex.com)")
+        resp = self.ep.parse_markdown_v2(r"[你好世界\!](ex.com)")
         assert resp == ('你好世界!', (MessageEntity(length=5,
                                                     offset=0,
                                                     type=MessageEntityType.TEXT_LINK,
@@ -596,6 +596,7 @@ class TestInlineUrl:
                                                             offset=0,
                                                             type=MessageEntityType.TEXT_LINK,
                                                             url="http://google.com/"),))
+
 
 class TestInlineMention:
     """
@@ -1014,6 +1015,7 @@ class TestBlockquote:
                         'The last line of the block quotation',
                             (MessageEntity(length=138, offset=0,
                                            type=MessageEntityType.EXPANDABLE_BLOCKQUOTE),))
+
     def test_nested_entities(self):
         text = ('>||Block|| *quotation* _started_\n'
                 '>__Block__ `quotation` ~ontinued~\n'
@@ -1037,6 +1039,7 @@ class TestBlockquote:
                              MessageEntity(language="block", length=20, offset=49, type=MessageEntityType.PRE),
                              MessageEntity(length=5, offset=70,
                                            type=MessageEntityType.TEXT_LINK, url="http://google.com/")))
+
     @pytest.mark.parametrize("e_char, e_type", (
             ("*", MessageEntityType.BOLD),
             ("_", MessageEntityType.ITALIC),

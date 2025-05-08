@@ -27,7 +27,7 @@ import re
 import string
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Pattern, Union
+from typing import Any, Literal, Optional, Union
 from urllib.parse import urlparse
 
 from telegram import MessageEntity, TelegramObject
@@ -404,7 +404,7 @@ def _decode_html_entity(in_text: str, position: int) -> tuple[Optional[str], int
         result = str(result)
     else:
         while ch := get_item(in_text, end_pos):
-            if not ch in string.ascii_letters:
+            if ch not in string.ascii_letters:
                 break
             end_pos += 1
         mapping = {"lt": "<", "gt": ">", "amp": "&", "quot": "\""}
@@ -1352,7 +1352,7 @@ class EntityParser:
         return result_text, tuple(sorted_entities)
 
     @staticmethod
-    def _extract_entities(text: str, pattern: Union[str, Pattern]) -> tuple[_EntityPosition, ...]:
+    def _extract_entities(text: str, pattern: Union[str, re.Pattern]) -> tuple[_EntityPosition, ...]:
         """
         Parse entities from text with the given regular expression.
 
@@ -1446,7 +1446,7 @@ class EntityParser:
             The tuple might be empty if no entities were found.
         """
         pattern = re.compile("(?<!\b|[/<>])/([a-zA-Z0-9_]{1,64})"
-                             "(?:@([a-zA-Z0-9_]{3,32}))?(?!\B|[/<>])")
+                             r"(?:@([a-zA-Z0-9_]{3,32}))?(?!\B|[/<>])")
 
         entities = list()
         for entity_position in EntityParser._extract_entities(text, pattern):
