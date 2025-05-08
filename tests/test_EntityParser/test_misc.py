@@ -11,7 +11,6 @@ from ptbtest.entityparser import (_get_utf16_length,
                                   _get_id_from_telegram_url,
                                   EntityParser,
                                   get_hash,
-                                  _EntityPosition,
                                   _is_hashtag_letter)
 
 

@@ -66,13 +66,11 @@ class TestParseBotCommands:
         assert result == (MessageEntity(length=23, offset=0,
                                         type=MessageEntityType.BOT_COMMAND),)
 
-
     def test_underscore_in_command_only(self):
         result = self.ep.parse_bot_commands("/_")
 
         assert result == (MessageEntity(length=2, offset=0,
                                         type=MessageEntityType.BOT_COMMAND),)
-
 
     def test_special_characters(self):
         result = self.ep.parse_bot_commands("/%$#!")
