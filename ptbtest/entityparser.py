@@ -1537,6 +1537,72 @@ class EntityParser:
         return tuple(entities)
 
     @staticmethod
+    def parse_cashtags(text: str) -> tuple[MessageEntity, ...]:
+        """
+        Extract :obj:`~telegram.MessageEntity` representing
+        cashtags (``$ABC``) from the given ``text``.
+
+        Examples:
+            An input string: ``$ABC``
+
+            Result:
+
+            .. code:: python
+
+                (MessageEntity(length=4, offset=0, type=<MessageEntityType.CASHTAG>), )
+
+        Args:
+            text (str): A message that must be parsed.
+
+        Returns:
+            tuple[~telegram.MessageEntity]: Tuple of :obj:`~telegram.MessageEntity` with
+            type :obj:`~telegram.constants.MessageEntityType.CASHTAG`.
+            The tuple might be empty if no entities were found.
+        """
+        entities = list()
+        # A cashtag can contain from 1 to 8 capital letter (the only exception is '1INCH'),
+        # with optional @mention (3 to 32 characters).
+        pattern = re.compile(r'\$(1INCH|[A-Z]+)(?:@([a-zA-Z0-9_]{3,}))?')
+
+        matches = pattern.finditer(text)
+
+        for match in matches:
+            # If the input string is "$ABC@mention", then
+            # match.group(0) is '$ABC@mention'
+            # match.group(1) is 'ABC'
+            # match.group(2) is 'mention' (optional)
+            cashtag = match.group(1)
+            mention = match.group(2)
+
+            # The character right before the cashtag.
+            prev_ch = get_item(text, match.start()-1, "", allow_negative_indexing=False)
+            # The character right after the cashtag (including an optional @mention).
+            next_ch = get_item(text, match.end(), "", allow_negative_indexing=False)
+            if len(cashtag) > 8:
+                continue
+            elif _is_hashtag_letter(prev_ch) or prev_ch == "$":
+                continue
+            elif not mention and _is_hashtag_letter(next_ch):
+                continue
+            # If there is '$' right after the cashtag, then the cashtag
+            # must be ignored.
+            elif get_item(text, match.start() + len(cashtag) + 1, "") == "$":
+                continue
+
+            # The length including mention and '$@' symbols.
+            full_length = match.end() - match.start()
+            # The mention must be ignored if it is too long
+            # or there is '$' symbol right after the mention
+            if mention and (len(mention) > 32 or next_ch == "$"):
+                full_length = len(cashtag) + 1
+
+            entities.append(MessageEntity(MessageEntityType.CASHTAG,
+                                          offset=_get_utf16_length(text[:match.start()]),
+                                          length=full_length))
+
+        return tuple(entities)
+
+    @staticmethod
     def __parse_text(ptype, message, invalids, tags, text_links):
         entities = []
         mentions = re.compile(r'@[a-zA-Z0-9]{1,}\b')
