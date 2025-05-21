@@ -11,7 +11,8 @@ from ptbtest.entityparser import (_get_utf16_length,
                                   _get_id_from_telegram_url,
                                   EntityParser,
                                   get_hash,
-                                  _is_hashtag_letter)
+                                  _is_hashtag_letter,
+                                  _fix_url)
 
 
 def test_get_utf16_length():
@@ -236,6 +237,77 @@ def test_is_hashtag_letter():
     assert not _is_hashtag_letter(".")
     assert not _is_hashtag_letter(" ")
     assert not _is_hashtag_letter("\t")
+
+
+class TestFixUrl:
+    def test_valid_urls_with_protocol(self):
+        assert _fix_url("http://example.com") == "http://example.com"
+        assert _fix_url("https://example.org/path") == "https://example.org/path"
+        assert _fix_url("ftp://sub.domain.co.uk?query=1") == "ftp://sub.domain.co.uk?query=1"
+        assert _fix_url("tonsite://example.ton") == "tonsite://example.ton"
+        assert _fix_url("https://example.com:8080") == "https://example.com:8080"
+
+    def test_valid_urls_without_protocol(self):
+        assert _fix_url("example.com") == "example.com"
+        assert _fix_url("domain.org/path/page.html") == "domain.org/path/page.html"
+        assert _fix_url("sub_.example.com") == "sub_.example.com"
+
+    def test_domain_path_dividers(self):
+        assert _fix_url("http://example.com/path") == "http://example.com/path"
+        assert _fix_url("http://example.com#path") == "http://example.com#path"
+        assert _fix_url("http://example.com?path") == "http://example.com?path"
+
+    def test_url_with_basic_auth(self):
+        assert _fix_url("https://user:pass@example.com") == "https://user:pass@example.com"
+
+    def test_url_with_port(self):
+        url = "https://example.com:8080"
+        assert _fix_url(url) == url
+
+    def test_fake_domain_teiegram_org(self):
+        assert _fix_url("teiegram.org") == ""
+        assert _fix_url("https://teiegram.org") == ""
+        assert _fix_url("http://teiegram.org") == ""
+        assert _fix_url("ftp://teiegram.org") == ""
+        assert _fix_url("tonsite://teiegram.org") == ""
+
+    def test_valid_brackets_balance(self):
+        assert _fix_url("http://site.com/path(sub[1]{2})") == "http://site.com/path(sub[1]{2})"
+
+    def test_invalid_brackets_balance(self):
+        assert _fix_url("http://broken.com/test)") == "http://broken.com/test"
+
+    def test_striping_invalid_symbols_at_the_end(self):
+        assert _fix_url("https://example.com/path);") == "https://example.com/path"
+        assert _fix_url("http://example.com/test!") == "http://example.com/test"
+        assert _fix_url("http://example.com/test.:;,('?!`") == "http://example.com/test"
+
+    def test_valid_ipv4(self):
+        assert _fix_url("http://192.168.1.1") == "http://192.168.1.1"
+        assert _fix_url("http://192.168.1.1/path") == "http://192.168.1.1/path"
+        assert _fix_url("http://192.168.1.1/?param=value") == "http://192.168.1.1/?param=value"
+        assert _fix_url("192.168.1.1/?param=value") == "192.168.1.1/?param=value"
+
+    def test_invalid_ip_addresses(self):
+        assert _fix_url("http://127.00.0.1") == ""
+        assert _fix_url("http://256.100.0.1") == ""
+
+    def test_invalid_urls(self):
+        assert _fix_url("localhost") == ""
+        assert _fix_url("custom.domainzzz") == ""
+        assert _fix_url("bad_domain.com") == ""
+        assert _fix_url("https://bad-.com") == ""
+        assert _fix_url("https://example.c_m") == ""
+
+    def test_valid_punycode(self):
+        assert _fix_url("https://xn--e1afmkfd.xn--80asehdb/") == "https://xn--e1afmkfd.xn--80asehdb/"
+
+    def test_invalid_punycode(self):
+        assert _fix_url("https://xn--a.xn--8/") == ""
+
+    def test_url_with_all_parts(self):
+        url = "https://user:pass@example.com:8080/path?param1=val&param2=val2#anchor"
+        assert _fix_url(url) == url
 
 
 class TestEntityParserExtractEntities:
