@@ -27,7 +27,7 @@ import re
 import string
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Pattern, Union
 from urllib.parse import urlparse
 
 from telegram import MessageEntity, TelegramObject
@@ -62,6 +62,31 @@ PRIORITIES = {
 ALLOWED_HTML_TAG_NAMES = ("a", "b", "strong", "i", "em", "s", "strike", "del",
                           "u", "ins", "tg-spoiler", "tg-emoji", "span", "pre",
                           "code", "blockquote")
+
+
+class _EntityPosition:
+    """
+    Args
+        start_pos (int): The start position of the entity.
+        end_pos (int): The end position of the entity.
+        text (str): The text entities are parsed from. It is used for calculating
+            utf16 offset.
+    """
+    def __init__(self, start_pos:int, end_pos:int, text:str):
+        self.start = start_pos
+        self.end = end_pos
+        self._utf16_offset = _get_utf16_length(text[:start_pos])
+        self._length = _get_utf16_length(text[self.start:self.end])
+
+    @property
+    def offset(self):
+        """Return the UTF-16 offset of the entity in the text."""
+        return self._utf16_offset
+
+    @property
+    def length(self):
+        """Return the UTF-16 length of the entity."""
+        return self._length
 
 
 def _get_utf16_length(text: str) -> int:
@@ -1299,6 +1324,77 @@ class EntityParser:
             raise BadMarkupException(err_msg_empty_string)
 
         return result_text, tuple(sorted_entities)
+
+    @staticmethod
+    def _extract_entities(text: str, pattern: Union[str, Pattern]) -> tuple[_EntityPosition, ...]:
+        """
+        Parse entities from text with the given regular expression.
+
+        .. TODO: add all methods where this method is used.
+
+            Used by:
+                :meth:`parse_mentions`
+
+        Args:
+            text (str): Text that must be parsed.
+            pattern (str | ~typing.Pattern): A regular expression.
+
+        Returns:
+            tuple[_EntityPosition]: A tuple of ``_EntityPosition`` with the offset and
+            the length of the found entities.
+            """
+        if isinstance(pattern, str):
+            pattern = re.compile(pattern)
+
+        result = list()
+        for match in pattern.finditer(text):
+            result.append(_EntityPosition(match.start(), match.end(), text))
+
+        return tuple(result)
+
+    @staticmethod
+    def parse_mentions(text: str) -> tuple[MessageEntity, ...]:
+        """
+        Extract :obj:`~telegram.MessageEntity` representing
+        ``@mentions`` from ``text``.
+
+        Examples:
+            An input string: ``text with @multiple @mentions``
+
+            Result:
+
+            .. code:: python
+
+                (MessageEntity(length=9, offset=10, type=MessageEntityType.MENTION),
+                 MessageEntity(length=9, offset=20, type=MessageEntityType.MENTION))
+
+        Args:
+            text (str): A message that must be parsed.
+
+        Returns:
+            tuple[~telegram.MessageEntity]: Tuple of :obj:`~telegram.MessageEntity` with
+            type :obj:`~telegram.constants.MessageEntityType.MENTION`.
+            The tuple might be empty if no entities were found.
+        """
+
+        pattern = r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)"
+
+        points = EntityParser._extract_entities(text, pattern)
+
+        allowed_3_char_mentions = ("@gif", "@vid", "@pic")
+        entities: list[MessageEntity] = list()
+        for entity_position in points:
+            if entity_position.length < 4 or entity_position.length > 33:
+                continue
+            elif (entity_position.length == 4 and
+                  text[entity_position.start:entity_position.end] not in allowed_3_char_mentions):
+                continue
+
+            entities.append(MessageEntity(MessageEntityType.MENTION,
+                                          offset=entity_position.offset,
+                                          length=entity_position.length))
+
+        return tuple(entities)
 
     @staticmethod
     def __parse_text(ptype, message, invalids, tags, text_links):

@@ -1,10 +1,17 @@
-from telegram import MessageEntity
+import re
+
+import pytest
+from telegram import MessageEntity, User
 from telegram.constants import MessageEntityType
 
 from ptbtest.entityparser import (_get_utf16_length,
                                   get_item,
                                   _check_and_normalize_url,
-                                  _split_and_sort_intersected_entities)
+                                  _split_and_sort_intersected_entities,
+                                  _get_id_from_telegram_url,
+                                  EntityParser,
+                                  get_hash,
+                                  _EntityPosition)
 
 
 def test_get_utf16_length():
@@ -96,6 +103,80 @@ class TestCheckAndNormalizeUrl:
         assert _check_and_normalize_url("https://example.com/login/") == "https://example.com/login/"
 
 
+class TestGetIdFromTelegramUrl:
+    def test_user_id(self):
+        result = _get_id_from_telegram_url("user",
+                                           "tg://user?id=12345")
+
+        assert result == 12345
+
+    def test_emoji_id(self):
+        result = _get_id_from_telegram_url("emoji",
+                                           "tg://emoji?id=67890")
+
+        assert result == 67890
+
+    def test_invalid_type_failing(self):
+        with pytest.raises(ValueError, match="Wrong type - mention"):
+            _get_id_from_telegram_url("mention", "tg://mention?id=123")
+
+    def test_mismatched_type_and_url(self):
+        result = _get_id_from_telegram_url("emoji",
+                                           "tg://user?id=222222")
+
+        assert result is None
+
+
+class TestGetHash:
+    def test_urls(self):
+        example_com = MessageEntity(MessageEntityType.URL, offset=2,
+                                    length=5, url="https://example.com")
+
+        wikipedia_org = MessageEntity(MessageEntityType.URL, offset=2,
+                                      length=5, url="https://wikipedia.org")
+
+        assert get_hash(example_com) != get_hash(wikipedia_org)
+
+        # Builtin hashes are the same.
+        assert hash(example_com) == hash(wikipedia_org)
+
+    def test_user(self):
+        user_a = MessageEntity(MessageEntityType.MENTION, offset=11, length=12,
+                               user=User(123, "UserA", False))
+        user_b = MessageEntity(MessageEntityType.MENTION, offset=11, length=12,
+                               user=User(789, "UserBot", True))
+
+        assert get_hash(user_a) != get_hash(user_b)
+
+        # Builtin hashes are the same.
+        assert hash(user_a) == hash(user_b)
+
+    def test_code_languages(self):
+        java = MessageEntity(MessageEntityType.PRE, offset=2,
+                             length=50, language="java")
+
+        python = MessageEntity(MessageEntityType.PRE, offset=2,
+                               length=50, language="python")
+
+
+        assert get_hash(java) != get_hash(python)
+
+        # Builtin hashes are the same.
+        assert hash(java) == hash(python)
+
+    def test_custom_emoji_id(self):
+        emoji_a = MessageEntity(MessageEntityType.CUSTOM_EMOJI, offset=2,
+                                length=5, custom_emoji_id="1234125")
+
+        emoji_b = MessageEntity(MessageEntityType.CUSTOM_EMOJI, offset=2,
+                                length=5, custom_emoji_id="789789789")
+
+        assert get_hash(emoji_a) != get_hash(emoji_b)
+
+        # Builtin hashes are the same.
+        assert hash(emoji_a) == hash(emoji_b)
+
+
 class TestSplitAndSortIntersectedEntities:
     def test_empty_entities(self):
         assert _split_and_sort_intersected_entities(()) == list()
@@ -131,3 +212,31 @@ class TestSplitAndSortIntersectedEntities:
                           MessageEntity(length=18, offset=24, type=MessageEntityType.ITALIC),
                           MessageEntity(length=15, offset=24, type=MessageEntityType.UNDERLINE),
                           MessageEntity(length=6, offset=24, type=MessageEntityType.STRIKETHROUGH)]
+
+
+class TestEntityParserExtractEntities:
+    ep = EntityParser()
+
+    def test_str_pattern(self):
+        pattern = r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)"
+        result = self.ep._extract_entities("@mention", pattern)
+
+        assert result[0].start == 0
+        assert result[0].end == 8
+        assert result[0].length == 8
+        assert result[0].offset == 0
+
+    def test_compiled_pattern(self):
+        pattern = re.compile(r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)")
+        result = self.ep._extract_entities("@mention", pattern)
+
+        assert result[0].start == 0
+        assert result[0].end == 8
+        assert result[0].length == 8
+        assert result[0].offset == 0
+
+    def test_empty_string(self):
+        pattern = re.compile(r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)")
+        result = self.ep._extract_entities("", pattern)
+
+        assert result == ()
