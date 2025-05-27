@@ -230,19 +230,30 @@ COMMON_TLDS = ("aaa", "aarp", "abb", "abbott", "abbvie", "abc", "able", "abogado
                 "zm", "zone", "zuerich", "zw")
 
 
-class _EntityPosition:
+class _EntityMatch:
     """
     Args
         start_pos (int): The start position of the entity.
         end_pos (int): The end position of the entity.
         text (str): The text entities are parsed from. It is used for calculating
             utf16 offset.
+        match (re.Match): The raw regex match object.
     """
-    def __init__(self, start_pos:int, end_pos:int, text:str):
-        self.start = start_pos
-        self.end = end_pos
-        self._utf16_offset = _get_utf16_length(text[:start_pos])
-        self._length = _get_utf16_length(text[self.start:self.end])
+    def __init__(self, match: re.Match, text:str):
+        self._match = match
+        self._start = self._match.start()
+        self._end = self._match.end()
+
+        self._utf16_offset = _get_utf16_length(text[:self._start])
+        self._length = _get_utf16_length(text[self._start:self._end])
+
+    @property
+    def start(self):
+        return self._start
+
+    @property
+    def end(self):
+        return self._end
 
     @property
     def offset(self):
@@ -253,6 +264,9 @@ class _EntityPosition:
     def length(self):
         """Return the UTF-16 length of the entity."""
         return self._length
+
+    def group(self, value: Any):
+        return self._match.group(value)
 
 
 def _get_utf16_length(text: str) -> int:
@@ -1635,7 +1649,7 @@ class EntityParser:
         return result_text, tuple(sorted_entities)
 
     @staticmethod
-    def _extract_entities(text: str, pattern: Union[str, re.Pattern]) -> tuple[_EntityPosition, ...]:
+    def _extract_entities(text: str, pattern: Union[str, re.Pattern]) -> tuple[_EntityMatch, ...]:
         """
         Parse entities from text with the given regular expression.
 
@@ -1649,7 +1663,7 @@ class EntityParser:
             pattern (str | ~typing.Pattern): A regular expression.
 
         Returns:
-            tuple[_EntityPosition]: A tuple of ``_EntityPosition`` with the offset and
+            tuple[_EntityMatch]: A tuple of ``_EntityPosition`` with the offset and
             the length of the found entities.
             """
         if isinstance(pattern, str):
@@ -1657,7 +1671,7 @@ class EntityParser:
 
         result = list()
         for match in pattern.finditer(text):
-            result.append(_EntityPosition(match.start(), match.end(), text))
+            result.append(_EntityMatch(match, text))
 
         return tuple(result)
 
