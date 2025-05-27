@@ -301,9 +301,15 @@ class TestFixUrl:
 
     def test_valid_punycode(self):
         assert _fix_url("https://xn--e1afmkfd.xn--80asehdb/") == "https://xn--e1afmkfd.xn--80asehdb/"
+        assert _fix_url("xn--80afpi2a3c.xn--p1ai") == "xn--80afpi2a3c.xn--p1ai"
 
     def test_invalid_punycode(self):
         assert _fix_url("https://xn--a.xn--8/") == ""
+
+    def test_is_common_tld(self):
+        """This is a test for the inner function."""
+        assert _fix_url("example.Com") == ""
+        assert _fix_url("тест.Онлайн") == ""
 
     def test_url_with_all_parts(self):
         url = "https://user:pass@example.com:8080/path?param1=val&param2=val2#anchor"
