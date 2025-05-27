@@ -611,7 +611,7 @@ def _is_hashtag_letter(letter: str) -> bool:
 def _fix_url(full_url: str) -> str:
     has_protocol = False
     url = full_url
-    protocols_pattern = re.compile(r"^(https?|ftp|tonsite)://")
+    protocols_pattern = re.compile(r"^(https?|ftp|tonsite)://", flags=re.IGNORECASE)
 
     if match := protocols_pattern.match(full_url):
         has_protocol = True
@@ -682,18 +682,35 @@ def _fix_url(full_url: str) -> str:
     if is_ipv4:
         return full_url
 
-    # .com, .net, .org, etc.
-    tld = domain_parts[-1]
-    if len(tld) <= 1:
-        return ""
-
     # The "google" part in "google.com".
     second_level_domain = domain_parts[-2]
+    # Skip the URL if there are no subdomains and domain starts with a underscore.
+    if len(domain_parts) == 2 and second_level_domain.startswith("_"):
+        return ""
+
+    # If the 2nd level domain consists of whitespaces only.
+    if not second_level_domain.strip():
+        return ""
     # Telegram considers the underscore as an invalid symbol
     # only in the second level domain, while for all subdomains
     # it is perfectly OK.
-    if "_" in second_level_domain:
+    elif "_" in second_level_domain:
         return ""
+
+    # .com, .net, .org, etc.
+    tld = domain_parts[-1].rstrip("…")
+    if len(tld) <= 1:
+        return ""
+
+    def is_common_tld(tld: str) -> bool:
+        if tld.islower():
+            return tld in COMMON_TLDS
+
+        lowered = tld.lower()
+        if lowered != tld and lowered[1:] == tld[1:]:
+            return False
+
+        return lowered in COMMON_TLDS
 
     if tld.startswith("xn--"):
         if len(tld) <= 5 or re.search(r"[^0-9a-zA-Z]", tld[4:]):
@@ -702,8 +719,8 @@ def _fix_url(full_url: str) -> str:
         if tld.count("_") + tld.count("-") > 0:
             return ""
 
-    if not has_protocol and tld not in COMMON_TLDS:
-        return ""
+        if not has_protocol and not is_common_tld(tld):
+            return ""
 
     return full_url
 
