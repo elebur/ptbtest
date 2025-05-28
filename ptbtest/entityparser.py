@@ -26,6 +26,7 @@ import html
 import ipaddress
 import re
 import string
+import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
@@ -1896,6 +1897,137 @@ class EntityParser:
             entities.append(MessageEntity(MessageEntityType.CASHTAG,
                                           offset=_get_utf16_length(text[:match.start()]),
                                           length=full_length))
+
+        return tuple(entities)
+
+    @staticmethod
+    def parse_urls(text: str) -> tuple[MessageEntity, ...]:
+        """
+        Extract :obj:`~telegram.MessageEntity` representing
+        URLs (``https://example.com``) from the given ``text``.
+
+        Examples:
+            An input string: ``https://example.com``
+
+            Result:
+
+            .. code:: python
+
+                (MessageEntity(length=19, offset=0, type=MessageEntityType.URL),)
+
+        Args:
+            text (str): A message that must be parsed.
+
+        Returns:
+            tuple[~telegram.MessageEntity]: Tuple of :obj:`~telegram.MessageEntity` with
+            type :obj:`~telegram.constants.MessageEntityType.URL`.
+            The tuple might be empty if no entities were found.
+        """
+        # Allowed characters in the username and in the password in the basic auth.
+        user_pass_chars = "a-zA-Z0-9._―‑!-"
+        # This pattern is based on this one https://gist.github.com/dperini/729294
+        pattern = re.compile(
+            # Optional protocol.
+            r"(?:[a-zA-Z]+://)?"
+            # 'user:pass' basic auth (optional)
+            fr"(?:[:{user_pass_chars}]+(?::[{user_pass_chars}]+)?@)?"
+            r"(?:"
+                # IP address 
+                r"(?:(?:\d{1,3})\.){3}(?:\d{1,3})\b"
+            r"|"
+                # host & domain names
+                r"(?:"
+                    r"(?:"
+                        r"[a-z0-9\u00a1-\uffff―_‑-]"
+                        r"[a-z0-9\u00a1-\uffff_―‑-]{0,62}"
+                    r")?"
+                    r"[a-z0-9\u00a1-\uffff_―‑-]\."
+                r")+"
+                # TLD identifier name
+                r"(?:[a-z0-9\u00a1-\uffff`‑―-]{2,})"
+            r")"
+            # port number (optional)
+            r"(?P<port>:[0-9]+)?"
+            # resource path (optional)
+            r"(?P<path>[/?#]\S*)?", flags=re.IGNORECASE)
+
+        def is_url_path_symbol(ch):
+            """
+            Check if the given symbol is a valid symbol for the path.
+            """
+            if ch in "\n<>\"«»":
+                return False
+
+            int_ch = ord(ch)
+            if 0x206f >= int_ch >= 0x2000:  # General Punctuation.
+                # Zero Width Non-Joiner/Joiner and various dashes
+                return int_ch == 0x200c or int_ch == 0x200d or (0x2015 >= int_ch >= 0x2010)
+
+            # The char is not a Separator.
+            return not unicodedata.category(ch).startswith("Z")
+
+        entities = list()
+        matches = EntityParser._extract_entities(text, pattern)
+        for match in matches:
+            url = text[match.start:match.end]
+            protocol = urlparse(url).scheme if "://" in url else None
+            prev_ch: str = get_item(text, match.start - 1, "", allow_negative_indexing=False)
+
+            # Skip if there is a dot or a latin letter right before the url or ...
+            if (prev_ch and prev_ch in string.ascii_letters + "." or
+                    # ... there is '@' symbol without user:pass or ...
+                    "://@" in url or
+                    # ... there is no protocol, but '://' at the beginning or the URL startswith '@'.
+                    url.startswith("@") or url.startswith("://")):
+                continue
+            # if there is a dot(s) followed by a non-whitespace symbol right after the
+            # TLD, then ignore such an URL.
+            elif re.search("^\.+[^.\s]", text[match.end:]):
+                continue
+            elif protocol and protocol.lower() not in ("http", "https", "ftp", "tonsite"):
+                continue
+
+            path = match.group("path")
+
+            # Checking for invalid symbols in the path.
+            valid_symbols_in_path_counter = 1  # Skip the leading slash in the path.
+            while (path and
+                   valid_symbols_in_path_counter < len(path) and
+                   is_url_path_symbol(path[valid_symbols_in_path_counter])):
+                valid_symbols_in_path_counter+=1
+
+            length_subtraction = 0
+            if path and valid_symbols_in_path_counter != len(path):
+                invalid_symbols_counter = len(path) - valid_symbols_in_path_counter
+                url = url[:len(url) - invalid_symbols_counter]
+                path = path[:valid_symbols_in_path_counter]
+                length_subtraction += invalid_symbols_counter
+
+            fixed_url = _fix_url(url)
+            if not fixed_url:
+                continue
+            elif (url_length_diff := len(url) - len(fixed_url)) > 0:
+                length_subtraction += url_length_diff
+
+            # The 'raw_port' will contain the colon symbol.
+            # E.g., ':8080'.
+            if raw_port := match.group("port"):
+                # If the port is bigger than 65535, than ignore everything
+                # in the url after the tld.
+                port = int(raw_port[1:])
+                if port == 0 or port > 65535:
+                    length_subtraction += len(raw_port + (path or ""))
+
+            # Ignore trailing '#' symbol if there are no preceding '#', '?' or '/' symbols.
+            if re.search(r"(?<![#?/])#$", fixed_url):
+                length_subtraction += 1
+
+            if not path and fixed_url.endswith("…"):
+                length_subtraction += 1
+
+            entities.append(MessageEntity(MessageEntityType.URL,
+                                          offset=match.offset,
+                                          length=match.length - length_subtraction))
 
         return tuple(entities)
 
