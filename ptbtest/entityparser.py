@@ -738,6 +738,18 @@ def _fix_url(full_url: str) -> str:
     return full_url
 
 
+def _is_email_address(text: str) -> bool:
+    """
+    Check if the given ``text`` is a valid email address.
+    """
+    pattern = re.compile(r"^([a-z0-9_-]{0,26}[.+:]){0,10}"
+                         r"[a-z0-9_-]{1,35}"
+                         r"@(([a-z0-9][a-z0-9_-]{0,28})?[a-z0-9][.]){1,6}"
+                         r"[a-z]{2,8}$", flags=re.IGNORECASE)
+
+    return bool(pattern.search(text))
+
+
 class EntityParser:
     @staticmethod
     def parse_markdown(text: str) -> tuple[str, tuple[MessageEntity, ...]]:
@@ -1967,6 +1979,7 @@ class EntityParser:
         entities = list()
         matches = EntityParser._extract_entities(text, pattern)
         for match in matches:
+            entity_length = match.utf16_length
             url = text[match.start:match.end]
             protocol = urlparse(url).scheme if "://" in url else None
             prev_ch: str = get_item(text, match.start - 1, "", allow_negative_indexing=False)
@@ -1994,18 +2007,17 @@ class EntityParser:
                    is_url_path_symbol(path[valid_symbols_in_path_counter])):
                 valid_symbols_in_path_counter+=1
 
-            length_subtraction = 0
             if path and valid_symbols_in_path_counter != len(path):
                 invalid_symbols_counter = len(path) - valid_symbols_in_path_counter
                 url = url[:len(url) - invalid_symbols_counter]
                 path = path[:valid_symbols_in_path_counter]
-                length_subtraction += invalid_symbols_counter
+                entity_length -= invalid_symbols_counter
 
             fixed_url = _fix_url(url)
             if not fixed_url:
                 continue
             elif (url_length_diff := len(url) - len(fixed_url)) > 0:
-                length_subtraction += url_length_diff
+                entity_length -= url_length_diff
 
             # The 'raw_port' will contain the colon symbol.
             # E.g., ':8080'.
@@ -2014,18 +2026,29 @@ class EntityParser:
                 # in the url after the tld.
                 port = int(raw_port[1:])
                 if port == 0 or port > 65535:
-                    length_subtraction += len(raw_port + (path or ""))
+                    entity_length -= len(raw_port + (path or ""))
 
             # Ignore trailing '#' symbol if there are no preceding '#', '?' or '/' symbols.
             if re.search(r"(?<![#?/])#$", fixed_url):
-                length_subtraction += 1
+                entity_length -= 1
 
             if not path and fixed_url.endswith("…"):
-                length_subtraction += 1
+                entity_length -= 1
 
-            entities.append(MessageEntity(MessageEntityType.URL,
-                                          offset=match.offset,
-                                          length=match.length - length_subtraction))
+            entity_type = MessageEntityType.URL
+            offset = match.utf16_offset
+            entity_text = text[match.start:match.start + entity_length]
+
+            if _is_email_address(entity_text):
+                entity_type = MessageEntityType.EMAIL
+                if entity_text.startswith(":"):
+                    offset += 1
+                    entity_length -= 1
+                elif entity_text.startswith("mailto:"):
+                    offset += 7
+                    entity_length -= 7
+
+            entities.append(MessageEntity(entity_type, offset=offset, length=entity_length))
 
         return tuple(entities)
 

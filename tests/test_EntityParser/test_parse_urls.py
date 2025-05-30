@@ -265,3 +265,38 @@ class TestParseUrls:
         assert self.ep.parse_urls("a:b!@gmail.com") == (MessageEntity(length=14, offset=0, type=MessageEntityType.URL),)
         assert self.ep.parse_urls("_sip._udp.apnic.net") == (MessageEntity(length=19, offset=0, type=MessageEntityType.URL),)
         assert self.ep.parse_urls("https://as_sip._udp.apnic.net") == (MessageEntity(length=29, offset=0, type=MessageEntityType.URL),)
+
+    def test_emails(self):
+        assert self.ep.parse_urls("a.bc@c.com") == (MessageEntity(length=10, offset=0, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://a.de[bc@c.com") == (MessageEntity(length=12, offset=0, type=MessageEntityType.URL),
+                                                               MessageEntity(length=8, offset=13, type=MessageEntityType.EMAIL))
+        assert self.ep.parse_urls("https://a.de]bc@c.com") == (MessageEntity(length=12, offset=0, type=MessageEntityType.URL),
+                                                               MessageEntity(length=8, offset=13, type=MessageEntityType.EMAIL))
+        assert self.ep.parse_urls("https://a.de{bc@c.com") == (MessageEntity(length=12, offset=0, type=MessageEntityType.URL),
+                                                               MessageEntity(length=8, offset=13, type=MessageEntityType.EMAIL))
+        assert self.ep.parse_urls("https://a.de}bc@c.com") == (MessageEntity(length=12, offset=0, type=MessageEntityType.URL),
+                                                               MessageEntity(length=8, offset=13, type=MessageEntityType.EMAIL))
+        assert self.ep.parse_urls("https://a.de(bc@c.com") == (MessageEntity(length=12, offset=0, type=MessageEntityType.URL),
+                                                               MessageEntity(length=8, offset=13, type=MessageEntityType.EMAIL))
+        assert self.ep.parse_urls("https://a.de)bc@c.com") == (MessageEntity(length=12, offset=0, type=MessageEntityType.URL),
+                                                               MessageEntity(length=8, offset=13, type=MessageEntityType.EMAIL))
+        assert self.ep.parse_urls("https://a.de'bc@c.com") == (MessageEntity(length=12, offset=0, type=MessageEntityType.URL),
+                                                               MessageEntity(length=8, offset=13, type=MessageEntityType.EMAIL))
+        assert self.ep.parse_urls("https://de[bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://de/bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://de[bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://de{bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://de}bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://de(bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://de)bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://de\\bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://de'bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("https://de`bc@c.com") == (MessageEntity(length=8, offset=11, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("a@b@c.com") == (MessageEntity(length=7, offset=2, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("a@b.com:c@1") == (MessageEntity(length=7, offset=0, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("test@test.software") == (MessageEntity(length=18, offset=0, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("abc@c.com@d.com") == (MessageEntity(length=9, offset=0, type=MessageEntityType.EMAIL),
+                                                         MessageEntity(length=5, offset=10, type=MessageEntityType.URL))
+        assert self.ep.parse_urls("Look :test@example.com") == (MessageEntity(length=16, offset=6, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("a#:b@gmail.com") == (MessageEntity(length=11, offset=3, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls("Look mailto:test@example.com") == (MessageEntity(length=16, offset=12, type=MessageEntityType.EMAIL),)
