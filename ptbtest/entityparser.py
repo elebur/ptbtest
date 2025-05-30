@@ -257,13 +257,11 @@ class _EntityMatch:
         return self._end
 
     @property
-    def offset(self):
-        """Return the UTF-16 offset of the entity in the text."""
+    def utf16_offset(self):
         return self._utf16_offset
 
     @property
-    def length(self):
-        """Return the UTF-16 length of the entity."""
+    def utf16_length(self):
         return self._length
 
     def group(self, value: Any):
@@ -1708,15 +1706,15 @@ class EntityParser:
         allowed_3_char_mentions = ("@gif", "@vid", "@pic")
         entities: list[MessageEntity] = list()
         for entity_position in points:
-            if entity_position.length < 4 or entity_position.length > 33:
+            if entity_position.utf16_length < 4 or entity_position.utf16_length > 33:
                 continue
-            elif (entity_position.length == 4 and
+            elif (entity_position.utf16_length == 4 and
                   text[entity_position.start:entity_position.end] not in allowed_3_char_mentions):
                 continue
 
             entities.append(MessageEntity(MessageEntityType.MENTION,
-                                          offset=entity_position.offset,
-                                          length=entity_position.length))
+                                          offset=entity_position.utf16_offset,
+                                          length=entity_position.utf16_length))
 
         return tuple(entities)
 
@@ -1749,8 +1747,8 @@ class EntityParser:
         entities = list()
         for entity_position in EntityParser._extract_entities(text, pattern):
             entities.append(MessageEntity(MessageEntityType.BOT_COMMAND,
-                                          offset=entity_position.offset,
-                                          length=entity_position.length))
+                                          offset=entity_position.utf16_offset,
+                                          length=entity_position.utf16_length))
 
         return tuple(entities)
 
