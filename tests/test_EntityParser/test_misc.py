@@ -325,8 +325,8 @@ class TestEntityParserExtractEntities:
 
         assert result[0].start == 0
         assert result[0].end == 8
-        assert result[0].length == 8
-        assert result[0].offset == 0
+        assert result[0].utf16_length == 8
+        assert result[0].utf16_offset == 0
 
     def test_compiled_pattern(self):
         pattern = re.compile(r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)")
@@ -334,8 +334,8 @@ class TestEntityParserExtractEntities:
 
         assert result[0].start == 0
         assert result[0].end == 8
-        assert result[0].length == 8
-        assert result[0].offset == 0
+        assert result[0].utf16_length == 8
+        assert result[0].utf16_offset == 0
 
     def test_empty_string(self):
         pattern = re.compile(r"(?<=\B)@([a-zA-Z0-9_]{2,32})(?=\b)")
