@@ -12,7 +12,8 @@ from ptbtest.entityparser import (_get_utf16_length,
                                   EntityParser,
                                   get_hash,
                                   _is_hashtag_letter,
-                                  _fix_url)
+                                  _fix_url,
+                                  _is_email_address)
 
 
 def test_get_utf16_length():
@@ -314,6 +315,120 @@ class TestFixUrl:
     def test_url_with_all_parts(self):
         url = "https://user:pass@example.com:8080/path?param1=val&param2=val2#anchor"
         assert _fix_url(url) == url
+
+
+def test_is_email_address():
+    # FAILING
+    assert not _is_email_address("")
+    assert not _is_email_address("telegram.org")
+    assert not _is_email_address("security.telegram.org")
+    assert not _is_email_address("@")
+    assert not _is_email_address("test.abd")
+    assert not _is_email_address("a.ab")
+
+    # SUCCESS
+    assert _is_email_address("security@telegram.org")
+    assert _is_email_address("A@a.a.a.ab")
+    assert _is_email_address("A@a.ab")
+    assert _is_email_address("Test@aa.aa.aa.aa")
+    assert _is_email_address("Test@test.abd")
+    assert _is_email_address("a@a.a.a.ab")
+    assert _is_email_address("test@test.abd")
+    assert _is_email_address("test@test.com")
+    assert _is_email_address("a.bc@d.ef")
+
+    bad_userdata = ("",
+                    "a.a.a.a.a.a.a.a.a.a.a.a",
+                    "+.+.+.+.+.+",
+                    "*.a.a",
+                    "a.*.a",
+                    "a.a.*",
+                    "a.a.",
+                    "a.abcdefghijklmnopqrstuvwxyz0.a",
+                    "a.a.abcdefghijklmnopqrstuvwxyz0123456789",
+                    "abcdefghijklmnopqrstuvwxyz0.a.a")
+
+    good_userdata = ("a.a.a.a.a.a.a.a.a.a.a",
+                     "a+a+a+a+a+a+a+a+a+a+a",
+                     "+.+.+.+.+._",
+                     "aozAQZ0-5-9_+-aozAQZ0-5-9_.aozAQZ0-5-9_.-._.+-",
+                     "a.a.a",
+                     "a.a.abcdefghijklmnopqrstuvwxyz012345678",
+                     "a.abcdefghijklmnopqrstuvwxyz.a",
+                     "a..a",
+                     "abcdefghijklmnopqrstuvwxyz.a.a",
+                     ".a.a")
+
+    bad_domains = ("",
+                   ".",
+                   "abc",
+                   "localhost",
+                   "a.a.a.a.a.a.a.ab",
+                   ".......",
+                   "a.a.a.a.a.a+ab",
+                   "a+a.a.a.a.a.ab",
+                   "a.a.a.a.a.a.a",
+                   "a.a.a.a.a.a.abcdefghi",
+                   "a.a.a.a.a.a.ab0yz",
+                   "a.a.a.a.a.a.ab9yz",
+                   "a.a.a.a.a.a.ab-yz",
+                   "a.a.a.a.a.a.ab_yz",
+                   "a.a.a.a.a.a.ab*yz",
+                   ".ab",".a.ab",
+                   "a..ab",
+                   "a.a.a..a.ab",
+                   ".a.a.a.a.ab",
+                   "abcdefghijklmnopqrstuvwxyz01234.ab",
+                   "ab0cd.abd.aA*sd.0.9.0-9.ABOYZ",
+                   "ab*cd.abd.aAasd.0.9.0-9.ABOYZ",
+                   "ab0cd.abd.aAasd.0.9.0*9.ABOYZ",
+                   "*b0cd.ab_d.aA-sd.0.9.0-9.ABOYZ",
+                   "ab0c*.ab_d.aA-sd.0.9.0-9.ABOYZ",
+                   "ab0cd.ab_d.aA-sd.0.9.0-*.ABOYZ",
+                   "ab0cd.ab_d.aA-sd.0.9.*-9.ABOYZ",
+                   "-b0cd.ab_d.aA-sd.0.9.0-9.ABOYZ",
+                   "ab0c-.ab_d.aA-sd.0.9.0-9.ABOYZ",
+                   "ab0cd.ab_d.aA-sd.-.9.0-9.ABOYZ",
+                   "ab0cd.ab_d.aA-sd.0.9.--9.ABOYZ",
+                   "ab0cd.ab_d.aA-sd.0.9.0--.ABOYZ",
+                   "_b0cd.ab_d.aA-sd.0.9.0-9.ABOYZ",
+                   "ab0c_.ab_d.aA-sd.0.9.0-9.ABOYZ",
+                   "ab0cd.ab_d.aA-sd._.9.0-9.ABOYZ",
+                   "ab0cd.ab_d.aA-sd.0.9._-9.ABOYZ",
+                   "ab0cd.ab_d.aA-sd.0.9.0-_.ABOYZ",
+                   "-.ab_d.aA-sd.0.9.0-9.ABOYZ",
+                   "ab0cd.ab_d.-.0.9.0-9.ABOYZ",
+                   "ab0cd.ab_d.aA-sd.0.9.-.ABOYZ",
+                   "_.ab_d.aA-sd.0.9.0-9.ABOYZ",
+                   "ab0cd.ab_d._.0.9.0-9.ABOYZ",
+                   "ab0cd.ab_d.aA-sd.0.9._.ABOYZ")
+
+    good_domains = ("a.a.a.a.a.a.ab",
+                    "a.a.a.a.a.a.abcdef",
+                    "a.a.a.a.a.a.aboyz",
+                    "a.a.a.a.a.a.ABOYZ",
+                    "a.a.a.a.a.a.AbOyZ",
+                    "abcdefghijklmnopqrstuvwxyz0123.ab",
+                    "ab0cd.ab_d.aA-sd.0.9.0-9.ABOYZ",
+                    "A.Z.aA-sd.a.z.0-9.ABOYZ")
+
+    for b_userdata in bad_userdata:
+        for b_domain in bad_domains:
+            assert not _is_email_address(f"{b_userdata}@{b_domain}"), f"{b_userdata}@{b_domain}"
+            assert not _is_email_address(f"{b_userdata}{b_domain}"), f"{b_userdata}{b_domain}"
+
+        for g_domain in good_domains:
+            assert not _is_email_address(f"{b_userdata}@{g_domain}"), f"{b_userdata}@{g_domain}"
+            assert not _is_email_address(f"{b_userdata}{g_domain}"), f"{b_userdata}{g_domain}"
+
+    for g_userdata in good_userdata:
+        for b_domain in bad_domains:
+            assert not _is_email_address(f"{g_userdata}@{b_domain}"), f"{g_userdata}@{b_domain}"
+            assert not _is_email_address(f"{g_userdata}{b_domain}"), f"{g_userdata}{b_domain}"
+
+        for g_domain in good_domains:
+            assert _is_email_address(f"{g_userdata}@{g_domain}"), f"{g_userdata}@{g_domain}"
+            assert not _is_email_address(f"{g_userdata}{g_domain}"), f"{g_userdata}{g_domain}"
 
 
 class TestEntityParserExtractEntities:
