@@ -1911,7 +1911,7 @@ class EntityParser:
         return tuple(entities)
 
     @staticmethod
-    def parse_urls(text: str) -> tuple[MessageEntity, ...]:
+    def parse_urls_and_emails(text: str) -> tuple[MessageEntity, ...]:
         """
         Extract :obj:`~telegram.MessageEntity` representing
         URLs (``https://example.com``) from the given ``text``.
