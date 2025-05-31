@@ -61,7 +61,7 @@ class TestParseTgUrls:
         assert self.ep.parse_tg_urls("tg:test/") == ()
         assert self.ep.parse_tg_urls("tg:/test/") == ()
         assert self.ep.parse_tg_urls("tg://%30/sccct") == ()
-        assert self.ep.parse_tg_urls("tg://б.а.н.а.на") == ()
+        assert self.ep.parse_tg_urls("tg://б.а.н.а.на") == ()  # noqa: RUF001
 
     def test_hash_sign_and_question_mark_at_the_end(self):
         assert self.ep.parse_tg_urls("tg://test/?") == (MessageEntity(length=10, offset=0, type=MessageEntityType.URL),)
@@ -75,7 +75,7 @@ class TestParseTgUrls:
 
     @pytest.mark.parametrize(["char"], "()[]{'}$%")
     def test_valid_urls_with_special_symbol(self, char):
-        assert self.ep.parse_tg_urls(f"tg://test?as(df") == (MessageEntity(length=15, offset=0, type=MessageEntityType.URL),)
+        assert self.ep.parse_tg_urls(f"tg://test?as{char}df") == (MessageEntity(length=15, offset=0, type=MessageEntityType.URL),)
 
     def test_misc(self):
         assert self.ep.parse_tg_urls("tg://test:asd@google.com:80") == (MessageEntity(length=9, offset=0, type=MessageEntityType.URL),)
