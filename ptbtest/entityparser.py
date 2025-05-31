@@ -1934,7 +1934,7 @@ class EntityParser:
             The tuple might be empty if no entities were found.
         """
         # Allowed characters in the username and in the password in the basic auth.
-        user_pass_chars = "a-zA-Z0-9._―‑!-"
+        user_pass_chars = "a-z0-9._―‑!%-"
         # This pattern is based on this one https://gist.github.com/dperini/729294
         pattern = re.compile(
             # Optional protocol.
