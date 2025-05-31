@@ -1935,6 +1935,8 @@ class EntityParser:
         """
         # Allowed characters in the username and in the password in the basic auth.
         user_pass_chars = "a-z0-9._―‑!%-"
+
+        host_domain_symbols = "a-z0-9\u00a1-\uffff―_‑-"
         # This pattern is based on this one https://gist.github.com/dperini/729294
         pattern = re.compile(
             # Optional protocol.
@@ -1948,10 +1950,10 @@ class EntityParser:
                 # host & domain names
                 r"(?:"
                     r"(?:"
-                        r"[a-z0-9\u00a1-\uffff―_‑-]"
-                        r"[a-z0-9\u00a1-\uffff_―‑-]{0,62}"
+                        rf"[{host_domain_symbols}]"
+                        rf"[{host_domain_symbols}]{{0,62}}"
                     r")?"
-                    r"[a-z0-9\u00a1-\uffff_―‑-]\."
+                    rf"[{host_domain_symbols}]\."
                 r")+"
                 # TLD identifier name
                 r"(?:[a-z0-9\u00a1-\uffff`‑―-]{2,})"
