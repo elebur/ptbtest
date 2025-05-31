@@ -2058,6 +2058,58 @@ class EntityParser:
         return tuple(entities)
 
     @staticmethod
+    def parse_tg_urls(text) -> tuple[MessageEntity, ...]:
+        """
+        Extract :obj:`~telegram.MessageEntity` representing
+        Telegram URLs (``tg://example``) from the given ``text``.
+
+        Examples:
+            An input string: ``tg://resolve?domain=username``
+
+            Result:
+
+            .. code:: python
+
+                (MessageEntity(length=28, offset=0, type=MessageEntityType.URL),))
+        Args:
+            text (str): A message that must be parsed.
+
+        Returns:
+            tuple[~telegram.MessageEntity]: Tuple of :obj:`~telegram.MessageEntity` with
+            type :obj:`~telegram.constants.MessageEntityType.URL`.
+            The tuple might be empty if no entities were found.
+        """
+
+        pattern = re.compile(
+            r"(tg|ton|tonsite)://"
+            r"[a-z0-9_-]{1,253}"
+            r"(?P<path>[/?#][^\s\u2000-\u200b\u200e-\u200f\u2016-\u206f<>«»\"]*)?", flags=re.IGNORECASE)
+
+        entities: list[MessageEntity] = list()
+        path_bad_end_chars = ".:;,('?!`"
+
+        matches = EntityParser._extract_entities(text, pattern)
+        for match in matches:
+            url = text[match.start:match.end]
+            entity_length = match.utf16_length
+
+            striped_url = url.rstrip(path_bad_end_chars)
+            if (url_diff := len(url) - len(striped_url)) > 0:
+                url = striped_url
+                entity_length -= url_diff
+
+            # Remove trailing '#' if there is no leading '/' symbol.
+            if re.search(r"[^/]#$", url):
+                url = url[:-1]
+                entity_length -= 1
+
+            entities.append(MessageEntity(MessageEntityType.URL,
+                                          offset=match.utf16_offset,
+                                          length=entity_length))
+
+        return tuple(entities)
+
+    @staticmethod
     def __parse_text(ptype, message, invalids, tags, text_links):
         entities = []
         mentions = re.compile(r'@[a-zA-Z0-9]{1,}\b')
