@@ -326,6 +326,13 @@ class TestParseUrls:
                                                        MessageEntity(length=10, offset=1234, type=MessageEntityType.URL),
                                                        MessageEntity(length=10, offset=1246, type=MessageEntityType.URL))
 
+    def test_utf16_length(self):
+        assert self.ep.parse_urls_and_emails("example.com/hello=𐐷&hhh=2𐍈") == (MessageEntity(length=28, offset=0,
+                                                                                             type=MessageEntityType.URL),)
+        assert self.ep.parse_urls_and_emails("example.com/hello=𐐷&«hhh=2𐍈") == (MessageEntity(length=21, offset=0,
+                                                                                              type=MessageEntityType.URL),)
+        assert self.ep.parse_urls_and_emails("example.com/hello=𐐷&hhh)=2𐍈") == (MessageEntity(length=24, offset=0,
+                                                                                              type=MessageEntityType.URL),)
 
     def test_percentage_symbol(self):
         assert self.ep.parse_urls_and_emails("http://%3c330e7f8409726r@mail.gmail.com") == (MessageEntity(length=39,

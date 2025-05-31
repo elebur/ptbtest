@@ -2012,14 +2012,14 @@ class EntityParser:
             if path and valid_symbols_in_path_counter != len(path):
                 invalid_symbols_counter = len(path) - valid_symbols_in_path_counter
                 url = url[:len(url) - invalid_symbols_counter]
+                entity_length -= _get_utf16_length(path[valid_symbols_in_path_counter:])
                 path = path[:valid_symbols_in_path_counter]
-                entity_length -= invalid_symbols_counter
 
             fixed_url = _fix_url(url)
             if not fixed_url:
                 continue
             elif (url_length_diff := len(url) - len(fixed_url)) > 0:
-                entity_length -= url_length_diff
+                entity_length -= _get_utf16_length(url[-url_length_diff:])
 
             # The 'raw_port' will contain the colon symbol.
             # E.g., ':8080'.
