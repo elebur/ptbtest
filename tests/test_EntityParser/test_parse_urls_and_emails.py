@@ -266,6 +266,85 @@ class TestParseUrls:
         assert self.ep.parse_urls_and_emails("_sip._udp.apnic.net") == (MessageEntity(length=19, offset=0, type=MessageEntityType.URL),)
         assert self.ep.parse_urls_and_emails("https://as_sip._udp.apnic.net") == (MessageEntity(length=29, offset=0, type=MessageEntityType.URL),)
 
+    def test_complex(self):
+        text = ("a.b.google.com dfsknnfs gsdfgsg http://códuia.de/ dffdg,\" 12)(cpia.de/())(\" http://гришка.рф/ sdufhdf "
+                "http://xn--80afpi2a3c.xn--p1ai/ I have a good time.Thanks, guys!\n\n(hdfughidufhgdis) go#ogle.com гришка.рф "
+                "hsighsdf gi почта.рф\n\n✪df.ws/123      "
+                "xn--80afpi2a3c.xn--p1ai\n\nhttp://foo.com/blah_blah\nhttp://foo.com/blah_blah/\n(Something like "
+                "http://foo.com/blah_blah)\nhttp://foo.com/blah_blah_(wikipedi8989a_Вася)\n(Something like "
+                "http://foo.com/blah_blah_(Стакан_007))\nhttp://foo.com/blah_blah.\nhttp://foo.com/blah_blah/.\n<http://foo.com/"
+                "blah_blah>\n<http://fo@@@@@@@@@^%#*@^&@$#*@#%^*&!^o.com/blah_blah/>\nhttp://foo.com/blah_blah,\nhttp://"
+                "www.example.com/wpstyle/?p=364.\nhttp://✪df.ws/123\nrdar://1234\nhttp://"
+                "userid:password@example.com:8080\nhttp://userid@example.com\nhttp://userid@example.com:8080\nhttp://"
+                "userid:password@example.com\nhttp://example.com:8080 "
+                "x-yojimbo-item://6303E4C1-xxxx-45A6-AB9D-3A908F59AE0E\nmessage://"
+                "%3c330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com%3e\n"
+                "<tag>http://example.com</tag>\nJust a www.example.com "
+                "link.\n\n➡️.ws/"
+                "䨹\n\nabcdefghijklmnopqrstuvwxyz0123456789qwe_sdfsdf.aweawe-sdfs.com\ngoogle.com:"
+                "᪉᪉᪉᪉\ngoogle."
+                "com:᪀᪀\nhttp://  .com\nURL:     .com\nURL: "
+                ".com\n\ngoogle.com?qwe\ngoogle.com#qwe\ngoogle.com/?\ngoogle.com/#\ngoogle.com?\ngoogle.com#\n")
+
+        assert self.ep.parse_urls_and_emails(text) == (MessageEntity(length=14, offset=0, type=MessageEntityType.URL),
+                                                       MessageEntity(length=17, offset=32, type=MessageEntityType.URL),
+                                                       MessageEntity(length=10, offset=62, type=MessageEntityType.URL),
+                                                       MessageEntity(length=17, offset=76, type=MessageEntityType.URL),
+                                                       MessageEntity(length=31, offset=102, type=MessageEntityType.URL),
+                                                       MessageEntity(length=8, offset=189, type=MessageEntityType.URL),
+                                                       MessageEntity(length=9, offset=198, type=MessageEntityType.URL),
+                                                       MessageEntity(length=8, offset=220, type=MessageEntityType.URL),
+                                                       MessageEntity(length=10, offset=230, type=MessageEntityType.URL),
+                                                       MessageEntity(length=23, offset=246, type=MessageEntityType.URL),
+                                                       MessageEntity(length=24, offset=271, type=MessageEntityType.URL),
+                                                       MessageEntity(length=25, offset=296, type=MessageEntityType.URL),
+                                                       MessageEntity(length=24, offset=338, type=MessageEntityType.URL),
+                                                       MessageEntity(length=45, offset=364, type=MessageEntityType.URL),
+                                                       MessageEntity(length=37, offset=426, type=MessageEntityType.URL),
+                                                       MessageEntity(length=24, offset=465, type=MessageEntityType.URL),
+                                                       MessageEntity(length=25, offset=491, type=MessageEntityType.URL),
+                                                       MessageEntity(length=24, offset=519, type=MessageEntityType.URL),
+                                                       MessageEntity(length=16, offset=583, type=MessageEntityType.URL),
+                                                       MessageEntity(length=24, offset=601, type=MessageEntityType.URL),
+                                                       MessageEntity(length=37, offset=627, type=MessageEntityType.URL),
+                                                       MessageEntity(length=17, offset=666, type=MessageEntityType.URL),
+                                                       MessageEntity(length=39, offset=696, type=MessageEntityType.URL),
+                                                       MessageEntity(length=25, offset=736, type=MessageEntityType.URL),
+                                                       MessageEntity(length=30, offset=762, type=MessageEntityType.URL),
+                                                       MessageEntity(length=34, offset=793, type=MessageEntityType.URL),
+                                                       MessageEntity(length=23, offset=828, type=MessageEntityType.URL),
+                                                       MessageEntity(length=18, offset=982, type=MessageEntityType.URL),
+                                                       MessageEntity(length=15, offset=1014, type=MessageEntityType.URL),
+                                                       MessageEntity(length=7, offset=1037, type=MessageEntityType.URL),
+                                                       MessageEntity(length=62, offset=1046, type=MessageEntityType.URL),
+                                                       MessageEntity(length=10, offset=1109, type=MessageEntityType.URL),
+                                                       MessageEntity(length=10, offset=1125, type=MessageEntityType.URL),
+                                                       MessageEntity(length=14, offset=1178, type=MessageEntityType.URL),
+                                                       MessageEntity(length=14, offset=1193, type=MessageEntityType.URL),
+                                                       MessageEntity(length=11, offset=1208, type=MessageEntityType.URL),
+                                                       MessageEntity(length=12, offset=1221, type=MessageEntityType.URL),
+                                                       MessageEntity(length=10, offset=1234, type=MessageEntityType.URL),
+                                                       MessageEntity(length=10, offset=1246, type=MessageEntityType.URL))
+
+
+    def test_percentage_symbol(self):
+        assert self.ep.parse_urls_and_emails("http://%3c330e7f8409726r@mail.gmail.com") == (MessageEntity(length=39,
+                                                                                                          offset=0,
+                                                                                                          type=MessageEntityType.URL),)
+        assert self.ep.parse_urls_and_emails("http://%3c330e7f8409726rmail.gmail.com") == (MessageEntity(length=30,
+                                                                                                         offset=8,
+                                                                                                         type=MessageEntityType.URL),)
+        assert self.ep.parse_urls_and_emails("%3c330e7f8409726rmail.gmail.com") == (MessageEntity(length=30,
+                                                                                                  offset=1,
+                                                                                                  type=MessageEntityType.URL),)
+        assert self.ep.parse_urls_and_emails("%3c330e7f8409726r@mail.gmail.com") == (MessageEntity(length=32,
+                                                                                                   offset=0,
+                                                                                                   type=MessageEntityType.URL),)
+        assert self.ep.parse_urls_and_emails("http://%3c330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com") == (MessageEntity(length=64,
+                                                                                                                                   offset=0,
+                                                                                                                                   type=MessageEntityType.URL),)
+        assert self.ep.parse_urls_and_emails("message://%3c330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com%3e") == ()
+
     def test_emails(self):
         assert self.ep.parse_urls_and_emails("a.bc@c.com") == (MessageEntity(length=10, offset=0, type=MessageEntityType.EMAIL),)
         assert self.ep.parse_urls_and_emails("https://a.de[bc@c.com") == (MessageEntity(length=12, offset=0, type=MessageEntityType.URL),
