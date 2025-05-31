@@ -1,3 +1,4 @@
+# ruff: noqa: C901, RUF001
 # A library that provides a testing suite fot python-telegram-bot
 # which can be found on https://github.com/python-telegram-bot/python-telegram-bot
 # Copyright (C) 2017
@@ -688,7 +689,9 @@ def _fix_url(full_url: str) -> str:
     if len(domain_parts) <= 1:
         return ""
 
-    validator = lambda x: not x or len(x) >= 64 or x.endswith("-")
+    def validator(text):
+        return not text or len(text) >= 64 or text.endswith("-")
+
     if any(map(validator, domain_parts)):
         return ""
 
@@ -1876,9 +1879,9 @@ class EntityParser:
 
         for match in matches:
             # If the input string is "$ABC@mention", then
-            # match.group(0) is '$ABC@mention'
-            # match.group(1) is 'ABC'
-            # match.group(2) is 'mention' (optional)
+            # group 0 is '$ABC@mention'
+            # group 1 is 'ABC'
+            # group 2 is 'mention' (optional)
             cashtag = match.group(1)
             mention = match.group(2)
 
@@ -1944,7 +1947,7 @@ class EntityParser:
             # 'user:pass' basic auth (optional)
             fr"(?:[:{user_pass_chars}]+(?::[{user_pass_chars}]+)?@)?"
             r"(?:"
-                # IP address 
+                # IP address
                 r"(?:(?:\d{1,3})\.){3}(?:\d{1,3})\b"
             r"|"
                 # host & domain names
@@ -1995,7 +1998,7 @@ class EntityParser:
                 continue
             # if there is a dot(s) followed by a non-whitespace symbol right after the
             # TLD, then ignore such an URL.
-            elif re.search("^\.+[^.\s]", text[match.end:]):
+            elif re.search(r"^\.+[^.\s]", text[match.end:]):
                 continue
             elif protocol and protocol.lower() not in ("http", "https", "ftp", "tonsite"):
                 continue
