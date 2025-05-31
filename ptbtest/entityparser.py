@@ -1938,7 +1938,7 @@ class EntityParser:
         # This pattern is based on this one https://gist.github.com/dperini/729294
         pattern = re.compile(
             # Optional protocol.
-            r"(?:[a-zA-Z]+://)?"
+            r"(?:[a-z]+://)?"
             # 'user:pass' basic auth (optional)
             fr"(?:[:{user_pass_chars}]+(?::[{user_pass_chars}]+)?@)?"
             r"(?:"
