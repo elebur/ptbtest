@@ -2159,6 +2159,124 @@ class EntityParser:
         return tuple(entities)
 
     @staticmethod
+    def parse_phone_numbers(text):
+        """
+        Extract :obj:`~telegram.MessageEntity` representing
+        phone numbers (``+18001234567``) from the given ``text``.
+
+        Examples:
+            An input string: ``Some text around the +18001234567 number``
+
+            Result:
+
+            .. code:: python
+
+                (MessageEntity(length=12, offset=21, type=MessageEntityType.PHONE_NUMBER),)
+        Args:
+            text (str): A message that must be parsed.
+
+        Returns:
+            tuple[~telegram.MessageEntity]: Tuple of :obj:`~telegram.MessageEntity` with
+            type :obj:`~telegram.constants.MessageEntityType.PHONE_NUMBER`.
+            The tuple might be empty if no entities were found.
+
+        """
+        # Do not use '\d' here because it allows numbers like '٢٣'
+        pattern = re.compile(
+            # An opening parenthesis that doesn't have another
+            # opening parenthesis before it.
+            r"((?<!\()\(?)"
+            # The plus sign with an optional plus sign before the first one,
+            # with an optional opening parenthesis between them,
+            # then arbitrary count of digits, parenthesis and hyphens...
+            r"((\+(([(\-])?))?\+[0-9()-]+)"
+            # ... not followed by hyphen or parentheses
+            r"(?<![-()])-?")
+
+        entities: list[MessageEntity] = list()
+
+        def is_valid(phone: str) -> bool:
+            result = False
+            # Remove everything in the number except numbers.
+            clean_number = re.sub(r"[^0-9]", "", phone)
+            for country_code in COUNTRY_CODES:
+                if clean_number.startswith(country_code):
+                    clean_number = clean_number.removeprefix(country_code)
+                    # Telegram allows numbers like "+100000004561231234",
+                    # as far as I understood it just ignores zeros between the country code
+                    # and the actual number.
+                    if clean_number.startswith("0"):
+                        clean_number = clean_number.lstrip("0")
+
+                    length = len(clean_number)
+
+                    countries = NUMBER_LENGTHS.get(length, None)
+                    if countries and country_code in countries:
+                        result = True
+                        break
+                    else:
+                        break
+
+            return result
+
+        for match in EntityParser._extract_entities(text, pattern):
+            phone_num = text[match.start:match.end].rstrip("-")
+
+            entity_length = len(phone_num)
+            entity_offset = match.utf16_offset
+
+            open_par_count = phone_num.count("(")
+            close_par_count = phone_num.count(")")
+
+            if phone_num.startswith("("):
+                # If there are certain symbols right before the number,
+                # this number must be ignored.
+                if (minus_two := match.start - 2) >= 0 and text[minus_two:match.start] in ("(-", "[-", "+-"):
+                    continue
+                # There is only one opening parenthesis, e.g., '(+14561231234'
+                elif ((open_par_count == 1 and close_par_count == 0) or
+                        # E.g., '(+14(561)231234'
+                        (open_par_count == 2 and close_par_count == 1)):
+                    entity_length -= 1
+                    entity_offset += 1
+                    open_par_count -= 1
+                    phone_num = phone_num[1:]
+            # Only one pair of parentheses is allowed.
+            if open_par_count > 1 or close_par_count > 1:
+                continue
+            # For whatever reason, if there is a hyphen in the number,
+            # then the number can be 1 symbol longer.
+            if entity_length >= 20 + int("-" in phone_num):
+                continue
+            # If there are five hyphens in a row, then skip the number.
+            elif re.search(r"-{5,}", phone_num):
+                continue
+
+            # At this point, there could be only 0 or 1 opened and closed
+            # parenthesis.
+            # If their count doesn't match, it means there is
+            # an unclosed opened or closed parenthesis.
+            elif open_par_count != close_par_count:
+                continue
+            # Closed parenthesis is placed before opened one.
+            elif phone_num.find("(") > phone_num.find(")"):
+                continue
+            elif phone_num.endswith(")"):
+                continue
+
+            next_ch = get_item(text, match.end, "", allow_negative_indexing=False)
+
+            if next_ch and unicodedata.category(next_ch).startswith("L"):
+                continue
+
+            if is_valid(phone_num):
+                entities.append(MessageEntity(MessageEntityType.PHONE_NUMBER,
+                                              offset=entity_offset,
+                                              length=entity_length))
+
+        return tuple(entities)
+
+    @staticmethod
     def __parse_text(ptype, message, invalids, tags, text_links):
         entities = []
         mentions = re.compile(r'@[a-zA-Z0-9]{1,}\b')
