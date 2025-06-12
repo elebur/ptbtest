@@ -280,6 +280,9 @@ NUMBER_LENGTHS = {
 
 COUNTRY_CODES = {c for c in itertools.chain(*NUMBER_LENGTHS.values())}
 
+MESSAGE_TEXT_IS_EMPTY_ERROR = "Message text is empty"
+TEXT_MUST_BE_NON_EMPTY_ERROR = "Text must be non-empty"
+
 
 class _EntityMatch:
     """
@@ -1009,7 +1012,7 @@ class EntityParser:
 
         result_str = "".join(new_text).rstrip()
         if not result_str:
-            raise BadMarkupException("Text must be non-empty")
+            raise BadMarkupException(TEXT_MUST_BE_NON_EMPTY_ERROR)
 
         return result_str, tuple(entities)
 
@@ -1050,8 +1053,7 @@ class EntityParser:
                           "{entity_type} entity at byte offset {offset}")
         err_msg_reserved = ("Can't parse entities: character '{0}' is reserved "
                             "and must be escaped with the preceding '\\'")
-        err_empty_text = "Message text is empty"
-
+        err_empty_text = MESSAGE_TEXT_IS_EMPTY_ERROR
         have_blockquote = False
         can_start_blockquote = True
 
@@ -1215,8 +1217,8 @@ class EntityParser:
                 # By default, the error message for an empty string
                 # is "Message text is empty", but if there was at least
                 # one entity, the text changes to "text must be non-empty".
-                if err_empty_text == "Message text is empty":
-                    err_empty_text = "Text must be non-empty"
+                if err_empty_text == MESSAGE_TEXT_IS_EMPTY_ERROR:
+                    err_empty_text = TEXT_MUST_BE_NON_EMPTY_ERROR
 
                 nested_entities.append(me)
 
@@ -1414,7 +1416,7 @@ class EntityParser:
             ~ptbtest.errors.BadMarkupException
         """
         err_msg_prefix = "Can't parse entities:"
-        err_msg_empty_string = "Message text is empty"
+        err_msg_empty_string = MESSAGE_TEXT_IS_EMPTY_ERROR
 
         @dataclass
         class EntityInfo:
@@ -1569,8 +1571,8 @@ class EntityParser:
                     entity_offset=utf16_offset,
                     entity_begin_pos=begin_pos
                 ))
-                if err_msg_empty_string == "Message text is empty":
-                    err_msg_empty_string = "Text must be non-empty"
+                if err_msg_empty_string == MESSAGE_TEXT_IS_EMPTY_ERROR:
+                    err_msg_empty_string = TEXT_MUST_BE_NON_EMPTY_ERROR
             # The end of an entity
             else:
                 if not nested_entities:
