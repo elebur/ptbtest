@@ -440,7 +440,7 @@ def _get_id_from_telegram_url(type_: Literal["user", "emoji"], url: str) -> Opti
     return id_
 
 
-def get_hash(obj: TelegramObject) -> int:
+def get_hash(tg_obj: TelegramObject) -> int:
     """
     Generate the unique hash value for objects that are inherited
     from :obj:`~telegram.TelegramObject`.
@@ -457,12 +457,12 @@ def get_hash(obj: TelegramObject) -> int:
     and then gets hash of that string.
 
     Args:
-        obj (:obj:`~telegram.TelegramObject`): An object to generate hash for.
+        tg_obj (:obj:`~telegram.TelegramObject`): An object to generate hash for.
 
     Returns:
         int: A hash value for the given object.
     """
-    return hash(obj.to_json())
+    return hash(tg_obj.to_json())
 
 
 def _split_and_sort_intersected_entities(entities):
