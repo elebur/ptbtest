@@ -2068,8 +2068,14 @@ class EntityParser:
                 path = path[:valid_symbols_in_path_counter]
 
             fixed_url = _fix_url(url)
+            is_email = False
+            is_url_valid = True
             if not fixed_url:
-                continue
+                is_url_valid = False
+                if is_email := _is_email_address(url):
+                    fixed_url = url
+                else:
+                    continue
             elif (url_length_diff := len(url) - len(fixed_url)) > 0:
                 entity_length -= _get_utf16_length(url[-url_length_diff:])
 
@@ -2093,7 +2099,7 @@ class EntityParser:
             offset = match.utf16_offset
             entity_text = text[match.start:match.start + entity_length]
 
-            if _is_email_address(entity_text):
+            if is_email or _is_email_address(entity_text):
                 entity_type = MessageEntityType.EMAIL
                 if entity_text.startswith(":"):
                     offset += 1
@@ -2101,6 +2107,8 @@ class EntityParser:
                 elif entity_text.startswith("mailto:"):
                     offset += 7
                     entity_length -= 7
+            elif not is_url_valid:
+                continue
 
             entities.append(MessageEntity(entity_type, offset=offset, length=entity_length))
 
