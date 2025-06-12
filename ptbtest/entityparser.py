@@ -468,7 +468,7 @@ def get_hash(tg_obj: TelegramObject) -> int:
     return hash(tg_obj.to_json())
 
 
-def _split_and_sort_intersected_entities(entities):
+def _split_and_sort_intersected_entities(entities: Sequence[MessageEntity]) -> list[MessageEntity]:
     """
     The function splits nested intersected entities.
     Therefore, ``parse_markdown_v2`` and ``parse_html`` functions will
@@ -2122,7 +2122,7 @@ class EntityParser:
         return tuple(entities)
 
     @staticmethod
-    def parse_tg_urls(text) -> tuple[MessageEntity, ...]:
+    def parse_tg_urls(text: str) -> tuple[MessageEntity, ...]:
         """
         Extract :obj:`~telegram.MessageEntity` representing
         Telegram URLs (``tg://example``) from the given ``text``.
@@ -2174,7 +2174,7 @@ class EntityParser:
         return tuple(entities)
 
     @staticmethod
-    def parse_phone_numbers(text):
+    def parse_phone_numbers(text: str) -> tuple[MessageEntity, ...]:
         """
         Extract :obj:`~telegram.MessageEntity` representing
         phone numbers (``+18001234567``) from the given ``text``.
