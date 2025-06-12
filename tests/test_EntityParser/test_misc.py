@@ -111,6 +111,10 @@ class TestCheckAndNormalizeUrl:
         assert _check_and_normalize_url("www.example.com/login") == "http://www.example.com/login"
         assert _check_and_normalize_url("https://example.com/login/") == "https://example.com/login/"
 
+    def test_at_symbol_at_the_beginning_of_the_domain(self):
+        assert _check_and_normalize_url("https://@example.com") == "https://example.com/"
+        assert _check_and_normalize_url("https://@@example.com") == ""
+
 
 class TestGetIdFromTelegramUrl:
     def test_user_id(self):

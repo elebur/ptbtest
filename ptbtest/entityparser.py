@@ -399,7 +399,8 @@ def _check_and_normalize_url(url: str) -> str:
         return ""
 
     # Validate domain name.
-    pattern_valid_domain = re.compile(r"^(?=.{1,255}$)(?!-)[A-Za-z0-9\-]{1,63}"
+    pattern_valid_domain = re.compile(r"^(?=.{1,255}$)(?!-)"
+                                      r"((?<!@)@)?[A-Za-z0-9\-]{1,63}"
                                       r"(\.[A-Za-z0-9\-]{1,63})*\.?(?<!-)$")
     if not pattern_valid_domain.match(parsed_url.netloc):
         return ""
@@ -409,6 +410,10 @@ def _check_and_normalize_url(url: str) -> str:
     # https://www.example.com/login - doesn't add the slash.
     if not parsed_url.path and not result.endswith("/"):
         result += "/"
+
+    if parsed_url.netloc.startswith("@"):
+        result = result.replace(f"{parsed_url.scheme}://@",
+                                f"{parsed_url.scheme}://")
 
     return result
 
