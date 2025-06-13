@@ -347,7 +347,7 @@ class TestSimpleEntities:
 class TestTagA:
     ep = EntityParser()
 
-    def test_without_href(self):
+    def test_without_href_url_inside_tag_as_text(self):
         resp = self.ep.parse_html("<a>http://www.example.com/</a>")
 
         entity = resp[1][0]
@@ -356,6 +356,14 @@ class TestTagA:
                                                                   type=MessageEntityType.TEXT_LINK,
                                                                   url='http://www.example.com/'),))
         assert entity.url == "http://www.example.com/"
+
+    def test_without_href_url_with_leading_at_sign_inside_tag_as_text(self):
+        text, entities = self.ep.parse_html("<a>https://@example.com</a>")
+        assert text == "https://@example.com"
+        assert entities == (MessageEntity(length=20, offset=0,
+                                          type=MessageEntityType.TEXT_LINK,
+                                          url="https://example.com/"),)
+        assert entities[0].url == "https://example.com/"
 
     def test_href_attr_double_quotes(self):
         resp = self.ep.parse_html("<a href=\"http://www.example.com/\">inline URL</a>")
