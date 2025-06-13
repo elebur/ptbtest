@@ -153,3 +153,7 @@ class TestParseBotCommands:
     def test_command_from_numbers_only(self):
         assert self.ep.parse_bot_commands("/1234") == (MessageEntity(length=5, offset=0, type=MessageEntityType.BOT_COMMAND),)
         assert self.ep.parse_bot_commands("rdar:/1234") == (MessageEntity(length=5, offset=5, type=MessageEntityType.BOT_COMMAND),)
+
+    def test_command_in_the_middle_of_the_string(self):
+        assert self.ep.parse_bot_commands("text/command") == ()
+        assert self.ep.parse_bot_commands("1234/command") == ()

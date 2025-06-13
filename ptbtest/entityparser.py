@@ -1812,7 +1812,7 @@ class EntityParser:
             type :obj:`~telegram.constants.MessageEntityType.BOT_COMMAND`.
             The tuple might be empty if no entities were found.
         """
-        pattern = re.compile("(?<!\b|[/<>])/([a-zA-Z0-9_]{1,64})"
+        pattern = re.compile("(?<!\b|[/<>]|[a-zA-Z0-9])/([a-zA-Z0-9_]{1,64})"
                              r"(?:@([a-zA-Z0-9_]{3,32}))?(?!\B|[/<>])")
 
         entities = list()
