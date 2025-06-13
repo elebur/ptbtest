@@ -505,39 +505,71 @@ def _split_and_sort_intersected_entities(entities: Sequence[MessageEntity]) -> l
             A list of sorted and split entities.
     """
     def sort_entities(e):
-        return sorted(e, key=lambda m: (m.offset, -m.length, PRIORITIES[m.type]))
+        return list(sorted(e, key=lambda m: (m.offset, -m.length, PRIORITIES[m.type])))
+
+    def create_msg_entity_from(old_entity: MessageEntity, *,
+                               new_length: int = None,
+                               new_offset: int = None) -> MessageEntity:
+        dict_ent = old_entity.to_dict()
+        if new_length:
+            dict_ent["length"] = new_length
+        if new_offset:
+            dict_ent["offset"] = new_offset
+
+        return MessageEntity(**dict_ent)
+
 
     new_entities = list()
     # Sorting the entities in the order in which they appear in the sentence
     entities = sort_entities(entities)
     while entities:
-        # Taking the leftmost entities and check all other entities against it.
-        base_ent = entities.pop(0)
-        # [Expandable]Blockquotes and text links must not be split.
-        if base_ent.type in (MessageEntityType.BLOCKQUOTE,
-                             MessageEntityType.EXPANDABLE_BLOCKQUOTE,
-                             MessageEntityType.TEXT_LINK):
-            new_entities.append(base_ent)
+        # Taking the leftmost entity and check all other entities against it.
+        base_entity = entities.pop(0)
+        # These entity types are not splittable.
+        if base_entity.type in (MessageEntityType.BLOCKQUOTE, MessageEntityType.EXPANDABLE_BLOCKQUOTE,
+                                MessageEntityType.TEXT_LINK, MessageEntityType.MENTION,
+                                MessageEntityType.HASHTAG, MessageEntityType.CASHTAG,
+                                MessageEntityType.BOT_COMMAND, MessageEntityType.EMAIL,
+                                MessageEntityType.TEXT_MENTION, MessageEntityType.PHONE_NUMBER):
+            new_entities.append(base_entity)
             continue
 
-        for e in entities:
-            # If the next entity is inside the current one,
+        for nested_entity in entities:
+            # If the next entity starts inside the current ('base_entity') one,
             # then the base entity should be split.
-            if e.offset < base_ent.offset + base_ent.length:
-                d_base = base_ent.to_dict()
-                d_new = d_base.copy()
+            if base_entity.offset <= nested_entity.offset < base_entity.offset + base_entity.length:
+                # The length of the part before the nested entity.
+                # Example string:
+                #        "text <b>text @mention #hashtag</b>"
+                # This part ----> ^^^^^
+                # In this example the 'base_entity' is <b>old, and 'nested_entity' is '@mention'
+                leftover_length = nested_entity.offset - base_entity.offset
+                if leftover_length > 0:
+                    new_entities.append(create_msg_entity_from(base_entity, new_length=leftover_length))
 
-                d_new["length"] = e.offset - d_new["offset"]
-                if d_new["length"] > 0:
-                    new_entities.append(MessageEntity(**d_new))
+                base_entity = create_msg_entity_from(base_entity,
+                                                     new_length=base_entity.length - leftover_length,
+                                                     new_offset=nested_entity.offset)
 
-                d_base["length"] -=  d_new["length"]
-                d_base["offset"] = e.offset
-                base_ent = MessageEntity(**d_base)
+                if nested_entity.type in (MessageEntityType.MENTION, MessageEntityType.HASHTAG,
+                                          MessageEntityType.CASHTAG,MessageEntityType.BOT_COMMAND,
+                                          MessageEntityType.EMAIL, MessageEntityType.TEXT_MENTION,
+                                          MessageEntityType.PHONE_NUMBER):
+                    # If the 'nested_entity' is fully nested into the outer entity,
+                    # then split the outer entity.
+                    if nested_entity.offset + nested_entity.length < base_entity.offset + base_entity.length:
+                        new_entities.append(create_msg_entity_from(base_entity,
+                                                                   new_length=nested_entity.length))
+                        base_entity = create_msg_entity_from(base_entity,
+                                                             new_length=base_entity.length - nested_entity.length,
+                                                             new_offset=base_entity.offset + nested_entity.length)
 
-        new_entities.append(base_ent)
+        new_entities.append(base_entity)
 
     return sort_entities(new_entities)
+
+
+
 
 
 def _decode_html_entity(in_text: str, position: int) -> tuple[Optional[str], int]:
