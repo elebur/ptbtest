@@ -36,7 +36,7 @@ from typing import Any, Literal, Optional, Union
 from urllib.parse import urlparse
 
 from telegram import MessageEntity, TelegramObject
-from telegram.constants import MessageEntityType
+from telegram.constants import MessageEntityType, ParseMode
 
 from ptbtest.errors import BadMarkupException
 
@@ -2404,64 +2404,66 @@ class EntityParser:
         return tuple(entities)
 
     @staticmethod
-    def __parse_text(ptype, message, invalids, tags, text_links):
-        entities = []
-        mentions = re.compile(r'@[a-zA-Z0-9]{1,}\b')
-        hashtags = re.compile(r'#[a-zA-Z0-9]{1,}\b')
-        botcommands = re.compile(r'(?<!\/|\w)\/[a-zA-Z0-0_\-]{1,}\b')
-        urls = re.compile(
-            r'(([hHtTpP]{4}[sS]?|[fFtTpP]{3})://)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?'
-        )
-        inv = invalids.search(message)
-        if inv:
-            raise BadMarkupException(
-                "nested {} is not supported. your text: {}".format(
-                    ptype, inv.groups()[0]))
-        while tags.search(message):
-            tag = tags.search(message)
-            text = tag.groups()[2]
-            start = tag.start()
-            if tag.groups()[1] in ["b", "*"]:
-                parse_type = "bold"
-            elif tag.groups()[1] in ["i", "_"]:
-                parse_type = "italic"
-            elif tag.groups()[1] in ["code", "`"]:
-                parse_type = "code"
-            elif tag.groups()[1] in ["pre", "```"]:
-                parse_type = "pre"
-            entities.append(MessageEntity(parse_type, start, len(text)))
-            message = tags.sub(r'\3', message, count=1)
-        while text_links.search(message):
-            link = text_links.search(message)
-            url = link.group('url')
-            text = link.group('text')
-            start = link.start()
-            length = len(text)
-            for x, ent in enumerate(entities):
-                if ent.offset > start:
-                    # The previous solution subtracted link.end()-start-length
-                    # from entities[x].offset. That's why the -1 multiplication.
-                    shift_to = (link.end() - start - length) * -1
-                    entities[x] = MessageEntity.shift_entities(shift_to, [entities[x]])[0]
-            entities.append(MessageEntity('text_link', start, length, url=url))
-            message = text_links.sub(r'\g<text>', message, count=1)
-        for mention in mentions.finditer(message):
-            entities.append(
-                MessageEntity('mention',
-                              mention.start(), mention.end() - mention.start(
-                    )))
-        for hashtag in hashtags.finditer(message):
-            entities.append(
-                MessageEntity('hashtag',
-                              hashtag.start(), hashtag.end() - hashtag.start(
-                    )))
-        for botcommand in botcommands.finditer(message):
-            entities.append(
-                MessageEntity('bot_command',
-                              botcommand.start(),
-                              botcommand.end() - botcommand.start()))
-        for url in urls.finditer(message):
-            entities.append(
-                MessageEntity('url', url.start(), url.end() - url.start()))
+    def parse_text(text: str, parse_mode: Union[ParseMode, str, None] = None) -> tuple[str, tuple[MessageEntity, ...]]:
+        """
+        Extract all message entities (:obj:`~telegram.MessageEntity`)
+        from the given ``text``.
 
-        return message, entities
+        Examples:
+            An input string: ``<b>@mention <i>#hashtag</i> $ABC</b>``
+
+            Result:
+
+            .. code:: python
+                (("@mention #hashtag $ABC",
+                    (MessageEntity(length=8, offset=0, type=MessageEntityType.MENTION),
+                    MessageEntity(length=8, offset=0, type=MessageEntityType.BOLD),
+                    MessageEntity(length=1, offset=8, type=MessageEntityType.BOLD),
+                    MessageEntity(length=8, offset=9, type=MessageEntityType.HASHTAG),
+                    MessageEntity(length=8, offset=9, type=MessageEntityType.BOLD),
+                    MessageEntity(length=8, offset=9, type=MessageEntityType.ITALIC),
+                    MessageEntity(length=1, offset=17, type=MessageEntityType.BOLD),
+                    MessageEntity(length=4, offset=18, type=MessageEntityType.CASHTAG),
+                    MessageEntity(length=4, offset=18, type=MessageEntityType.BOLD))))
+
+        Args:
+            text (str): A message that must be parsed.
+            parse_mode (str|~telegram.constants.ParseMode), optional: "HTML", "Markdown",
+                "MarkdownV2"
+
+        Returns:
+            tuple[~telegram.MessageEntity]: Tuple of :obj:`~telegram.MessageEntity` that
+            were found in the ``text``
+        """
+        if text == "":
+            raise BadMarkupException(MESSAGE_TEXT_IS_EMPTY_ERROR)
+        elif not text.strip():
+            raise BadMarkupException(TEXT_MUST_BE_NON_EMPTY_ERROR)
+
+        PARSE_MODES = {
+            ParseMode.HTML: EntityParser.parse_html,
+            ParseMode.MARKDOWN: EntityParser.parse_markdown,
+            ParseMode.MARKDOWN_V2: EntityParser.parse_markdown_v2
+        }
+
+        entities_list: list[MessageEntity] = list()
+
+        if parse_mode is not None and not PARSE_MODES.get(parse_mode):
+            raise ValueError(f"Incorrect 'parse_mode' was sent - '{parse_mode}. "
+                             f"Available values are `{'`, `'.join(PARSE_MODES.keys())}`")
+
+        if parse_mode:
+            text, markup_entities = PARSE_MODES[parse_mode](text)
+            entities_list.extend(markup_entities)
+
+        entities_list.extend(EntityParser.parse_mentions(text))
+        entities_list.extend(EntityParser.parse_bot_commands(text))
+        entities_list.extend(EntityParser.parse_hashtags(text))
+        entities_list.extend(EntityParser.parse_cashtags(text))
+        entities_list.extend(EntityParser.parse_phone_numbers(text))
+        entities_list.extend(EntityParser.parse_tg_urls(text))
+        entities_list.extend(EntityParser.parse_urls_and_emails(text))
+
+        unsorted_entities = _remove_intersected_entities(entities_list)
+
+        return text.strip(), tuple(_split_and_sort_intersected_entities(unsorted_entities ))
