@@ -2078,11 +2078,12 @@ class EntityParser:
             prev_ch: str = get_item(text, match.start - 1, "", allow_negative_indexing=False)
 
             # Skip if there is a dot or a latin letter right before the url or ...
-            if (prev_ch and prev_ch in string.ascii_letters + "." or
-                    # ... there is '@' symbol without user:pass or ...
-                    "://@" in url or
-                    # ... there is no protocol, but '://' at the beginning or the URL startswith '@'.
-                    url.startswith("@") or url.startswith("://")):
+            if (prev_ch and (prev_ch in string.ascii_letters + "." or
+                             # ... there is '@' symbol without user:pass or ...
+                             "://@" in url or
+                             # ... there is no protocol, but '://' at the beginning or the URL startswith '@' ...
+                             url.startswith("@") or url.startswith("://")
+            )):
                 continue
             # if there is a dot(s) followed by a non-whitespace symbol right after the
             # TLD, then ignore such an URL.
