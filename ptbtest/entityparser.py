@@ -569,7 +569,86 @@ def _split_and_sort_intersected_entities(entities: Sequence[MessageEntity]) -> l
     return sort_entities(new_entities)
 
 
+def _remove_intersected_entities(entities: list[MessageEntity]) -> list[MessageEntity]:
+    """
+    The function removes some intersected entities if they are:
+    - placed in ``pre``, ``code``, ``text_link`` entities.
+    - @mention and phone numbers if they are in an email entity
+    -
 
+    Args:
+        entities (Sequence[~telegram.MessageEntity]): A list of entities.
+
+    Returns:
+        (list[~telegram.MessageEntity]):
+            A list of unsorted, cleaned entities.
+
+    """
+    # Within these entities, other entities are not Telegram entities,
+    # but plain text.
+    # E.g., 'pre', 'code', 'text_link'
+    clean_entities = list()
+    # Urls outside tags. E.g.,
+    # "https://example.com" VS "<a>https://example.com</a>"
+    inline_urls = list()
+    # A list of all email entities.
+    emails = list()
+
+    counter = len(entities) - 1
+    # Collecting all entities that cannot include other entities.
+    while counter >= 0:
+        entity = entities[counter]
+        if entity.type in (MessageEntityType.CODE, MessageEntityType.PRE, MessageEntityType.TEXT_LINK):
+            clean_entities.append(entities.pop(counter))
+        elif entity.type == MessageEntityType.EMAIL:
+            emails.append(entity)
+        elif entity.type == MessageEntityType.URL:
+            inline_urls.append(entities.pop(counter))
+
+        counter -= 1
+
+    counter = len(entities) - 1
+    while counter >= 0:
+        entity = entities[counter]
+        is_removed = False
+        # Removing all entities from 'pre', 'code', and 'text_link' entities.
+        for clean_ent in clean_entities:
+            if clean_ent.offset <= entity.offset <= clean_ent.offset + clean_ent.length:
+                entities.pop(counter)
+                is_removed = True
+                break
+
+        if is_removed:
+            counter -= 1
+            continue
+        # Removing mentions and phone numbers that are placed in emails.
+        for email in emails:
+            if entity.type in (MessageEntityType.PHONE_NUMBER, MessageEntityType.MENTION):
+                if email.offset <= entity.offset <= email.offset + email.length:
+                    entities.pop(counter)
+                    is_removed = True
+                    break
+
+        if is_removed:
+            counter -= 1
+            continue
+
+        inl_url_counter = len(inline_urls) - 1
+        # Mentions, hashtags, cashtags and bot commands have higher priority than
+        # URLs, so if a URL and mention placed in the same range(offset, offset+length)
+        # than the URL must be moved.
+        while inl_url_counter >= 0:
+            inl_url = inline_urls[inl_url_counter]
+            if entity.type in (MessageEntityType.MENTION, MessageEntityType.HASHTAG,
+                          MessageEntityType.CASHTAG, MessageEntityType.BOT_COMMAND):
+
+                if entity.offset <= inl_url.offset <= entity.offset + entity.length:
+                    inline_urls.pop(inl_url_counter)
+            inl_url_counter -= 1
+
+        counter -= 1
+
+    return entities + clean_entities + inline_urls
 
 
 def _decode_html_entity(in_text: str, position: int) -> tuple[Optional[str], int]:
