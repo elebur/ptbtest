@@ -2104,7 +2104,7 @@ class EntityParser:
             The tuple might be empty if no entities were found.
         """
         # Allowed characters in the username and in the password in the basic auth.
-        user_pass_chars = "a-z0-9._―‑!%-"
+        user_pass_chars = ":a-z0-9._―‑!%-"
 
         host_domain_symbols = "a-z0-9\u00a1-\uffff―_‑-"
         # This pattern is based on this one https://gist.github.com/dperini/729294
@@ -2112,7 +2112,7 @@ class EntityParser:
             # Optional protocol.
             r"(?:[a-z]+://)?"
             # 'user:pass' basic auth (optional)
-            fr"(?:[:{user_pass_chars}]+(?::[{user_pass_chars}]+)?@)?"
+            fr"(?:[+{user_pass_chars}]+(?:[{user_pass_chars}]+)?@)?"
             r"(?:"
                 # IP address
                 r"(?:(?:\d{1,3})\.){3}(?:\d{1,3})\b"

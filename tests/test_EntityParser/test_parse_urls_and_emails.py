@@ -388,3 +388,4 @@ class TestParseUrls:
         assert self.ep.parse_urls_and_emails("a#:b@gmail.com") == (MessageEntity(length=11, offset=3, type=MessageEntityType.EMAIL),)
         assert self.ep.parse_urls_and_emails("Look mailto:test@example.com") == (MessageEntity(length=16, offset=12, type=MessageEntityType.EMAIL),)
         assert self.ep.parse_urls_and_emails("tempus@elemen.tum") == (MessageEntity(length=17, offset=0, type=MessageEntityType.EMAIL),)
+        assert self.ep.parse_urls_and_emails("+18001234567@email.com") == (MessageEntity(length=22, offset=0, type=MessageEntityType.EMAIL),)
