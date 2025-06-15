@@ -213,6 +213,8 @@ class TestParseTextWithMarkup:
         assert self.sut("go #ogle.com", None) == ("go #ogle.com", (
                                                                 MessageEntity(length=5, offset=3,
                                                                               type=MessageEntityType.HASHTAG),))
+        assert self.sut("#example.com/#hash", None) == ("#example.com/#hash", (MessageEntity(length=8, offset=0, type=MessageEntityType.HASHTAG),
+                                                                               MessageEntity(length=5, offset=13, type=MessageEntityType.HASHTAG)))
 
     def test_invalid_hashtag_inside_plain_url(self):
         assert self.sut("go#ogle.com", None) == ("go#ogle.com",
@@ -476,3 +478,12 @@ class TestParseTextWithMarkup:
         assert self.sut("a!:b@gmail.com", None) == ("a!:b@gmail.com",
                                                                 (MessageEntity(length=14, offset=0,
                                                                                type=MessageEntityType.URL),))
+        assert self.sut("https://google.com//command", None) == ("https://google.com//command",
+                                                                 (MessageEntity(length=27, offset=0,
+                                                                                type=MessageEntityType.URL),))
+        assert self.sut("https://google.com/$ABC", None) == ("https://google.com/$ABC",
+                                                             (MessageEntity(length=23, offset=0,
+                                                                            type=MessageEntityType.URL),))
+        assert self.sut("https://google.com/#hashtag", None) == ("https://google.com/#hashtag",
+                                                                 (MessageEntity(length=27, offset=0,
+                                                                                type=MessageEntityType.URL),))
