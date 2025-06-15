@@ -256,6 +256,7 @@ class TestParseUrls:
         assert self.ep.parse_urls_and_emails("a:b!@gmail.com") == (MessageEntity(length=14, offset=0, type=MessageEntityType.URL),)
         assert self.ep.parse_urls_and_emails("_sip._udp.apnic.net") == (MessageEntity(length=19, offset=0, type=MessageEntityType.URL),)
         assert self.ep.parse_urls_and_emails("https://as_sip._udp.apnic.net") == (MessageEntity(length=29, offset=0, type=MessageEntityType.URL),)
+        assert self.ep.parse_urls_and_emails(".http://example.com") == (MessageEntity(length=18, offset=1, type=MessageEntityType.URL),)
 
     def test_complex(self):
         text = ("a.b.google.com dfsknnfs gsdfgsg http://códuia.de/ dffdg,\" 12)(cpia.de/())(\" http://гришка.рф/ sdufhdf "

@@ -634,16 +634,16 @@ def _remove_intersected_entities(entities: list[MessageEntity]) -> list[MessageE
             continue
 
         inl_url_counter = len(inline_urls) - 1
-        # Mentions, hashtags, cashtags and bot commands have higher priority than
-        # URLs, so if a URL and mention placed in the same range(offset, offset+length)
-        # than the URL must be moved.
+        # Removing mentions, hashtags, cashtags, and bot commands
+        # if they are in the URL.
         while inl_url_counter >= 0:
             inl_url = inline_urls[inl_url_counter]
             if entity.type in (MessageEntityType.MENTION, MessageEntityType.HASHTAG,
-                          MessageEntityType.CASHTAG, MessageEntityType.BOT_COMMAND):
+                               MessageEntityType.CASHTAG, MessageEntityType.BOT_COMMAND):
 
-                if entity.offset <= inl_url.offset <= entity.offset + entity.length:
-                    inline_urls.pop(inl_url_counter)
+                if inl_url.offset <= entity.offset <= inl_url.offset + inl_url.length:
+                    entities.pop(counter)
+                    break
             inl_url_counter -= 1
 
         counter -= 1
@@ -2155,17 +2155,44 @@ class EntityParser:
             url = text[match.start:match.end]
             protocol = urlparse(url).scheme if "://" in url else None
             prev_ch: str = get_item(text, match.start - 1, "", allow_negative_indexing=False)
+            prev_prev_ch: str = get_item(text, match.start - 2, "", allow_negative_indexing=False)
 
-            # Skip if there is a dot or a latin letter right before the url or ...
-            if (prev_ch and (prev_ch in string.ascii_letters + "." or
-                             # ... there is '@' symbol without user:pass or ...
-                             "://@" in url or
-                             # ... there is no protocol, but '://' at the beginning or the URL startswith '@' ...
-                             url.startswith("@") or url.startswith("://")
-            )):
+            # If there is any symbol before the found URL and ...
+            if prev_ch:
+                # ... the symbol is ASCII letter or a dot or ...
+                if prev_ch in string.ascii_letters:
+                    continue
+                # ... the symbol is dot and there is no protocol in URL.
+                # Valid - .https://example.com
+                # Invalid - .example.com
+                elif prev_ch == "." and "://" not in url:
+                    continue
+                # ... the symbol is one of the '@' (mentions), '#' (hashtags), '$' (cashtags) and ...
+                elif prev_ch in "@#$":
+                    # ... there is no symbol before the previous one or ...
+                    # @example.com
+                    if not prev_prev_ch:
+                        continue
+                    # ... the previous-previous symbol is letter or ...
+                    # Valid URL (actually email)- a@example.com
+                    # Invalid URL - .@example.com
+                    elif not unicodedata.category(prev_prev_ch).startswith("L"):
+                        continue
+                    # ... the text right before the previous symbol is "://".
+                    # http://@example.com
+                    elif text[:match.start - 1].endswith("://"):
+                        continue
+                # The malformed URL - http:/example.com
+                elif prev_prev_ch+prev_ch == ":/":
+                    continue
+                # '/views.py'
+                elif prev_ch == "/" and not prev_prev_ch:
+                    continue
+            # ://example.com
+            elif url.startswith("://"):
                 continue
             # if there is a dot(s) followed by a non-whitespace symbol right after the
-            # TLD, then ignore such an URL.
+            # TLD, then ignore such a URL.
             elif re.search(r"^\.+[^.\s]", text[match.end:]):
                 continue
             elif protocol and protocol.lower() not in ("http", "https", "ftp", "tonsite"):
