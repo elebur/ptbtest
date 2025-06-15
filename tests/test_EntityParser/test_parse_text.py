@@ -7,7 +7,7 @@ from ptbtest.entityparser import EntityParser
 
 class TestParseTextNoMarkup:
     # [S]ystem [u]nder [t]est
-    sut = lambda self, text: EntityParser().parse_text(text)
+    sut = lambda self, text: EntityParser().parse_text(text)  # noqa: E731
 
     def test_non_intersected_entities(self):
         test_text = ("Test text @without /markup but with #other kinds "
@@ -35,7 +35,7 @@ class TestParseTextNoMarkup:
 
 
 class TestParseTextWithMarkup:
-    sut = lambda self, text, markup: EntityParser().parse_text(text, markup)
+    sut = lambda self, text, markup: EntityParser().parse_text(text, markup)  # noqa: E731
     entities = {
         "b": MessageEntityType.BOLD,
         "strong": MessageEntityType.BOLD,
@@ -102,7 +102,7 @@ class TestParseTextWithMarkup:
                             MessageEntity(length=12, offset=66, type=MessageEntityType.PHONE_NUMBER))
 
     def test_inside_nested_markup(self):
-        test_text = "*Bold @mention with _italic \#hastag_ and __underlined email@example\.com__*"
+        test_text = "*Bold @mention with _italic \#hastag_ and __underlined email@example\.com__*"  # noqa: W605
 
         text, entities = self.sut(test_text, ParseMode.MARKDOWN_V2)
         assert text == "Bold @mention with italic #hastag and underlined email@example.com"
@@ -295,7 +295,7 @@ class TestParseTextWithMarkup:
                      "message://%3c330e7f8409726r6a4ba78dkf1fd71420c1bf6ff@mail.gmail.com%3e\n"
                      "\n<tag>http://example.com</tag>\nJust a www.example.com "
                      "link.\n\nabcdefghijklmnopqrstuvwxyz0123456789qwe_sdfsdf.aweawe-sdfs.com\n"
-                     "google.com:᪉᪉᪉᪉\ngoogle.com:᪀᪀\nhttp://  .com\nURL:     .com\nURL: "
+                     "google.com:᪉᪉᪉᪉\ngoogle.com:᪀᪀\nhttp://  .com\nURL:     .com\nURL: "  # noqa: RUF001
                      ".com\n\ngoogle.com?qwe\ngoogle.com#qwe\ngoogle.com/?\ngoogle.com/#\n"
                      "google.com?\ngoogle.com#\n")
 

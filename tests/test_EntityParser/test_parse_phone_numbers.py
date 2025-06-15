@@ -165,11 +165,11 @@ class TestParsePhoneNumbers:
         assert self.ep.parse_phone_numbers("(+1123456789") == ()
 
     def test_non_0123456789_numbers(self):
-        # These all symbols are valid numbers ("1૩５𝟔൭௯𝟵𝟿៩௫८"),
+        # These all symbols are valid numbers ("1૩５𝟔൭௯𝟵𝟿៩௫८"),  # noqa: RUF003
         # and regex's '\d' will match them, but Telegram expects numbers
         # to consist of 0-9 digits only.
         # A little more details on the numbers - https://stackoverflow.com/a/54912545/19813684
-        assert self.ep.parse_phone_numbers("+1૩５𝟔൭௯𝟵𝟿៩௫८") == ()
+        assert self.ep.parse_phone_numbers("+1૩５𝟔൭௯𝟵𝟿៩௫८") == ()  # noqa: RUF001
 
     def test_whitespaces(self):
         assert self.ep.parse_phone_numbers("+1 8117967070") == ()
