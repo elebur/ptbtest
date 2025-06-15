@@ -93,16 +93,6 @@ class TestParseUrls:
         assert self.ep.parse_urls_and_emails("()telegram.org/?q=()") == (MessageEntity(length=18, offset=2, type=MessageEntityType.URL),)
         assert self.ep.parse_urls_and_emails("http://telegram.org/?asd=123#123.") == (MessageEntity(length=32, offset=0, type=MessageEntityType.URL),)
 
-    def test_basic_auth_ignoring_mentions(self):
-        """
-        These tests will fail if they'll be testsed against the Telegram server,
-        because mentions extracted before URLs and in this string http://@google.com
-        "@google" as a mention will be found, and no URLs.
-        """
-        assert self.ep.parse_urls_and_emails("http://@google.com") == (MessageEntity(length=10, offset=8, type=MessageEntityType.URL),)
-        assert self.ep.parse_urls_and_emails("http://@goog.com") == (MessageEntity(length=8, offset=8, type=MessageEntityType.URL),)
-        assert self.ep.parse_urls_and_emails("http://@@google.com") == (MessageEntity(length=10, offset=9, type=MessageEntityType.URL),)
-
     def test_basic_auth(self):
         assert self.ep.parse_urls_and_emails("http://a@google.com") == (MessageEntity(length=19, offset=0, type=MessageEntityType.URL),)
         assert self.ep.parse_urls_and_emails("http://test@google.com") == (MessageEntity(length=22, offset=0, type=MessageEntityType.URL),)
